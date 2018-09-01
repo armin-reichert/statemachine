@@ -14,7 +14,7 @@ import java.util.function.Consumer;
  * @param <E>
  *          event type
  */
-class TransitionImpl<S, E> implements Transition<S, E> {
+class TransitionImpl<S, E> {
 
 	private final Consumer<E> NULL_ACTION = e -> {
 
@@ -65,15 +65,5 @@ class TransitionImpl<S, E> implements Transition<S, E> {
 
 	public S to() {
 		return to;
-	}
-
-	@Override
-	public State<S, E> getSourceState() {
-		return sm.state(from);
-	}
-
-	@Override
-	public State<S, E> getTargetState() {
-		return sm.state(to);
 	}
 }
