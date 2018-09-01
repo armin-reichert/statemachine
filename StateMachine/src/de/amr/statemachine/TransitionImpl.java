@@ -1,7 +1,6 @@
 package de.amr.statemachine;
 
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
@@ -17,47 +16,64 @@ import java.util.function.Consumer;
  */
 class TransitionImpl<S, E> implements Transition<S, E> {
 
-	final StateMachine<S, E> sm;
-	final S from;
-	final S to;
-	final BooleanSupplier guard;
-	final Consumer<E> action;
-	final Class<? extends E> eventType;
-	final boolean timeout;
-	private E event;
+	private final Consumer<E> NULL_ACTION = e -> {
+
+	};
+
+	private final StateMachine<S, E> sm;
+	private final S from;
+	private final S to;
+	private final BooleanSupplier guard;
+	private final Consumer<E> action;
+	private final Class<? extends E> eventType;
+	private final boolean timeout;
 
 	public TransitionImpl(StateMachine<S, E> sm, S from, S to, BooleanSupplier guard, Consumer<E> action,
 			Class<? extends E> eventType, boolean timeout) {
+		Objects.requireNonNull(sm);
 		this.sm = sm;
+		Objects.requireNonNull(from);
 		this.from = from;
+		Objects.requireNonNull(to);
 		this.to = to;
-		this.guard = guard;
-		this.action = action;
+		this.guard = guard == null ? () -> true : guard;
+		this.action = action == null ? NULL_ACTION : action;
 		this.eventType = eventType;
 		this.timeout = timeout;
 	}
 
-	public E getEvent() {
-		return event;
+	public boolean canFire(E event) {
+		if (!guard.getAsBoolean()) {
+			return false;
+		}
+		if (timeout) {
+			return sm.state(from).isTerminated();
+		}
+		if (eventType != null) {
+			return event != null && eventType.equals(event.getClass());
+		}
+		return true;
 	}
 
-	public void setEvent(E event) {
-		Objects.nonNull(event);
-		this.event = event;
+	public Consumer<E> action() {
+		return action;
+	}
+
+	public S from() {
+		return from;
+	}
+
+	public S to() {
+		return to;
 	}
 
 	@Override
-	public State<S, E> from() {
+	public State<S, E> getSourceState() {
 		return sm.state(from);
 	}
 
 	@Override
-	public State<S, E> to() {
+	public State<S, E> getTargetState() {
 		return sm.state(to);
-	}
-
-	@Override
-	public Optional<E> event() {
-		return Optional.ofNullable(event);
 	}
 }

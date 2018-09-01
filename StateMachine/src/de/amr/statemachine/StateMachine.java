@@ -274,58 +274,36 @@ public class StateMachine<S, E> {
 	 *                                 if no matching transition is found
 	 */
 	public void update() {
+		E event = eventQ.poll();
 		Optional<TransitionImpl<S, E>> matchingTransition = transitions(currentState).stream()
-				.filter(this::canFire).findFirst();
+				.filter(t -> t.canFire(event)).findFirst();
 		if (matchingTransition.isPresent()) {
-			fireTransition(matchingTransition.get(), eventQ.poll());
-		} else {
-			if (eventQ.isEmpty()) {
-				state(currentState).updateTimer();
-				state(currentState).onTick();
-			} else {
-				E event = eventQ.poll();
-				tracer.unhandledEvent(event);
-				throw new IllegalStateException(String.format(
-						"%s: No transition defined in state '%s' for event '%s'", description, currentState, event));
-			}
+			fireTransition(matchingTransition.get(), event);
+			return;
 		}
-	}
-
-	private boolean canFire(TransitionImpl<S, E> t) {
-		boolean guardOk = t.guard == null || t.guard.getAsBoolean();
-		if (t.timeout) {
-			return guardOk && state(t.from).isTerminated();
-		} else if (t.eventType != null) {
-			return guardOk && hasMatchingEvent(t.eventType);
-		} else {
-			return guardOk;
+		if (event != null) {
+			tracer.unhandledEvent(event);
+			throw new IllegalStateException(String.format("%s: No transition defined for state '%s' and event '%s'",
+					description, currentState, event));
 		}
-	}
-
-	// TODO make this configurable
-	private boolean hasMatchingEvent(Class<? extends E> eventType) {
-		return !eventQ.isEmpty() && eventQ.peek().getClass().equals(eventType);
+		state(currentState).updateTimer();
+		state(currentState).onTick();
 	}
 
 	private void fireTransition(TransitionImpl<S, E> t, E event) {
-		t.setEvent(event);
-		tracer.firingTransition(t);
-		if (currentState == t.to) {
+		tracer.firingTransition(t, event);
+		if (currentState == t.to()) {
 			// keep state: no exit/entry actions are executed
-			if (t.action != null) {
-				t.action.accept(event);
-			}
+			t.action().accept(event);
 		} else {
 			// change state, execute exit and entry actions
-			State<S, E> oldState = state(t.from);
-			State<S, E> newState = state(t.to);
+			State<S, E> oldState = state(t.from());
+			State<S, E> newState = state(t.to());
 			tracer.exitingState(currentState);
 			oldState.onExit();
-			if (t.action != null) {
-				t.action.accept(event);
-			}
-			currentState = t.to;
-			tracer.enteringState(t.to);
+			t.action().accept(event);
+			currentState = t.to();
+			tracer.enteringState(t.to());
 			newState.resetTimer();
 			newState.onEntry();
 		}

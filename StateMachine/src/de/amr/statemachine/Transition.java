@@ -1,9 +1,7 @@
 package de.amr.statemachine;
 
-import java.util.Optional;
-
 /**
- * State transition as seen by client.
+ * State transition as seen by state machine clients.
  * 
  * @author Armin Reichert
  *
@@ -19,31 +17,12 @@ public interface Transition<S, E> {
 	 * 
 	 * @return state object
 	 */
-	public State<S, E> from();
+	public State<S, E> getSourceState();
 
 	/**
 	 * The state where this transition leads to.
 	 * 
 	 * @return state object
 	 */
-	public State<S, E> to();
-
-	/**
-	 * The input/event which triggered the execution of this transition.
-	 * 
-	 * @return optional input which triggered transition
-	 */
-	public Optional<E> event();
-
-	/**
-	 * Convenience method which returns the event that triggered this transition.
-	 * 
-	 * @return event that triggered this transition cast to the specific event type or {@code null} if
-	 *         no event triggered this transition
-	 */
-	@SuppressWarnings("unchecked")
-	public default <T extends E> T typedEvent() {
-		Optional<E> event = event();
-		return event.isPresent() ? (T) event().get() : null;
-	}
+	public State<S, E> getTargetState();
 }
