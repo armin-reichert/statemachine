@@ -58,7 +58,7 @@ public class StateMachineTracer<S, E> implements StateMachineListener<S, E> {
 	}
 
 	@Override
-	public void firingTransition(TransitionImpl<S, E> t, E event) {
+	public void firingTransition(Transition<S, E> t, E event) {
 		if (event == null) {
 			if (t.from() != t.to()) {
 				log.info(String.format("%s changing from '%s' to '%s'", sm.getDescription(), t.from(), t.to()));

@@ -14,7 +14,7 @@ import java.util.function.Consumer;
  * @param <E>
  *          event type
  */
-class TransitionImpl<S, E> {
+class Transition<S, E> {
 
 	private final Consumer<E> NULL_ACTION = e -> {
 
@@ -28,7 +28,7 @@ class TransitionImpl<S, E> {
 	private final Class<? extends E> eventType;
 	private final boolean timeout;
 
-	public TransitionImpl(StateMachine<S, E> sm, S from, S to, BooleanSupplier guard, Consumer<E> action,
+	public Transition(StateMachine<S, E> sm, S from, S to, BooleanSupplier guard, Consumer<E> action,
 			Class<? extends E> eventType, boolean timeout) {
 		Objects.requireNonNull(sm);
 		this.sm = sm;

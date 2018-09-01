@@ -42,7 +42,7 @@ public class StateMachine<S, E> {
 
 	private final Deque<E> eventQ;
 	private final Map<S, State<S, E>> stateMap;
-	private final Map<S, List<TransitionImpl<S, E>>> transitionMap;
+	private final Map<S, List<Transition<S, E>>> transitionMap;
 	private StateMachineTracer<S, E> tracer;
 	private String description;
 	private S initialState;
@@ -140,7 +140,7 @@ public class StateMachine<S, E> {
 		if (timeout && eventType != null) {
 			throw new IllegalStateException("Cannot specify timeout and event condition on same transition");
 		}
-		transitions(from).add(new TransitionImpl<>(this, from, to, guard, action, eventType, timeout));
+		transitions(from).add(new Transition<>(this, from, to, guard, action, eventType, timeout));
 	}
 
 	/**
@@ -275,7 +275,7 @@ public class StateMachine<S, E> {
 	 */
 	public void update() {
 		E event = eventQ.poll();
-		Optional<TransitionImpl<S, E>> matchingTransition = transitions(currentState).stream()
+		Optional<Transition<S, E>> matchingTransition = transitions(currentState).stream()
 				.filter(t -> t.canFire(event)).findFirst();
 		if (matchingTransition.isPresent()) {
 			fireTransition(matchingTransition.get(), event);
@@ -290,7 +290,7 @@ public class StateMachine<S, E> {
 		state(currentState).onTick();
 	}
 
-	private void fireTransition(TransitionImpl<S, E> t, E event) {
+	private void fireTransition(Transition<S, E> t, E event) {
 		tracer.firingTransition(t, event);
 		if (currentState == t.to()) {
 			// keep state: no exit/entry actions are executed
@@ -309,7 +309,7 @@ public class StateMachine<S, E> {
 		}
 	}
 
-	private List<TransitionImpl<S, E>> transitions(S state) {
+	private List<Transition<S, E>> transitions(S state) {
 		if (!transitionMap.containsKey(state)) {
 			transitionMap.put(state, new ArrayList<>(3));
 		}
