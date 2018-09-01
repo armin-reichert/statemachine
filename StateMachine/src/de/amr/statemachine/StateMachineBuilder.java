@@ -51,7 +51,7 @@ public class StateMachineBuilder<S, E> {
 			entry = null;
 			exit = null;
 			update = null;
-			fnDuration = () -> StateObject.ENDLESS;
+			fnDuration = () -> State.ENDLESS;
 		}
 
 		public StateBuilder state(S state) {
@@ -65,7 +65,7 @@ public class StateMachineBuilder<S, E> {
 			return this;
 		}
 
-		public <C extends StateObject<S, E>> StateBuilder impl(C customStateObject) {
+		public <C extends State<S, E>> StateBuilder impl(C customStateObject) {
 			if (customStateObject == null) {
 				throw new IllegalArgumentException("Custom state object cannot be NULL");
 			}
@@ -97,7 +97,7 @@ public class StateMachineBuilder<S, E> {
 		}
 
 		private StateBuilder commit() {
-			StateObject<S, E> stateObject = sm.state(state);
+			State<S, E> stateObject = sm.state(state);
 			stateObject.entry = entry;
 			stateObject.exit = exit;
 			stateObject.update = update;

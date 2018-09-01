@@ -21,28 +21,32 @@ import java.util.stream.Stream;
  * @param <S>
  *          type for identifying states, for example an enumeration type.
  * @param <E>
- *          type of inputs (events).
+ *          type of events/inputs.
  * 
  * @author Armin Reichert
  */
 public class StateMachine<S, E> {
 
-	public static <SS, EE> StateMachineBuilder<SS, EE> define(Class<SS> stateLabelType, Class<EE> eventType) {
+	/**
+	 * Starts a state machine definition.
+	 * 
+	 * @param stateLabelType
+	 *                         state label type
+	 * @param eventType
+	 *                         event type
+	 * @return state machine builder
+	 */
+	public static <STATE, EVENT> StateMachineBuilder<STATE, EVENT> define(Class<STATE> stateLabelType,
+			Class<EVENT> eventType) {
 		return new StateMachineBuilder<>(stateLabelType);
 	}
 
 	private final Deque<E> eventQ;
-
-	private final Map<S, StateObject<S, E>> stateMap;
-
-	private final Map<S, List<Transition<S, E>>> transitionsFromState;
-
+	private final Map<S, State<S, E>> stateMap;
+	private final Map<S, List<TransitionImpl<S, E>>> transitionMap;
 	private StateMachineTracer<S, E> tracer;
-
 	private String description;
-
 	private S initialState;
-
 	private S currentState;
 
 	/**
@@ -55,7 +59,7 @@ public class StateMachine<S, E> {
 	public StateMachine(Class<S> stateLabelType) {
 		eventQ = new ArrayDeque<>();
 		stateMap = stateLabelType.isEnum() ? new EnumMap(stateLabelType) : new HashMap<>(7);
-		transitionsFromState = new HashMap<>(7);
+		transitionMap = new HashMap<>(7);
 		tracer = new StateMachineTracer<>(this, Logger.getGlobal(), () -> 60);
 	}
 
@@ -123,8 +127,8 @@ public class StateMachine<S, E> {
 	 * @param timeout
 	 *                    if transition is fired on a timeout
 	 */
-	public void addTransition(S from, S to, BooleanSupplier guard, Consumer<E> action, Class<? extends E> eventType,
-			boolean timeout) {
+	public void addTransition(S from, S to, BooleanSupplier guard, Consumer<E> action,
+			Class<? extends E> eventType, boolean timeout) {
 		Objects.nonNull(from);
 		Objects.nonNull(to);
 		if (guard == null) {
@@ -137,7 +141,7 @@ public class StateMachine<S, E> {
 		if (timeout && eventType != null) {
 			throw new IllegalStateException("Cannot specify timeout and event condition on same transition");
 		}
-		transitionsFrom(from).add(new Transition<>(this, from, to, guard, action, eventType, timeout));
+		transitions(from).add(new TransitionImpl<>(this, from, to, guard, action, eventType, timeout));
 	}
 
 	/**
@@ -200,9 +204,10 @@ public class StateMachine<S, E> {
 	 * 
 	 * @return the state object of the current state
 	 */
-	public <C extends StateObject<S, E>> C currentStateObject() {
+	public <C extends State<S, E>> C currentStateObject() {
 		if (currentState == null) {
-			throw new IllegalStateException("Cannot access current state object, state machine has not been initialzed");
+			throw new IllegalStateException(
+					"Cannot access current state object, state machine has not been initialzed");
 		}
 		return state(currentState);
 	}
@@ -215,9 +220,9 @@ public class StateMachine<S, E> {
 	 * @return the state object for the given state identifier
 	 */
 	@SuppressWarnings("unchecked")
-	public <C extends StateObject<S, E>> C state(S state) {
+	public <C extends State<S, E>> C state(S state) {
 		if (!stateMap.containsKey(state)) {
-			return (C) replaceState(state, new StateObject<>());
+			return (C) replaceState(state, new State<>());
 		}
 		return (C) stateMap.get(state);
 	}
@@ -231,7 +236,7 @@ public class StateMachine<S, E> {
 	 *                      state object
 	 * @return the new state object
 	 */
-	public <C extends StateObject<S, E>> C replaceState(S state, C stateObject) {
+	public <C extends State<S, E>> C replaceState(S state, C stateObject) {
 		stateObject.id = state;
 		stateObject.machine = this;
 		stateMap.put(state, stateObject);
@@ -248,8 +253,8 @@ public class StateMachine<S, E> {
 	 *         current state has no timer returns {@code false}.
 	 */
 	public boolean stateTimeExpiredPct(int pct) {
-		StateObject<S, E> stateObject = currentStateObject();
-		if (stateObject.timerTotalTicks == StateObject.ENDLESS) {
+		State<S, E> stateObject = currentStateObject();
+		if (stateObject.timerTotalTicks == State.ENDLESS) {
 			return false;
 		}
 		float expiredFraction = 1f - (float) stateObject.ticksRemaining / (float) stateObject.timerTotalTicks;
@@ -278,7 +283,8 @@ public class StateMachine<S, E> {
 		E event = eventQ.peek();
 		if (event == null) {
 			// find transition without event
-			Optional<Transition<S, E>> match = transitionsFrom(currentState).stream().filter(this::canFire).findFirst();
+			Optional<TransitionImpl<S, E>> match = transitions(currentState).stream().filter(this::canFire)
+					.findFirst();
 			if (match.isPresent()) {
 				fireTransition(match.get(), event);
 			} else {
@@ -288,19 +294,20 @@ public class StateMachine<S, E> {
 			}
 		} else {
 			// find transition for current event
-			Optional<Transition<S, E>> match = transitionsFrom(currentState).stream().filter(this::canFire).findFirst();
+			Optional<TransitionImpl<S, E>> match = transitions(currentState).stream().filter(this::canFire)
+					.findFirst();
 			if (match.isPresent()) {
 				fireTransition(match.get(), event);
 			} else {
 				tracer.unhandledEvent(event);
-				throw new IllegalStateException(
-						String.format("%s: No transition defined in state '%s' for event '%s'", description, currentState, event));
+				throw new IllegalStateException(String.format(
+						"%s: No transition defined in state '%s' for event '%s'", description, currentState, event));
 			}
 			eventQ.poll();
 		}
 	}
 
-	private boolean canFire(Transition<S, E> t) {
+	private boolean canFire(TransitionImpl<S, E> t) {
 		boolean guardOk = t.guard == null || t.guard.getAsBoolean();
 		if (t.timeout) {
 			return guardOk && state(t.from).isTerminated();
@@ -316,7 +323,7 @@ public class StateMachine<S, E> {
 		return !eventQ.isEmpty() && eventQ.peek().getClass().equals(eventType);
 	}
 
-	private void fireTransition(Transition<S, E> t, E event) {
+	private void fireTransition(TransitionImpl<S, E> t, E event) {
 		t.setEvent(event);
 		tracer.firingTransition(t);
 		if (currentState == t.to) {
@@ -326,8 +333,8 @@ public class StateMachine<S, E> {
 			}
 		} else {
 			// change state, execute exit and entry actions
-			StateObject<S, E> oldState = state(t.from);
-			StateObject<S, E> newState = state(t.to);
+			State<S, E> oldState = state(t.from);
+			State<S, E> newState = state(t.to);
 			tracer.exitingState(currentState);
 			oldState.onExit();
 			if (t.action != null) {
@@ -340,10 +347,10 @@ public class StateMachine<S, E> {
 		}
 	}
 
-	private List<Transition<S, E>> transitionsFrom(S state) {
-		if (!transitionsFromState.containsKey(state)) {
-			transitionsFromState.put(state, new ArrayList<>(3));
+	private List<TransitionImpl<S, E>> transitions(S state) {
+		if (!transitionMap.containsKey(state)) {
+			transitionMap.put(state, new ArrayList<>(3));
 		}
-		return transitionsFromState.get(state);
+		return transitionMap.get(state);
 	}
 }

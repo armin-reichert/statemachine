@@ -1,63 +1,49 @@
 package de.amr.statemachine;
 
-import java.util.Objects;
 import java.util.Optional;
-import java.util.function.BooleanSupplier;
-import java.util.function.Consumer;
 
 /**
- * Representation of a state transition.
+ * State transition as seen by client.
  * 
  * @author Armin Reichert
  *
  * @param <S>
- *          state identifier type
+ *          type of state identifiers
  * @param <E>
- *          event type
+ *          type of inputs (events)
  */
-class Transition<S, E> implements StateTransition<S, E> {
+public interface Transition<S, E> {
 
-	final StateMachine<S, E> sm;
-	final S from;
-	final S to;
-	final BooleanSupplier guard;
-	final Consumer<E> action;
-	final Class<? extends E> eventType;
-	final boolean timeout;
-	private E event;
+	/**
+	 * The state which is changed by this transition.
+	 * 
+	 * @return state object
+	 */
+	public State<S, E> from();
 
-	public Transition(StateMachine<S, E> sm, S from, S to, BooleanSupplier guard, Consumer<E> action,
-			Class<? extends E> eventType, boolean timeout) {
-		this.sm = sm;
-		this.from = from;
-		this.to = to;
-		this.guard = guard;
-		this.action = action;
-		this.eventType = eventType;
-		this.timeout = timeout;
-	}
+	/**
+	 * The state where this transition leads to.
+	 * 
+	 * @return state object
+	 */
+	public State<S, E> to();
 
-	public E getEvent() {
-		return event;
-	}
+	/**
+	 * The input/event which triggered the execution of this transition.
+	 * 
+	 * @return optional input which triggered transition
+	 */
+	public Optional<E> event();
 
-	public void setEvent(E event) {
-		Objects.nonNull(event);
-		this.event = event;
-	}
-
-	@Override
-	public StateObject<S, E> from() {
-		return sm.state(from);
-	}
-
-	@Override
-	public StateObject<S, E> to() {
-		return sm.state(to);
-	}
-
-	@Override
-	public Optional<E> event() {
-		return Optional.ofNullable(event);
+	/**
+	 * Convenience method which returns the event that triggered this transition.
+	 * 
+	 * @return event that triggered this transition cast to the specific event type or {@code null} if
+	 *         no event triggered this transition
+	 */
+	@SuppressWarnings("unchecked")
+	public default <T extends E> T typedEvent() {
+		Optional<E> event = event();
+		return event.isPresent() ? (T) event().get() : null;
 	}
 }

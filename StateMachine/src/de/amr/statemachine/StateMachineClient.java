@@ -22,7 +22,7 @@ public interface StateMachineClient<S, E> {
 		getStateMachine().setState(state);
 	}
 
-	default StateObject<S, E> getStateObject() {
+	default State<S, E> getStateObject() {
 		return getStateMachine().currentStateObject();
 	}
 

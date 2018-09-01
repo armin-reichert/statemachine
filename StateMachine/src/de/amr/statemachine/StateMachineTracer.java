@@ -43,7 +43,7 @@ public class StateMachineTracer<S, E> implements StateMachineListener<S, E> {
 
 	@Override
 	public void enteringState(S enteredState) {
-		if (sm.state(enteredState).getDuration() != StateObject.ENDLESS) {
+		if (sm.state(enteredState).getDuration() != State.ENDLESS) {
 			float seconds = sm.state(enteredState).getDuration() / fnTicksPerSecond.getAsInt();
 			log.info(String.format("%s entering state '%s' for %.2f seconds (%d frames)",
 					sm.getDescription(), enteredState, seconds, sm.state(enteredState).getDuration()));
@@ -58,7 +58,7 @@ public class StateMachineTracer<S, E> implements StateMachineListener<S, E> {
 	}
 
 	@Override
-	public void firingTransition(Transition<S, E> t) {
+	public void firingTransition(TransitionImpl<S, E> t) {
 		if (t.getEvent() == null) {
 			if (t.from != t.to) {
 				log.info(String.format("%s changing from '%s' to '%s'", sm.getDescription(), t.from, t.to));

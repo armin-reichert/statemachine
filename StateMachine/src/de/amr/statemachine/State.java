@@ -7,7 +7,7 @@ import java.util.function.IntSupplier;
  * 
  * @author Armin Reichert
  */
-public class StateObject<S, E> {
+public class State<S, E> {
 
 	/** Constant for defining an unlimited duration. */
 	public static final int ENDLESS = Integer.MAX_VALUE;
@@ -36,7 +36,7 @@ public class StateObject<S, E> {
 	/** Ticks remaining until time-out */
 	int ticksRemaining;
 
-	protected StateObject() {
+	protected State() {
 		fnDuration = () -> ENDLESS;
 		ticksRemaining = timerTotalTicks = ENDLESS;
 	}

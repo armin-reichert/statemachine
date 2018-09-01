@@ -12,5 +12,5 @@ public interface StateMachineListener<S, E> {
 
 	void exitingState(S exitedState);
 
-	void firingTransition(Transition<S, E> t);
+	void firingTransition(TransitionImpl<S, E> t);
 }
