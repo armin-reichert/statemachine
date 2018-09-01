@@ -33,11 +33,29 @@ public class StateMachine<S, E> {
 	 *                         state label type
 	 * @param eventType
 	 *                         event type
+	 * 
 	 * @return state machine builder
 	 */
 	public static <STATE, EVENT> StateMachineBuilder<STATE, EVENT> define(Class<STATE> stateLabelType,
 			Class<EVENT> eventType) {
 		return new StateMachineBuilder<>(stateLabelType);
+	}
+
+	/**
+	 * Starts a state machine definition.
+	 * 
+	 * @param stateLabelType
+	 *                         state label type
+	 * @param eventType
+	 *                         event type
+	 * @param matchStrategy
+	 *                         transition match strategy
+	 * 
+	 * @return state machine builder
+	 */
+	public static <STATE, EVENT> StateMachineBuilder<STATE, EVENT> define(Class<STATE> stateLabelType,
+			Class<EVENT> eventType, MatchStrategy matchStrategy) {
+		return new StateMachineBuilder<>(stateLabelType, matchStrategy);
 	}
 
 	private final MatchStrategy matchStrategy;
