@@ -185,6 +185,14 @@ public class StateMachineBuilder<S, E> {
 			return this;
 		}
 
+		public TransitionBuilder on(E eventObject) {
+			if (eventObject == null) {
+				throw new IllegalArgumentException("Event object of transition must not be NULL");
+			}
+			this.eventObject = eventObject;
+			return this;
+		}
+		
 		public TransitionBuilder act(Consumer<E> action) {
 			if (action == null) {
 				throw new IllegalArgumentException("Transition action must not be NULL");
