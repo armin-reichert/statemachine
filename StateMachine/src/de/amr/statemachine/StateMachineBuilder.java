@@ -63,8 +63,8 @@ public class StateMachineBuilder<S, E> {
 			if (this.state != null) {
 				commit();
 			}
-			// start new build
 			clear();
+			// start new build
 			this.state = state;
 			return this;
 		}

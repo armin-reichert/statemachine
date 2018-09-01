@@ -77,6 +77,9 @@ public class State<S, E> {
 	}
 
 	void updateTimer() {
+		if (timerTotalTicks == ENDLESS) {
+			return;
+		}
 		if (ticksRemaining > 0) {
 			--ticksRemaining;
 		}

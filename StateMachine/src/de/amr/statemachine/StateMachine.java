@@ -316,6 +316,13 @@ public class StateMachine<S, E> {
 	}
 
 	/**
+	 * Returns the number of remaining ticks for the current state.
+	 */
+	public int getRemainingTicks() {
+		return getStateObject().getRemaining();
+	}
+
+	/**
 	 * Initializes this state machine by switching to the initial state and executing the initial
 	 * state's (optional) entry action.
 	 */
