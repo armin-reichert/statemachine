@@ -33,7 +33,7 @@ public class StateMachineTracer<S, E> implements StateMachineListener<S, E> {
 	@Override
 	public void unhandledEvent(E event) {
 		log.info(String.format("%s in state %s could not handle '%s'", sm.getDescription(),
-				sm.currentState(), event));
+				sm.getState(), event));
 	}
 
 	@Override

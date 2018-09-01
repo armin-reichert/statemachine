@@ -13,7 +13,6 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.IntSupplier;
 import java.util.logging.Logger;
-import java.util.stream.Stream;
 
 /**
  * A finite state machine.
@@ -168,24 +167,9 @@ public class StateMachine<S, E> {
 	}
 
 	/**
-	 * Tells if the state machine is in any of the given states.
-	 * 
-	 * @param states
-	 *                 non-empty list of state labels
-	 * @return <code>true</code> if the state machine is in any of the given states
-	 */
-	@SuppressWarnings("unchecked")
-	public boolean any(S... states) {
-		if (states.length == 0) {
-			throw new IllegalArgumentException("At least one state ID is needed");
-		}
-		return Stream.of(states).anyMatch(state -> state.equals(currentState));
-	}
-
-	/**
 	 * @return the current state (identifier)
 	 */
-	public S currentState() {
+	public S getState() {
 		return currentState;
 	}
 
@@ -197,46 +181,48 @@ public class StateMachine<S, E> {
 	 */
 	public void setState(S state) {
 		currentState = state;
-		currentStateObject().onEntry();
+		getStateObject().onEntry();
 	}
 
 	/**
-	 * 
 	 * @return the state object of the current state
 	 */
-	public <C extends State<S, E>> C currentStateObject() {
+	public <C extends State<S, E>> C getStateObject() {
 		if (currentState == null) {
-			throw new IllegalStateException(
-					"Cannot access current state object, state machine has not been initialzed");
+			throw new IllegalStateException("Cannot access current state object, state machine not initialized.");
 		}
 		return state(currentState);
 	}
 
 	/**
-	 * Returns the state object with the given identifier. The state object is created on demand.
+	 * Returns the object representing the given state. It is created on-demand.
 	 * 
+	 * @param       <T>
+	 *                subtype of default state class
 	 * @param state
 	 *                a state identifier
 	 * @return the state object for the given state identifier
 	 */
 	@SuppressWarnings("unchecked")
-	public <C extends State<S, E>> C state(S state) {
+	public <T extends State<S, E>> T state(S state) {
 		if (!stateMap.containsKey(state)) {
-			return (C) replaceState(state, new State<>());
+			return (T) realizeState(state, new State<>());
 		}
-		return (C) stateMap.get(state);
+		return (T) stateMap.get(state);
 	}
 
 	/**
 	 * Replaces the state object for the given state by the given object.
 	 * 
+	 * @param             <T>
+	 *                      subtype of default state class used for representing the given state
 	 * @param state
 	 *                      state identifier
 	 * @param stateObject
 	 *                      state object
 	 * @return the new state object
 	 */
-	public <C extends State<S, E>> C replaceState(S state, C stateObject) {
+	public <T extends State<S, E>> T realizeState(S state, T stateObject) {
 		stateObject.id = state;
 		stateObject.machine = this;
 		stateMap.put(state, stateObject);
@@ -253,7 +239,7 @@ public class StateMachine<S, E> {
 	 *         current state has no timer returns {@code false}.
 	 */
 	public boolean stateTimeExpiredPct(int pct) {
-		State<S, E> stateObject = currentStateObject();
+		State<S, E> stateObject = getStateObject();
 		if (stateObject.timerTotalTicks == State.ENDLESS) {
 			return false;
 		}
@@ -261,8 +247,11 @@ public class StateMachine<S, E> {
 		return 100 * expiredFraction == pct;
 	}
 
+	/**
+	 * Resets the timer of the current state.
+	 */
 	public void resetTimer() {
-		currentStateObject().resetTimer();
+		getStateObject().resetTimer();
 	}
 
 	/**
@@ -277,33 +266,28 @@ public class StateMachine<S, E> {
 	}
 
 	/**
-	 * Triggers an update (processing step) of this state machine.
+	 * Triggers an update (reading input, firing transition) of this state machine. If the event queue
+	 * is empty, the machine looks for a transition that doesn't need input and executes it. If no such
+	 * transition exists, the {@code onTick} action of the current state is executed.
+	 * 
+	 * @throws IllegalStateException
+	 *                                 if no matching transition is found
 	 */
 	public void update() {
-		E event = eventQ.peek();
-		if (event == null) {
-			// find transition without event
-			Optional<TransitionImpl<S, E>> match = transitions(currentState).stream().filter(this::canFire)
-					.findFirst();
-			if (match.isPresent()) {
-				fireTransition(match.get(), event);
-			} else {
-				// perform update for current state
-				state(currentState).timerStep();
-				state(currentState).onTick();
-			}
+		Optional<TransitionImpl<S, E>> matchingTransition = transitions(currentState).stream()
+				.filter(this::canFire).findFirst();
+		if (matchingTransition.isPresent()) {
+			fireTransition(matchingTransition.get(), eventQ.poll());
 		} else {
-			// find transition for current event
-			Optional<TransitionImpl<S, E>> match = transitions(currentState).stream().filter(this::canFire)
-					.findFirst();
-			if (match.isPresent()) {
-				fireTransition(match.get(), event);
+			if (eventQ.isEmpty()) {
+				state(currentState).updateTimer();
+				state(currentState).onTick();
 			} else {
+				E event = eventQ.poll();
 				tracer.unhandledEvent(event);
 				throw new IllegalStateException(String.format(
 						"%s: No transition defined in state '%s' for event '%s'", description, currentState, event));
 			}
-			eventQ.poll();
 		}
 	}
 

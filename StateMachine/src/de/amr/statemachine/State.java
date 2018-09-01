@@ -76,7 +76,7 @@ public class State<S, E> {
 		ticksRemaining = timerTotalTicks = fnDuration.getAsInt();
 	}
 
-	void timerStep() {
+	void updateTimer() {
 		if (ticksRemaining > 0) {
 			--ticksRemaining;
 		}
