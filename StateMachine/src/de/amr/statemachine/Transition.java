@@ -20,16 +20,16 @@ class Transition<S, E> {
 
 	};
 
-	private final StateMachine<S, E> sm;
-	private final S from;
-	private final S to;
-	private final BooleanSupplier guard;
-	private final Consumer<E> action;
-	private final Class<? extends E> eventType;
-	private final boolean timeout;
+	final StateMachine<S, E> sm;
+	final S from;
+	final S to;
+	final BooleanSupplier guard;
+	final Consumer<E> action;
+	final boolean timeout;
+	final MatchCondition<S, E> matchCondition;
 
 	public Transition(StateMachine<S, E> sm, S from, S to, BooleanSupplier guard, Consumer<E> action,
-			Class<? extends E> eventType, boolean timeout) {
+			MatchCondition<S, E> matchCondition, boolean timeout) {
 		Objects.requireNonNull(sm);
 		this.sm = sm;
 		Objects.requireNonNull(from);
@@ -38,32 +38,7 @@ class Transition<S, E> {
 		this.to = to;
 		this.guard = guard == null ? () -> true : guard;
 		this.action = action == null ? NULL_ACTION : action;
-		this.eventType = eventType;
+		this.matchCondition = matchCondition;
 		this.timeout = timeout;
-	}
-
-	public boolean canFire(E event) {
-		if (!guard.getAsBoolean()) {
-			return false;
-		}
-		if (timeout) {
-			return sm.state(from).isTerminated();
-		}
-		if (eventType != null) {
-			return event != null && eventType.equals(event.getClass());
-		}
-		return true;
-	}
-
-	public Consumer<E> action() {
-		return action;
-	}
-
-	public S from() {
-		return from;
-	}
-
-	public S to() {
-		return to;
 	}
 }

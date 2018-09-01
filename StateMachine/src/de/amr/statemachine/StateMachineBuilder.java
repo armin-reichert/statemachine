@@ -115,7 +115,7 @@ public class StateMachineBuilder<S, E> {
 	}
 
 	public class TransitionBuilder {
-
+		
 		private S from;
 		private S to;
 		private BooleanSupplier guard;
@@ -197,7 +197,7 @@ public class StateMachineBuilder<S, E> {
 		}
 
 		private TransitionBuilder commit() {
-			sm.addTransition(from, to, guard, action, eventType, timeout);
+			sm.addTransition(from, to, guard, action, new MatchByClassCondition<>(eventType), timeout);
 			clear();
 			return this;
 		}

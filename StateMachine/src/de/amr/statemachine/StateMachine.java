@@ -117,8 +117,8 @@ public class StateMachine<S, E> {
 		return transitionMap.get(state);
 	}
 
-	void addTransition(S from, S to, BooleanSupplier guard, Consumer<E> action, Class<? extends E> eventType,
-			boolean timeout) {
+	void addTransition(S from, S to, BooleanSupplier guard, Consumer<E> action,
+			MatchCondition<S, E> eventCondition, boolean timeout) {
 		Objects.nonNull(from);
 		Objects.nonNull(to);
 		if (guard == null) {
@@ -128,29 +128,26 @@ public class StateMachine<S, E> {
 			action = t -> {
 			};
 		}
-		if (timeout && eventType != null) {
-			throw new IllegalStateException("Cannot specify timeout and event condition on same transition");
-		}
-		transitions(from).add(new Transition<>(this, from, to, guard, action, eventType, timeout));
+		transitions(from).add(new Transition<>(this, from, to, guard, action, eventCondition, timeout));
 	}
 
 	/**
 	 * Adds a state transition.
 	 * 
 	 * @param from
-	 *                    transition source state
+	 *                         transition source state
 	 * @param to
-	 *                    transition target state
+	 *                         transition target state
 	 * @param guard
-	 *                    condition guarding transition
+	 *                         condition guarding transition
 	 * @param action
-	 *                    action for transition
-	 * @param eventType
-	 *                    type of event for transition
+	 *                         action for transition
+	 * @param eventCondition
+	 *                         event match condition for transition
 	 */
 	public void addTransition(S from, S to, BooleanSupplier guard, Consumer<E> action,
-			Class<? extends E> eventType) {
-		addTransition(from, to, guard, action, eventType, false);
+			MatchCondition<S, E> eventCondition) {
+		addTransition(from, to, guard, action, eventCondition, false);
 	}
 
 	/**
@@ -304,7 +301,7 @@ public class StateMachine<S, E> {
 	public void update() {
 		E event = eventQ.poll();
 		Optional<Transition<S, E>> matchingTransition = transitions(currentState).stream()
-				.filter(t -> t.canFire(event)).findFirst();
+				.filter(t -> t.matchCondition.matches(this, t, event)).findFirst();
 		if (matchingTransition.isPresent()) {
 			fireTransition(matchingTransition.get(), event);
 			return;
@@ -320,18 +317,18 @@ public class StateMachine<S, E> {
 
 	private void fireTransition(Transition<S, E> t, E event) {
 		tracer.firingTransition(t, event);
-		if (currentState == t.to()) {
+		if (currentState == t.to) {
 			// keep state: no exit/entry actions are executed
-			t.action().accept(event);
+			t.action.accept(event);
 		} else {
 			// change state, execute exit and entry actions
-			State<S, E> oldState = state(t.from());
-			State<S, E> newState = state(t.to());
+			State<S, E> oldState = state(t.from);
+			State<S, E> newState = state(t.to);
 			tracer.exitingState(currentState);
 			oldState.onExit();
-			t.action().accept(event);
-			currentState = t.to();
-			tracer.enteringState(t.to());
+			t.action.accept(event);
+			currentState = t.to;
+			tracer.enteringState(t.to);
 			newState.resetTimer();
 			newState.onEntry();
 		}
