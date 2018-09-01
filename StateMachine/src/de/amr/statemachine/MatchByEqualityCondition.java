@@ -1,11 +1,11 @@
 package de.amr.statemachine;
 
-public class MatchByClassCondition<S, E> implements MatchCondition<S, E> {
+public class MatchByEqualityCondition<S, E> implements MatchCondition<S, E> {
 
-	private final Class<? extends E> eventType;
+	private final E eventObject;
 
-	public MatchByClassCondition(Class<? extends E> eventType) {
-		this.eventType = eventType;
+	public MatchByEqualityCondition(E eventObject) {
+		this.eventObject = eventObject;
 	}
 
 	@Override
@@ -16,8 +16,8 @@ public class MatchByClassCondition<S, E> implements MatchCondition<S, E> {
 		if (transition.timeout) {
 			return fsm.state(transition.from).isTerminated();
 		}
-		if (eventType != null) {
-			return event != null && eventType.equals(event.getClass());
+		if (eventObject != null) {
+			return event != null && event.equals(eventObject);
 		}
 		return true;
 	}

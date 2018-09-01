@@ -40,6 +40,7 @@ public class StateMachine<S, E> {
 		return new StateMachineBuilder<>(stateLabelType);
 	}
 
+	private final MatchStrategy matchStrategy;
 	private final Deque<E> eventQ;
 	private final Map<S, State<S, E>> stateMap;
 	private final Map<S, List<Transition<S, E>>> transitionMap;
@@ -53,13 +54,26 @@ public class StateMachine<S, E> {
 	 * 
 	 * @param stateLabelType
 	 *                         type for state identifiers
+	 * @param matchStrategy
+	 *                         strategy for matching events
 	 */
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	public StateMachine(Class<S> stateLabelType) {
+	public StateMachine(Class<S> stateLabelType, MatchStrategy matchStrategy) {
+		this.matchStrategy = matchStrategy;
 		eventQ = new ArrayDeque<>();
 		stateMap = stateLabelType.isEnum() ? new EnumMap(stateLabelType) : new HashMap<>(7);
 		transitionMap = new HashMap<>(7);
 		tracer = new StateMachineTracer<>(this, Logger.getGlobal(), () -> 60);
+	}
+
+	/**
+	 * Creates a new state machine.
+	 * 
+	 * @param stateLabelType
+	 *                         type for state identifiers
+	 */
+	public StateMachine(Class<S> stateLabelType) {
+		this(stateLabelType, MatchStrategy.BY_CLASS);
 	}
 
 	/**
@@ -70,6 +84,10 @@ public class StateMachine<S, E> {
 	 */
 	public void traceTo(Logger log, IntSupplier fnTicksPerSecond) {
 		tracer = new StateMachineTracer<>(this, log, fnTicksPerSecond);
+	}
+
+	public MatchStrategy getMatchStrategy() {
+		return matchStrategy;
 	}
 
 	/**

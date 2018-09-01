@@ -20,10 +20,14 @@ public class StateMachineBuilder<S, E> {
 	private String description;
 	private S initialState;
 
+	public StateMachineBuilder(Class<S> stateLabelType, MatchStrategy matchStrategy) {
+		sm = new StateMachine<>(stateLabelType, matchStrategy);
+	}
+
 	public StateMachineBuilder(Class<S> stateLabelType) {
 		sm = new StateMachine<>(stateLabelType);
 	}
-
+	
 	public StateMachineBuilder<S, E> description(String description) {
 		this.description = description != null ? description : getClass().getSimpleName();
 		return this;
@@ -115,11 +119,12 @@ public class StateMachineBuilder<S, E> {
 	}
 
 	public class TransitionBuilder {
-		
+
 		private S from;
 		private S to;
 		private BooleanSupplier guard;
 		private boolean timeout;
+		private E eventObject;
 		private Class<? extends E> eventType;
 		private Consumer<E> action;
 
@@ -197,7 +202,18 @@ public class StateMachineBuilder<S, E> {
 		}
 
 		private TransitionBuilder commit() {
-			sm.addTransition(from, to, guard, action, new MatchByClassCondition<>(eventType), timeout);
+			MatchCondition<S, E> matchBy;
+			switch (sm.getMatchStrategy()) {
+			case BY_CLASS:
+				matchBy = new MatchByClassCondition<>(eventType);
+				break;
+			case BY_EQUALITY:
+				matchBy = new MatchByEqualityCondition<>(eventObject);
+				break;
+			default:
+				throw new IllegalStateException("No match strategy defined");
+			}
+			sm.addTransition(from, to, guard, action, matchBy, timeout);
 			clear();
 			return this;
 		}
