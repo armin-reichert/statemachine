@@ -110,24 +110,15 @@ public class StateMachine<S, E> {
 		return initialState;
 	}
 
-	/**
-	 * Adds a state transition.
-	 * 
-	 * @param from
-	 *                    transition source state
-	 * @param to
-	 *                    transition target state
-	 * @param guard
-	 *                    condition guarding transition or {@code  null} for always fulfilled
-	 * @param action
-	 *                    action for transition or {@code null} for no action
-	 * @param eventType
-	 *                    type of event for transition or {@code null} for no event condition
-	 * @param timeout
-	 *                    if transition is fired on a timeout
-	 */
-	public void addTransition(S from, S to, BooleanSupplier guard, Consumer<E> action,
-			Class<? extends E> eventType, boolean timeout) {
+	private List<Transition<S, E>> transitions(S state) {
+		if (!transitionMap.containsKey(state)) {
+			transitionMap.put(state, new ArrayList<>(3));
+		}
+		return transitionMap.get(state);
+	}
+
+	void addTransition(S from, S to, BooleanSupplier guard, Consumer<E> action, Class<? extends E> eventType,
+			boolean timeout) {
 		Objects.nonNull(from);
 		Objects.nonNull(to);
 		if (guard == null) {
@@ -141,6 +132,43 @@ public class StateMachine<S, E> {
 			throw new IllegalStateException("Cannot specify timeout and event condition on same transition");
 		}
 		transitions(from).add(new Transition<>(this, from, to, guard, action, eventType, timeout));
+	}
+
+	/**
+	 * Adds a state transition.
+	 * 
+	 * @param from
+	 *                    transition source state
+	 * @param to
+	 *                    transition target state
+	 * @param guard
+	 *                    condition guarding transition
+	 * @param action
+	 *                    action for transition
+	 * @param eventType
+	 *                    type of event for transition
+	 */
+	public void addTransition(S from, S to, BooleanSupplier guard, Consumer<E> action,
+			Class<? extends E> eventType) {
+		addTransition(from, to, guard, action, eventType, false);
+	}
+
+	/**
+	 * Adds a state transition.
+	 * 
+	 * @param from
+	 *                  transition source state
+	 * @param to
+	 *                  transition target state
+	 * @param guard
+	 *                  condition guarding transition
+	 * @param action
+	 *                  action for transition
+	 * @param timeout
+	 *                  if transition is fired on a timeout
+	 */
+	public void addTransition(S from, S to, BooleanSupplier guard, Consumer<E> action, boolean timeout) {
+		addTransition(from, to, guard, action, null, timeout);
 	}
 
 	/**
@@ -307,12 +335,5 @@ public class StateMachine<S, E> {
 			newState.resetTimer();
 			newState.onEntry();
 		}
-	}
-
-	private List<Transition<S, E>> transitions(S state) {
-		if (!transitionMap.containsKey(state)) {
-			transitionMap.put(state, new ArrayList<>(3));
-		}
-		return transitionMap.get(state);
 	}
 }
