@@ -222,7 +222,7 @@ public class StateMachine<S, E> {
 			throw new IllegalStateException("No match strategy defined");
 		}
 	}
-	
+
 	public void addTransition(S from, S to, BooleanSupplier guard, Consumer<E> action) {
 		addTransition(from, to, guard, action, new MatchAlways<>());
 	}
@@ -388,7 +388,7 @@ public class StateMachine<S, E> {
 		if (t.timeout) {
 			return state(t.from).isTerminated();
 		}
-		return t.matchCondition.matches(this, t, event);
+		return t.matchCondition.matches(event);
 	}
 
 	private void fireTransition(Transition<S, E> t, E event) {

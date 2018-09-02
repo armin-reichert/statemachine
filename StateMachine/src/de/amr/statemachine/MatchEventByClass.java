@@ -9,7 +9,7 @@ public class MatchEventByClass<S, E> implements MatchEventStrategy<S, E> {
 	}
 
 	@Override
-	public boolean matches(StateMachine<S, E> fsm, Transition<S, E> transition, E event) {
+	public boolean matches(E event) {
 		if (eventType != null) {
 			return event != null && eventType.equals(event.getClass());
 		}

@@ -2,20 +2,17 @@ package de.amr.statemachine;
 
 public class MatchEventByEquality<S, E> implements MatchEventStrategy<S, E> {
 
-	private final E eventObject;
+	private final E event;
 
-	public MatchEventByEquality(E eventObject) {
-		this.eventObject = eventObject;
+	public MatchEventByEquality(E event) {
+		this.event = event;
 	}
 
 	@Override
-	public boolean matches(StateMachine<S, E> fsm, Transition<S, E> transition, E event) {
-		if (!transition.guard.getAsBoolean()) {
-			return false;
+	public boolean matches(E event) {
+		if (event != null) {
+			return event.equals(this.event);
 		}
-		if (eventObject != null) {
-			return event != null && event.equals(eventObject);
-		}
-		return true;
+		return false;
 	}
 }
