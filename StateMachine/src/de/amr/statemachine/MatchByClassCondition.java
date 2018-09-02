@@ -13,9 +13,6 @@ public class MatchByClassCondition<S, E> implements MatchCondition<S, E> {
 		if (!transition.guard.getAsBoolean()) {
 			return false;
 		}
-		if (transition.timeout) {
-			return fsm.state(transition.from).isTerminated();
-		}
 		if (eventType != null) {
 			return event != null && eventType.equals(event.getClass());
 		}

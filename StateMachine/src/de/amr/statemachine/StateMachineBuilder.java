@@ -27,7 +27,7 @@ public class StateMachineBuilder<S, E> {
 	public StateMachineBuilder(Class<S> stateLabelType) {
 		sm = new StateMachine<>(stateLabelType);
 	}
-	
+
 	public StateMachineBuilder<S, E> description(String description) {
 		this.description = description != null ? description : getClass().getSimpleName();
 		return this;
@@ -133,6 +133,7 @@ public class StateMachineBuilder<S, E> {
 			to = null;
 			guard = null;
 			timeout = false;
+			eventObject = null;
 			eventType = null;
 			action = null;
 		}
@@ -192,7 +193,7 @@ public class StateMachineBuilder<S, E> {
 			this.eventObject = eventObject;
 			return this;
 		}
-		
+
 		public TransitionBuilder act(Consumer<E> action) {
 			if (action == null) {
 				throw new IllegalArgumentException("Transition action must not be NULL");
@@ -210,18 +211,30 @@ public class StateMachineBuilder<S, E> {
 		}
 
 		private TransitionBuilder commit() {
-			MatchCondition<S, E> matchBy;
-			switch (sm.getMatchStrategy()) {
-			case BY_CLASS:
-				matchBy = new MatchByClassCondition<>(eventType);
-				break;
-			case BY_EQUALITY:
-				matchBy = new MatchByEqualityCondition<>(eventObject);
-				break;
-			default:
-				throw new IllegalStateException("No match strategy defined");
+			if (timeout && eventObject != null) {
+				throw new IllegalStateException(
+						"Cannot specify both timeout and event object for the same transition");
 			}
-			sm.addTransition(from, to, guard, action, matchBy, timeout);
+			if (timeout && eventType != null) {
+				throw new IllegalStateException("Cannot specify both timeout and event type for the same transition");
+			}
+			if (timeout) {
+				sm.addTransition(from, to, guard, action, timeout);
+			} else {
+				MatchCondition<S, E> matchBy;
+				switch (sm.getMatchStrategy()) {
+				case BY_CLASS:
+					matchBy = new MatchByClassCondition<>(eventType);
+					sm.addTransition(from, to, guard, action, matchBy);
+					break;
+				case BY_EQUALITY:
+					matchBy = new MatchByEqualityCondition<>(eventObject);
+					sm.addTransition(from, to, guard, action, matchBy);
+					break;
+				default:
+					throw new IllegalStateException("No match strategy defined");
+				}
+			}
 			clear();
 			return this;
 		}

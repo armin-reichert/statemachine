@@ -153,20 +153,6 @@ public class StateMachine<S, E> {
 		return transitionMap.get(state);
 	}
 
-	void addTransition(S from, S to, BooleanSupplier guard, Consumer<E> action,
-			MatchCondition<S, E> eventCondition, boolean timeout) {
-		Objects.nonNull(from);
-		Objects.nonNull(to);
-		if (guard == null) {
-			guard = () -> true;
-		}
-		if (action == null) {
-			action = t -> {
-			};
-		}
-		transitions(from).add(new Transition<>(this, from, to, guard, action, eventCondition, timeout));
-	}
-
 	/**
 	 * Adds a state transition.
 	 * 
@@ -178,12 +164,18 @@ public class StateMachine<S, E> {
 	 *                         condition guarding transition
 	 * @param action
 	 *                         action for transition
-	 * @param eventCondition
-	 *                         event match condition for transition
+	 * @param matchCondition
+	 *                         match condition for transition
 	 */
 	public void addTransition(S from, S to, BooleanSupplier guard, Consumer<E> action,
-			MatchCondition<S, E> eventCondition) {
-		addTransition(from, to, guard, action, eventCondition, false);
+			MatchCondition<S, E> matchCondition) {
+		Objects.requireNonNull(from);
+		Objects.requireNonNull(to);
+		Objects.requireNonNull(matchCondition);
+		action = action != null ? action : e -> {
+		};
+		guard = guard != null ? guard : () -> true;
+		transitions(from).add(new Transition<S, E>(from, to, guard, action, matchCondition, false));
 	}
 
 	/**
@@ -201,7 +193,12 @@ public class StateMachine<S, E> {
 	 *                  if transition is fired on a timeout
 	 */
 	public void addTransition(S from, S to, BooleanSupplier guard, Consumer<E> action, boolean timeout) {
-		addTransition(from, to, guard, action, null, timeout);
+		Objects.requireNonNull(from);
+		Objects.requireNonNull(to);
+		action = action != null ? action : e -> {
+		};
+		guard = guard != null ? guard : () -> true;
+		transitions(from).add(new Transition<S, E>(from, to, guard, action, null, timeout));
 	}
 
 	/**
@@ -344,7 +341,7 @@ public class StateMachine<S, E> {
 	public void update() {
 		E event = eventQ.poll();
 		Optional<Transition<S, E>> matchingTransition = transitions(currentState).stream()
-				.filter(t -> t.matchCondition.matches(this, t, event)).findFirst();
+				.filter(t -> isMatching(t, event)).findFirst();
 		if (matchingTransition.isPresent()) {
 			fireTransition(matchingTransition.get(), event);
 			return;
@@ -356,6 +353,13 @@ public class StateMachine<S, E> {
 		}
 		state(currentState).updateTimer();
 		state(currentState).onTick();
+	}
+
+	private boolean isMatching(Transition<S, E> t, E event) {
+		if (t.timeout) {
+			return state(t.from).isTerminated();
+		}
+		return t.matchCondition.matches(this, t, event);
 	}
 
 	private void fireTransition(Transition<S, E> t, E event) {
