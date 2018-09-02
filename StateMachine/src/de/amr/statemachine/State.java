@@ -1,5 +1,6 @@
 package de.amr.statemachine;
 
+import java.util.Objects;
 import java.util.function.IntSupplier;
 
 /**
@@ -44,6 +45,11 @@ public class State<S, E> {
 	public S id() {
 		return id;
 	}
+	
+	public void setOnEntry(Runnable action) {
+		Objects.requireNonNull(action);
+		entry = action;
+	}
 
 	public void onEntry() {
 		if (entry != null) {
@@ -51,10 +57,20 @@ public class State<S, E> {
 		}
 	}
 
+	public void setOnExit(Runnable action) {
+		Objects.requireNonNull(action);
+		exit = action;
+	}
+	
 	public void onExit() {
 		if (exit != null) {
 			exit.run();
 		}
+	}
+
+	public void setOnTick(Runnable action) {
+		Objects.requireNonNull(action);
+		update = action;
 	}
 
 	public void onTick() {
@@ -83,6 +99,11 @@ public class State<S, E> {
 		if (ticksRemaining > 0) {
 			--ticksRemaining;
 		}
+	}
+	
+	public void setDuration(IntSupplier fnDuration) {
+		Objects.requireNonNull(fnDuration);
+		this.fnDuration = fnDuration;
 	}
 
 	/**

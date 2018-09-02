@@ -167,7 +167,7 @@ public class StateMachine<S, E> {
 	 * @param matchCondition
 	 *                         match condition for transition
 	 */
-	public void addTransition(S from, S to, BooleanSupplier guard, Consumer<E> action,
+	void addTransition(S from, S to, BooleanSupplier guard, Consumer<E> action,
 			MatchCondition<S, E> matchCondition) {
 		Objects.requireNonNull(from);
 		Objects.requireNonNull(to);
@@ -192,13 +192,35 @@ public class StateMachine<S, E> {
 	 * @param timeout
 	 *                  if transition is fired on a timeout
 	 */
-	public void addTransition(S from, S to, BooleanSupplier guard, Consumer<E> action, boolean timeout) {
+	public void addTransitionOnTimeout(S from, S to, BooleanSupplier guard, Consumer<E> action) {
 		Objects.requireNonNull(from);
 		Objects.requireNonNull(to);
 		action = action != null ? action : e -> {
 		};
 		guard = guard != null ? guard : () -> true;
-		transitions(from).add(new Transition<S, E>(from, to, guard, action, null, timeout));
+		transitions(from).add(new Transition<S, E>(from, to, guard, action, null, true));
+	}
+
+	public void addTransitionOnEventType(S from, S to, BooleanSupplier guard, Consumer<E> action,
+			Class<? extends E> eventType) {
+		if (matchStrategy == MatchStrategy.BY_CLASS) {
+			addTransition(from, to, guard, action, new MatchByClassCondition<>(eventType));
+		} else if (matchStrategy == MatchStrategy.BY_EQUALITY) {
+			throw new IllegalStateException("Cannot add transition, wrong match strategy");
+		} else {
+			throw new IllegalStateException("No match strategy defined");
+		}
+	}
+
+	public void addTransitionOnEventObject(S from, S to, BooleanSupplier guard, Consumer<E> action,
+			E eventObject) {
+		if (matchStrategy == MatchStrategy.BY_CLASS) {
+			throw new IllegalStateException("Cannot add transition, wrong match strategy");
+		} else if (matchStrategy == MatchStrategy.BY_EQUALITY) {
+			addTransition(from, to, guard, action, new MatchByEqualityCondition<>(eventObject));
+		} else {
+			throw new IllegalStateException("No match strategy defined");
+		}
 	}
 
 	/**

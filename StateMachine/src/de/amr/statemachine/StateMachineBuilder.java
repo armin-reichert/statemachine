@@ -219,7 +219,7 @@ public class StateMachineBuilder<S, E> {
 				throw new IllegalStateException("Cannot specify both timeout and event type for the same transition");
 			}
 			if (timeout) {
-				sm.addTransition(from, to, guard, action, timeout);
+				sm.addTransitionOnTimeout(from, to, guard, action);
 			} else {
 				MatchCondition<S, E> matchBy;
 				switch (sm.getMatchStrategy()) {
