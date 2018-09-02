@@ -124,7 +124,7 @@ public class StateMachineBuilder<S, E> {
 		private S to;
 		private BooleanSupplier guard;
 		private boolean timeout;
-		private E eventObject;
+		private E event;
 		private Class<? extends E> eventType;
 		private Consumer<E> action;
 
@@ -133,7 +133,7 @@ public class StateMachineBuilder<S, E> {
 			to = null;
 			guard = null;
 			timeout = false;
-			eventObject = null;
+			event = null;
 			eventType = null;
 			action = null;
 		}
@@ -190,7 +190,7 @@ public class StateMachineBuilder<S, E> {
 			if (eventObject == null) {
 				throw new IllegalArgumentException("Event object of transition must not be NULL");
 			}
-			this.eventObject = eventObject;
+			this.event = eventObject;
 			return this;
 		}
 
@@ -211,7 +211,7 @@ public class StateMachineBuilder<S, E> {
 		}
 
 		private TransitionBuilder commit() {
-			if (timeout && eventObject != null) {
+			if (timeout && event != null) {
 				throw new IllegalStateException(
 						"Cannot specify both timeout and event object for the same transition");
 			}
@@ -220,16 +220,15 @@ public class StateMachineBuilder<S, E> {
 			}
 			if (timeout) {
 				sm.addTransitionOnTimeout(from, to, guard, action);
+			} else if (event == null && eventType == null) {
+				sm.addTransition(from, to, guard, action, new MatchAlways<>());
 			} else {
-				MatchEventStrategy<S, E> matchBy;
 				switch (sm.getMatchStrategy()) {
 				case BY_CLASS:
-					matchBy = new MatchEventByClass<>(eventType);
-					sm.addTransition(from, to, guard, action, matchBy);
+					sm.addTransition(from, to, guard, action, new MatchEventByClass<>(eventType));
 					break;
 				case BY_EQUALITY:
-					matchBy = new MatchEventByEquality<>(eventObject);
-					sm.addTransition(from, to, guard, action, matchBy);
+					sm.addTransition(from, to, guard, action, new MatchEventByEquality<>(event));
 					break;
 				default:
 					throw new IllegalStateException("No match strategy defined");

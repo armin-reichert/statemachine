@@ -1,9 +1,9 @@
 package de.amr.statemachine;
 
-public class MatchAlways<S, E> implements MatchEventStrategy<S, E> {
+public class MatchAlways<E> implements MatchCondition<E> {
 
 	@Override
-	public boolean matches(E event) {
+	public boolean matches(E eventOrNull) {
 		return true;
 	}
 }

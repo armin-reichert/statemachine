@@ -1,6 +1,6 @@
 package de.amr.statemachine;
 
-public interface MatchEventStrategy<S, E> {
+public interface MatchCondition<E> {
 
 	boolean matches(E event);
 

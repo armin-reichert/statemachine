@@ -168,7 +168,7 @@ public class StateMachine<S, E> {
 	 *                         match condition for transition
 	 */
 	void addTransition(S from, S to, BooleanSupplier guard, Consumer<E> action,
-			MatchEventStrategy<S, E> matchCondition) {
+			MatchCondition<E> matchCondition) {
 		Objects.requireNonNull(from);
 		Objects.requireNonNull(to);
 		Objects.requireNonNull(matchCondition);
@@ -203,6 +203,7 @@ public class StateMachine<S, E> {
 
 	public void addTransitionOnEventType(S from, S to, BooleanSupplier guard, Consumer<E> action,
 			Class<? extends E> eventType) {
+		Objects.requireNonNull(eventType);
 		if (matchStrategy == Match.BY_CLASS) {
 			addTransition(from, to, guard, action, new MatchEventByClass<>(eventType));
 		} else if (matchStrategy == Match.BY_EQUALITY) {
@@ -214,6 +215,7 @@ public class StateMachine<S, E> {
 
 	public void addTransitionOnEventObject(S from, S to, BooleanSupplier guard, Consumer<E> action,
 			E eventObject) {
+		Objects.requireNonNull(eventObject);
 		if (matchStrategy == Match.BY_CLASS) {
 			throw new IllegalStateException("Cannot add transition, wrong match strategy");
 		} else if (matchStrategy == Match.BY_EQUALITY) {
@@ -365,30 +367,30 @@ public class StateMachine<S, E> {
 	 *                                 if no matching transition is found
 	 */
 	public void update() {
-		E event = eventQ.poll();
+		E eventOrNull = eventQ.poll();
 		Optional<Transition<S, E>> matchingTransition = transitions(currentState).stream()
-				.filter(t -> isMatching(t, event)).findFirst();
+				.filter(t -> isMatching(t, eventOrNull)).findFirst();
 		if (matchingTransition.isPresent()) {
-			fireTransition(matchingTransition.get(), event);
+			fireTransition(matchingTransition.get(), eventOrNull);
 			return;
 		}
-		if (event != null) {
-			tracer.unhandledEvent(event);
+		if (eventOrNull != null) {
+			tracer.unhandledEvent(eventOrNull);
 			throw new IllegalStateException(String.format("%s: No transition defined for state '%s' and event '%s'",
-					description, currentState, event));
+					description, currentState, eventOrNull));
 		}
 		state(currentState).updateTimer();
 		state(currentState).onTick();
 	}
 
-	private boolean isMatching(Transition<S, E> t, E event) {
+	private boolean isMatching(Transition<S, E> t, E eventOrNull) {
 		if (!t.guard.getAsBoolean()) {
 			return false;
 		}
 		if (t.timeout) {
 			return state(t.from).isTerminated();
 		}
-		return t.matchCondition.matches(event);
+		return t.matchCondition.matches(eventOrNull);
 	}
 
 	private void fireTransition(Transition<S, E> t, E event) {

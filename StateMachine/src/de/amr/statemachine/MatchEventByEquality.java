@@ -1,6 +1,6 @@
 package de.amr.statemachine;
 
-public class MatchEventByEquality<S, E> implements MatchEventStrategy<S, E> {
+public class MatchEventByEquality<E> implements MatchCondition<E> {
 
 	private final E event;
 
@@ -9,10 +9,10 @@ public class MatchEventByEquality<S, E> implements MatchEventStrategy<S, E> {
 	}
 
 	@Override
-	public boolean matches(E event) {
-		if (event != null) {
-			return event.equals(this.event);
+	public boolean matches(E eventOrNull) {
+		if (eventOrNull == null) {
+			return false;
 		}
-		return false;
+		return eventOrNull.equals(this.event);
 	}
 }

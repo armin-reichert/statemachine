@@ -1,18 +1,18 @@
 package de.amr.statemachine;
 
-public class MatchEventByClass<S, E> implements MatchEventStrategy<S, E> {
+public class MatchEventByClass<E> implements MatchCondition<E> {
 
-	private final Class<? extends E> eventType;
+	private final Class<? extends E> eventClass;
 
-	public MatchEventByClass(Class<? extends E> eventType) {
-		this.eventType = eventType;
+	public MatchEventByClass(Class<? extends E> eventClass) {
+		this.eventClass = eventClass;
 	}
 
 	@Override
-	public boolean matches(E event) {
-		if (eventType != null) {
-			return event != null && eventType.equals(event.getClass());
+	public boolean matches(E eventOrNull) {
+		if (eventOrNull == null) {
+			return false;
 		}
-		return true;
+		return eventClass.equals(eventOrNull.getClass());
 	}
 }
