@@ -222,6 +222,10 @@ public class StateMachine<S, E> {
 			throw new IllegalStateException("No match strategy defined");
 		}
 	}
+	
+	public void addTransition(S from, S to, BooleanSupplier guard, Consumer<E> action) {
+		addTransition(from, to, guard, action, new MatchAlways<>());
+	}
 
 	/**
 	 * Adds an input ("event") to the queue of this state machine.
