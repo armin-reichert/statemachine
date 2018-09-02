@@ -54,11 +54,11 @@ public class StateMachine<S, E> {
 	 * @return state machine builder
 	 */
 	public static <STATE, EVENT> StateMachineBuilder<STATE, EVENT> define(Class<STATE> stateLabelType,
-			Class<EVENT> eventType, MatchStrategy matchStrategy) {
+			Class<EVENT> eventType, Match matchStrategy) {
 		return new StateMachineBuilder<>(stateLabelType, matchStrategy);
 	}
 
-	private final MatchStrategy matchStrategy;
+	private final Match matchStrategy;
 	private final Deque<E> eventQ;
 	private final Map<S, State<S, E>> stateMap;
 	private final Map<S, List<Transition<S, E>>> transitionMap;
@@ -76,7 +76,7 @@ public class StateMachine<S, E> {
 	 *                         strategy for matching events
 	 */
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	public StateMachine(Class<S> stateLabelType, MatchStrategy matchStrategy) {
+	public StateMachine(Class<S> stateLabelType, Match matchStrategy) {
 		this.matchStrategy = matchStrategy;
 		eventQ = new ArrayDeque<>();
 		stateMap = stateLabelType.isEnum() ? new EnumMap(stateLabelType) : new HashMap<>(7);
@@ -91,7 +91,7 @@ public class StateMachine<S, E> {
 	 *                         type for state identifiers
 	 */
 	public StateMachine(Class<S> stateLabelType) {
-		this(stateLabelType, MatchStrategy.BY_CLASS);
+		this(stateLabelType, Match.BY_CLASS);
 	}
 
 	/**
@@ -104,7 +104,7 @@ public class StateMachine<S, E> {
 		tracer = new StateMachineTracer<>(this, log, fnTicksPerSecond);
 	}
 
-	public MatchStrategy getMatchStrategy() {
+	public Match getMatchStrategy() {
 		return matchStrategy;
 	}
 
@@ -168,14 +168,14 @@ public class StateMachine<S, E> {
 	 *                         match condition for transition
 	 */
 	void addTransition(S from, S to, BooleanSupplier guard, Consumer<E> action,
-			MatchCondition<S, E> matchCondition) {
+			MatchEventStrategy<S, E> matchCondition) {
 		Objects.requireNonNull(from);
 		Objects.requireNonNull(to);
 		Objects.requireNonNull(matchCondition);
 		action = action != null ? action : e -> {
 		};
 		guard = guard != null ? guard : () -> true;
-		transitions(from).add(new Transition<S, E>(from, to, guard, action, matchCondition, false));
+		transitions(from).add(new Transition<>(from, to, guard, action, matchCondition, false));
 	}
 
 	/**
@@ -198,14 +198,14 @@ public class StateMachine<S, E> {
 		action = action != null ? action : e -> {
 		};
 		guard = guard != null ? guard : () -> true;
-		transitions(from).add(new Transition<S, E>(from, to, guard, action, null, true));
+		transitions(from).add(new Transition<>(from, to, guard, action, null, true));
 	}
 
 	public void addTransitionOnEventType(S from, S to, BooleanSupplier guard, Consumer<E> action,
 			Class<? extends E> eventType) {
-		if (matchStrategy == MatchStrategy.BY_CLASS) {
-			addTransition(from, to, guard, action, new MatchByClassCondition<>(eventType));
-		} else if (matchStrategy == MatchStrategy.BY_EQUALITY) {
+		if (matchStrategy == Match.BY_CLASS) {
+			addTransition(from, to, guard, action, new MatchEventByClass<>(eventType));
+		} else if (matchStrategy == Match.BY_EQUALITY) {
 			throw new IllegalStateException("Cannot add transition, wrong match strategy");
 		} else {
 			throw new IllegalStateException("No match strategy defined");
@@ -214,10 +214,10 @@ public class StateMachine<S, E> {
 
 	public void addTransitionOnEventObject(S from, S to, BooleanSupplier guard, Consumer<E> action,
 			E eventObject) {
-		if (matchStrategy == MatchStrategy.BY_CLASS) {
+		if (matchStrategy == Match.BY_CLASS) {
 			throw new IllegalStateException("Cannot add transition, wrong match strategy");
-		} else if (matchStrategy == MatchStrategy.BY_EQUALITY) {
-			addTransition(from, to, guard, action, new MatchByEqualityCondition<>(eventObject));
+		} else if (matchStrategy == Match.BY_EQUALITY) {
+			addTransition(from, to, guard, action, new MatchEventByEquality<>(eventObject));
 		} else {
 			throw new IllegalStateException("No match strategy defined");
 		}
@@ -382,6 +382,9 @@ public class StateMachine<S, E> {
 	}
 
 	private boolean isMatching(Transition<S, E> t, E event) {
+		if (!t.guard.getAsBoolean()) {
+			return false;
+		}
 		if (t.timeout) {
 			return state(t.from).isTerminated();
 		}

@@ -20,7 +20,7 @@ public class StateMachineBuilder<S, E> {
 	private String description;
 	private S initialState;
 
-	public StateMachineBuilder(Class<S> stateLabelType, MatchStrategy matchStrategy) {
+	public StateMachineBuilder(Class<S> stateLabelType, Match matchStrategy) {
 		sm = new StateMachine<>(stateLabelType, matchStrategy);
 	}
 
@@ -221,14 +221,14 @@ public class StateMachineBuilder<S, E> {
 			if (timeout) {
 				sm.addTransitionOnTimeout(from, to, guard, action);
 			} else {
-				MatchCondition<S, E> matchBy;
+				MatchEventStrategy<S, E> matchBy;
 				switch (sm.getMatchStrategy()) {
 				case BY_CLASS:
-					matchBy = new MatchByClassCondition<>(eventType);
+					matchBy = new MatchEventByClass<>(eventType);
 					sm.addTransition(from, to, guard, action, matchBy);
 					break;
 				case BY_EQUALITY:
-					matchBy = new MatchByEqualityCondition<>(eventObject);
+					matchBy = new MatchEventByEquality<>(eventObject);
 					sm.addTransition(from, to, guard, action, matchBy);
 					break;
 				default:

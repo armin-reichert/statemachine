@@ -1,10 +1,10 @@
 package de.amr.statemachine;
 
-public class MatchByEqualityCondition<S, E> implements MatchCondition<S, E> {
+public class MatchEventByEquality<S, E> implements MatchEventStrategy<S, E> {
 
 	private final E eventObject;
 
-	public MatchByEqualityCondition(E eventObject) {
+	public MatchEventByEquality(E eventObject) {
 		this.eventObject = eventObject;
 	}
 

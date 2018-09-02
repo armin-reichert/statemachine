@@ -20,9 +20,9 @@ class Transition<S, E> {
 	final BooleanSupplier guard;
 	final Consumer<E> action;
 	final boolean timeout;
-	final MatchCondition<S, E> matchCondition;
+	final MatchEventStrategy<S, E> matchCondition;
 
-	Transition(S from, S to, BooleanSupplier guard, Consumer<E> action, MatchCondition<S, E> matchCondition,
+	Transition(S from, S to, BooleanSupplier guard, Consumer<E> action, MatchEventStrategy<S, E> matchCondition,
 			boolean timeout) {
 		this.from = from;
 		this.to = to;
