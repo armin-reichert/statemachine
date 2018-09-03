@@ -220,19 +220,8 @@ public class StateMachineBuilder<S, E> {
 			}
 			if (timeout) {
 				sm.addTransitionOnTimeout(from, to, guard, action);
-			} else if (event == null && eventType == null) {
-				sm.addTransition(from, to, guard, action, new MatchAlways<>());
-			} else {
-				switch (sm.getMatchStrategy()) {
-				case BY_CLASS:
-					sm.addTransition(from, to, guard, action, new MatchEventByClass<>(eventType));
-					break;
-				case BY_EQUALITY:
-					sm.addTransition(from, to, guard, action, new MatchEventByEquality<>(event));
-					break;
-				default:
-					throw new IllegalStateException("No match strategy defined");
-				}
+			} else  {
+				sm.addTransition(from, to, guard, action, event, eventType);
 			}
 			clear();
 			return this;

@@ -20,15 +20,17 @@ class Transition<S, E> {
 	final BooleanSupplier guard;
 	final Consumer<E> action;
 	final boolean timeout;
-	final MatchCondition<E> matchCondition;
+	E event;
+	Class<? extends E> eventClass;
 
-	Transition(S from, S to, BooleanSupplier guard, Consumer<E> action, MatchCondition<E> matchCondition,
+	Transition(S from, S to, BooleanSupplier guard, Consumer<E> action, E event, Class<? extends E> eventClass,
 			boolean timeout) {
 		this.from = from;
 		this.to = to;
 		this.guard = guard;
 		this.action = action;
-		this.matchCondition = matchCondition;
+		this.event = event;
+		this.eventClass = eventClass;
 		this.timeout = timeout;
 	}
 }

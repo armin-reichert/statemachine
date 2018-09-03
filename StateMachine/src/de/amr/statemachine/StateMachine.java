@@ -58,7 +58,7 @@ public class StateMachine<S, E> {
 		return new StateMachineBuilder<>(stateLabelType, matchStrategy);
 	}
 
-	private final Match matchStrategy;
+	private final Match matchEventsBy;
 	private final Deque<E> eventQ;
 	private final Map<S, State<S, E>> stateMap;
 	private final Map<S, List<Transition<S, E>>> transitionMap;
@@ -77,7 +77,7 @@ public class StateMachine<S, E> {
 	 */
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public StateMachine(Class<S> stateLabelType, Match matchStrategy) {
-		this.matchStrategy = matchStrategy;
+		this.matchEventsBy = matchStrategy;
 		eventQ = new ArrayDeque<>();
 		stateMap = stateLabelType.isEnum() ? new EnumMap(stateLabelType) : new HashMap<>(7);
 		transitionMap = new HashMap<>(7);
@@ -105,7 +105,7 @@ public class StateMachine<S, E> {
 	}
 
 	public Match getMatchStrategy() {
-		return matchStrategy;
+		return matchEventsBy;
 	}
 
 	/**
@@ -157,25 +157,22 @@ public class StateMachine<S, E> {
 	 * Adds a state transition.
 	 * 
 	 * @param from
-	 *                         transition source state
+	 *                 transition source state
 	 * @param to
-	 *                         transition target state
+	 *                 transition target state
 	 * @param guard
-	 *                         condition guarding transition
+	 *                 condition guarding transition
 	 * @param action
-	 *                         action for transition
-	 * @param matchCondition
-	 *                         match condition for transition
+	 *                 action for transition
 	 */
-	void addTransition(S from, S to, BooleanSupplier guard, Consumer<E> action,
-			MatchCondition<E> matchCondition) {
+	void addTransition(S from, S to, BooleanSupplier guard, Consumer<E> action, E event,
+			Class<? extends E> eventClass) {
 		Objects.requireNonNull(from);
 		Objects.requireNonNull(to);
-		Objects.requireNonNull(matchCondition);
 		action = action != null ? action : e -> {
 		};
 		guard = guard != null ? guard : () -> true;
-		transitions(from).add(new Transition<>(from, to, guard, action, matchCondition, false));
+		transitions(from).add(new Transition<>(from, to, guard, action, event, eventClass, false));
 	}
 
 	/**
@@ -198,15 +195,15 @@ public class StateMachine<S, E> {
 		action = action != null ? action : e -> {
 		};
 		guard = guard != null ? guard : () -> true;
-		transitions(from).add(new Transition<>(from, to, guard, action, null, true));
+		transitions(from).add(new Transition<>(from, to, guard, action, null, null, true));
 	}
 
 	public void addTransitionOnEventType(S from, S to, BooleanSupplier guard, Consumer<E> action,
-			Class<? extends E> eventType) {
-		Objects.requireNonNull(eventType);
-		if (matchStrategy == Match.BY_CLASS) {
-			addTransition(from, to, guard, action, new MatchEventByClass<>(eventType));
-		} else if (matchStrategy == Match.BY_EQUALITY) {
+			Class<? extends E> eventClass) {
+		Objects.requireNonNull(eventClass);
+		if (matchEventsBy == Match.BY_CLASS) {
+			addTransition(from, to, guard, action, null, eventClass);
+		} else if (matchEventsBy == Match.BY_EQUALITY) {
 			throw new IllegalStateException("Cannot add transition, wrong match strategy");
 		} else {
 			throw new IllegalStateException("No match strategy defined");
@@ -214,19 +211,19 @@ public class StateMachine<S, E> {
 	}
 
 	public void addTransitionOnEventObject(S from, S to, BooleanSupplier guard, Consumer<E> action,
-			E eventObject) {
-		Objects.requireNonNull(eventObject);
-		if (matchStrategy == Match.BY_CLASS) {
+			E event) {
+		Objects.requireNonNull(event);
+		if (matchEventsBy == Match.BY_CLASS) {
 			throw new IllegalStateException("Cannot add transition, wrong match strategy");
-		} else if (matchStrategy == Match.BY_EQUALITY) {
-			addTransition(from, to, guard, action, new MatchEventByEquality<>(eventObject));
+		} else if (matchEventsBy == Match.BY_EQUALITY) {
+			addTransition(from, to, guard, action, event, null);
 		} else {
 			throw new IllegalStateException("No match strategy defined");
 		}
 	}
 
 	public void addTransition(S from, S to, BooleanSupplier guard, Consumer<E> action) {
-		addTransition(from, to, guard, action, new MatchAlways<>());
+		addTransition(from, to, guard, action, null, null);
 	}
 
 	/**
@@ -390,7 +387,15 @@ public class StateMachine<S, E> {
 		if (t.timeout) {
 			return state(t.from).isTerminated();
 		}
-		return t.matchCondition.matches(eventOrNull);
+		if (eventOrNull == null) {
+			return t.event == null && t.eventClass == null;
+		}
+		if (matchEventsBy == Match.BY_CLASS) {
+			return eventOrNull.getClass().equals(t.eventClass);
+		} else if (matchEventsBy == Match.BY_EQUALITY) {
+			return eventOrNull.equals(t.event);
+		}
+		return false;
 	}
 
 	private void fireTransition(Transition<S, E> t, E event) {
