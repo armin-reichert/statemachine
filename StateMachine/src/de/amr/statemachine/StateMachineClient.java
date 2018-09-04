@@ -23,7 +23,7 @@ public interface StateMachineClient<S, E> {
 	}
 
 	default State<S, E> getStateObject() {
-		return getStateMachine().getStateObject();
+		return getStateMachine().state();
 	}
 
 	default void processEvent(E e) {

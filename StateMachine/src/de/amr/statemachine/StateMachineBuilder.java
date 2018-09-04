@@ -225,7 +225,7 @@ public class StateMachineBuilder<S, E> {
 			if (timeout) {
 				sm.addTransitionOnTimeout(from, to, guard, action);
 			} else  {
-				sm.addTransition(from, to, guard, action, event, eventType);
+				sm.addTransition(from, to, guard, action, event, eventType, false);
 			}
 			clear();
 			return this;
