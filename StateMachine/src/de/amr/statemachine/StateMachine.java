@@ -42,6 +42,14 @@ public class StateMachine<S, E> {
 	}
 
 	/**
+	 * Starts a state machine definition for this machine.
+	 *
+	 */
+	public StateMachineBuilder<S, E> define() {
+		return new StateMachineBuilder<>(this);
+	}
+
+	/**
 	 * Starts a state machine definition.
 	 * 
 	 * @param stateLabelType
@@ -210,8 +218,7 @@ public class StateMachine<S, E> {
 		}
 	}
 
-	public void addTransitionOnEventObject(S from, S to, BooleanSupplier guard, Consumer<E> action,
-			E event) {
+	public void addTransitionOnEventObject(S from, S to, BooleanSupplier guard, Consumer<E> action, E event) {
 		Objects.requireNonNull(event);
 		if (matchEventsBy == Match.BY_CLASS) {
 			throw new IllegalStateException("Cannot add transition, wrong match strategy");

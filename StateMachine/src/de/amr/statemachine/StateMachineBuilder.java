@@ -27,6 +27,10 @@ public class StateMachineBuilder<S, E> {
 	public StateMachineBuilder(Class<S> stateLabelType) {
 		sm = new StateMachine<>(stateLabelType);
 	}
+	
+	public StateMachineBuilder(StateMachine<S,E> sm) {
+		this.sm = sm;
+	}
 
 	public StateMachineBuilder<S, E> description(String description) {
 		this.description = description != null ? description : getClass().getSimpleName();
