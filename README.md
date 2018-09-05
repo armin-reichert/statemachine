@@ -20,6 +20,11 @@ The states are identified by some arbitrary type, normally an enumeration type, 
 Here is simple example (without using events) which represents the controller for a Pong game:
 
 ```java
+
+public enum PlayState {
+	INIT, PLAYING, SERVING, GAME_OVER;
+}
+
 StateMachine.define(PlayState.class, Void.class)
 	.description("Pong")	
 	.initialState(INIT)
