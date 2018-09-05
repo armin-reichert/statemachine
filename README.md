@@ -11,6 +11,7 @@ A finite state machine implementation with the following features:
   - event conditions (match by equality or by event class)
   - state timeout
 - Supports transition actions with information about the event that triggered the transition
+- Actions can be implemented by lambda expression or function references
 - Tracer for state machine processing included
 - Drawbacks: No hierarchical states supported
 
