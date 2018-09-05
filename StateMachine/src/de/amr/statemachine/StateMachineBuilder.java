@@ -123,7 +123,8 @@ public class StateMachineBuilder<S, E> {
 	}
 
 	public class TransitionBuilder {
-
+		
+		private boolean started;
 		private S from;
 		private S to;
 		private BooleanSupplier guard;
@@ -133,6 +134,7 @@ public class StateMachineBuilder<S, E> {
 		private Consumer<E> action;
 
 		private void clear() {
+			started = false;
 			from = null;
 			to = null;
 			guard = null;
@@ -154,6 +156,7 @@ public class StateMachineBuilder<S, E> {
 				commit();
 			}
 			clear();
+			started = true;
 			this.from = this.to = from;
 			return this;
 		}
@@ -161,6 +164,9 @@ public class StateMachineBuilder<S, E> {
 		public TransitionBuilder then(S to) {
 			if (to == null) {
 				throw new IllegalArgumentException("Transition target state must not be NULL");
+			}
+			if (!started) {
+				throw new IllegalArgumentException("Transition building must be started with when(...) or stay(...)");
 			}
 			this.to = to;
 			return this;
@@ -170,6 +176,9 @@ public class StateMachineBuilder<S, E> {
 			if (guard == null) {
 				throw new IllegalArgumentException("Transition guard must not be NULL");
 			}
+			if (!started) {
+				throw new IllegalArgumentException("Transition building must be started with when(...) or stay(...)");
+			}
 			this.guard = guard;
 			return this;
 		}
@@ -177,6 +186,9 @@ public class StateMachineBuilder<S, E> {
 		public TransitionBuilder onTimeout() {
 			if (timeout) {
 				throw new IllegalArgumentException("Transition timeout must only be set once");
+			}
+			if (!started) {
+				throw new IllegalArgumentException("Transition building must be started with when(...) or stay(...)");
 			}
 			this.timeout = true;
 			return this;
@@ -186,6 +198,9 @@ public class StateMachineBuilder<S, E> {
 			if (eventType == null) {
 				throw new IllegalArgumentException("Event type of transition must not be NULL");
 			}
+			if (!started) {
+				throw new IllegalArgumentException("Transition building must be started with when(...) or stay(...)");
+			}
 			this.eventType = eventType;
 			return this;
 		}
@@ -193,6 +208,9 @@ public class StateMachineBuilder<S, E> {
 		public TransitionBuilder on(E eventObject) {
 			if (eventObject == null) {
 				throw new IllegalArgumentException("Event object of transition must not be NULL");
+			}
+			if (!started) {
+				throw new IllegalArgumentException("Transition building must be started with when(...) or stay(...)");
 			}
 			this.event = eventObject;
 			return this;
@@ -202,6 +220,9 @@ public class StateMachineBuilder<S, E> {
 			if (action == null) {
 				throw new IllegalArgumentException("Transition action must not be NULL");
 			}
+			if (!started) {
+				throw new IllegalArgumentException("Transition building must be started with when(...) or stay(...)");
+			}
 			this.action = action;
 			return this;
 		}
@@ -209,6 +230,9 @@ public class StateMachineBuilder<S, E> {
 		public TransitionBuilder act(Runnable action) {
 			if (action == null) {
 				throw new IllegalArgumentException("Transition action must not be NULL");
+			}
+			if (!started) {
+				throw new IllegalArgumentException("Transition building must be started with when(...) or stay(...)");
 			}
 			this.action = e -> action.run();
 			return this;
