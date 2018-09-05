@@ -11,6 +11,7 @@ A finite state machine implementation with the following features:
   - event conditions (match by equality or by event class)
   - state timeout
 - Supports transition actions with information about the event that triggered the transition
+- Tracer for state machine processing included
 - Drawbacks: No hierarchical states supported
 
 The states are identified by some arbitrary type, normally an enumeration type, string or integer.
