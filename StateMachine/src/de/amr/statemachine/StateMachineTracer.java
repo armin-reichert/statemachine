@@ -38,15 +38,17 @@ public class StateMachineTracer<S, E> implements StateMachineListener<S, E> {
 
 	@Override
 	public void enteringInitialState(S initialState) {
-		log.info(String.format("%s entering initial state '%s'", sm.getDescription(), initialState));
+		log.info(String.format("%s entering initial state:", sm.getDescription()));
+		enteringState(initialState);
 	}
 
 	@Override
 	public void enteringState(S enteredState) {
-		if (sm.state(enteredState).getDuration() != State.ENDLESS) {
-			float seconds = sm.state(enteredState).getDuration() / fnTicksPerSecond.getAsInt();
+		int duration = sm.state(enteredState).fnDuration.getAsInt();
+		if (duration != State.ENDLESS) {
+			float seconds = duration / fnTicksPerSecond.getAsInt();
 			log.info(String.format("%s entering state '%s' for %.2f seconds (%d frames)", sm.getDescription(),
-					enteredState, seconds, sm.state(enteredState).getDuration()));
+					enteredState, seconds, duration));
 		} else {
 			log.info(String.format("%s entering state '%s'", sm.getDescription(), enteredState));
 		}
@@ -62,7 +64,8 @@ public class StateMachineTracer<S, E> implements StateMachineListener<S, E> {
 		if (event == null) {
 			if (t.from != t.to) {
 				if (t.timeout) {
-					log.info(String.format("%s changing from '%s' to '%s' on timeout", sm.getDescription(), t.from, t.to));
+					log.info(
+							String.format("%s changing from '%s' to '%s' on timeout", sm.getDescription(), t.from, t.to));
 				} else {
 					log.info(String.format("%s changing from '%s' to '%s'", sm.getDescription(), t.from, t.to));
 				}
