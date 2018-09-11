@@ -110,8 +110,8 @@ public class StateMachineBuilder<S, E> {
 			stateObject.exit = exit;
 			stateObject.update = update;
 			// fnDuration could have alreday been set via API if this is a subclassed state!
-			if (stateObject.fnDuration == null) {
-				stateObject.fnDuration = fnDuration != null ? fnDuration : () -> State.ENDLESS;
+			if (stateObject.fnTimer == null) {
+				stateObject.fnTimer = fnDuration != null ? fnDuration : () -> State.ENDLESS;
 			}
 			return this;
 		}

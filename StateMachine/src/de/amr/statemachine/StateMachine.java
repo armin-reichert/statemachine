@@ -375,8 +375,8 @@ public class StateMachine<S, E> {
 	/**
 	 * Returns the number of remaining ticks for the current state.
 	 */
-	public int getRemainingTicks() {
-		return state().getRemaining();
+	public int getTicksRemaining() {
+		return state().getTicksRemaining();
 	}
 
 	/**

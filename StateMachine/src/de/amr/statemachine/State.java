@@ -28,24 +28,24 @@ public class State<S, E> {
 	/** The client code executed when leaving this state. */
 	Runnable exit;
 
-	/** Function returning state duration. */
-	IntSupplier fnDuration;
+	/** Function providing the timer duration for this state. */
+	IntSupplier fnTimer;
 
 	/** The number of ticks this state will be active. */
-	int timerTotalTicks;
+	int duration;
 
 	/** Ticks remaining until time-out */
 	int ticksRemaining;
 
 	protected State() {
-		fnDuration = () -> ENDLESS;
-		ticksRemaining = timerTotalTicks = ENDLESS;
+		fnTimer = () -> ENDLESS;
+		ticksRemaining = duration = ENDLESS;
 	}
 
 	public S id() {
 		return id;
 	}
-	
+
 	public void setOnEntry(Runnable action) {
 		Objects.requireNonNull(action);
 		entry = action;
@@ -61,7 +61,7 @@ public class State<S, E> {
 		Objects.requireNonNull(action);
 		exit = action;
 	}
-	
+
 	public void onExit() {
 		if (exit != null) {
 			exit.run();
@@ -86,33 +86,36 @@ public class State<S, E> {
 
 	/** Resets the timer to the complete state duration. */
 	public void resetTimer() {
-		if (fnDuration == null) {
+		if (fnTimer == null) {
 			throw new IllegalStateException(String.format("Timer function is NULL in state '%s'", id));
 		}
-		ticksRemaining = timerTotalTicks = fnDuration.getAsInt();
+		ticksRemaining = duration = fnTimer.getAsInt();
 	}
 
 	void updateTimer() {
-		if (timerTotalTicks == ENDLESS) {
-			return;
-		}
-		if (ticksRemaining > 0) {
+		if (duration != ENDLESS && ticksRemaining > 0) {
 			--ticksRemaining;
 		}
 	}
-	
-	public void setDuration(IntSupplier fnDuration) {
-		Objects.requireNonNull(fnDuration);
-		this.fnDuration = fnDuration;
+
+	/**
+	 * Sets a timer for this state.
+	 * 
+	 * @param fnTimer
+	 *                  function providing the time for this state
+	 */
+	public void setTimer(IntSupplier fnTimer) {
+		Objects.requireNonNull(fnTimer);
+		this.fnTimer = fnTimer;
 	}
 
 	/**
-	 * Returns the duration of this state.
+	 * Returns the duration of this state (in ticks).
 	 * 
 	 * @return the state duration (number of updates until this state times out)
 	 */
 	public int getDuration() {
-		return timerTotalTicks;
+		return duration;
 	}
 
 	/**
@@ -120,7 +123,7 @@ public class State<S, E> {
 	 * 
 	 * @return the number of updates until timeout occurs
 	 */
-	public int getRemaining() {
+	public int getTicksRemaining() {
 		return ticksRemaining;
 	}
 }

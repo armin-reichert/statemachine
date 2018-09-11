@@ -44,7 +44,7 @@ public class StateMachineTracer<S, E> implements StateMachineListener<S, E> {
 
 	@Override
 	public void enteringState(S enteredState) {
-		int duration = sm.state(enteredState).fnDuration.getAsInt();
+		int duration = sm.state(enteredState).fnTimer.getAsInt();
 		if (duration != State.ENDLESS) {
 			float seconds = duration / fnTicksPerSecond.getAsInt();
 			log.info(String.format("%s entering state '%s' for %.2f seconds (%d frames)", sm.getDescription(),
