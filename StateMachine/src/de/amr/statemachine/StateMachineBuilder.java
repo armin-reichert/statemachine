@@ -52,14 +52,14 @@ public class StateMachineBuilder<S, E> {
 		private Runnable entry;
 		private Runnable exit;
 		private Runnable update;
-		private IntSupplier fnDuration;
+		private IntSupplier fnTimer;
 
 		private void clear() {
 			state = null;
 			entry = null;
 			exit = null;
 			update = null;
-			fnDuration = null;
+			fnTimer = null;
 		}
 
 		public StateBuilder state(S state) {
@@ -81,11 +81,11 @@ public class StateMachineBuilder<S, E> {
 			return this;
 		}
 
-		public StateBuilder timeoutAfter(IntSupplier fnDuration) {
-			if (fnDuration == null) {
+		public StateBuilder timeoutAfter(IntSupplier fnTimer) {
+			if (fnTimer == null) {
 				throw new IllegalStateException("Timer function cannot be null for state " + state);
 			}
-			this.fnDuration = fnDuration;
+			this.fnTimer = fnTimer;
 			return this;
 		}
 
@@ -109,9 +109,8 @@ public class StateMachineBuilder<S, E> {
 			stateObject.entry = entry;
 			stateObject.exit = exit;
 			stateObject.update = update;
-			// fnDuration could have alreday been set via API if this is a subclassed state!
-			if (stateObject.fnTimer == null) {
-				stateObject.fnTimer = fnDuration != null ? fnDuration : () -> State.ENDLESS;
+			if (fnTimer != null) {
+				stateObject.fnTimer = fnTimer;
 			}
 			return this;
 		}

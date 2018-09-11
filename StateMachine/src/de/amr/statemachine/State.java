@@ -39,7 +39,7 @@ public class State<S, E> {
 
 	protected State() {
 		fnTimer = () -> ENDLESS;
-		ticksRemaining = duration = ENDLESS;
+		resetTimer();
 	}
 
 	public S id() {
