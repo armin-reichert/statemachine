@@ -40,7 +40,7 @@ public class StateMachine<S, E> {
 	 *                          event type
 	 * @return state machine builder
 	 */
-	public static <STATE, EVENT> StateMachineBuilder<STATE, EVENT> define(Class<STATE> stateLabelClass,
+	public static <STATE, EVENT> StateMachineBuilder<STATE, EVENT> beginStateMachine(Class<STATE> stateLabelClass,
 			Class<EVENT> eventClass) {
 		return new StateMachineBuilder<>(stateLabelClass);
 	}
@@ -61,7 +61,7 @@ public class StateMachine<S, E> {
 	 *                          event type
 	 * @return state machine builder
 	 */
-	public static <STATE, EVENT> StateMachineBuilder<STATE, EVENT> define(Class<STATE> stateLabelClass,
+	public static <STATE, EVENT> StateMachineBuilder<STATE, EVENT> beginStateMachine(Class<STATE> stateLabelClass,
 			Class<EVENT> eventClass, Match matchStrategy) {
 		return new StateMachineBuilder<>(stateLabelClass, matchStrategy);
 	}
@@ -78,7 +78,7 @@ public class StateMachine<S, E> {
 	/**
 	 * Starts the definition building for this state machine.
 	 */
-	public StateMachineBuilder<S, E> define() {
+	public StateMachineBuilder<S, E> beginStateMachine() {
 		return new StateMachineBuilder<>(this);
 	}
 
