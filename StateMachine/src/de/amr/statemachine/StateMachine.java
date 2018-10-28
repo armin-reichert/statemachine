@@ -40,8 +40,8 @@ public class StateMachine<S, E> {
 	 *                          event type
 	 * @return state machine builder
 	 */
-	public static <STATE, EVENT> StateMachineBuilder<STATE, EVENT> beginStateMachine(Class<STATE> stateLabelClass,
-			Class<EVENT> eventClass) {
+	public static <STATE, EVENT> StateMachineBuilder<STATE, EVENT> beginStateMachine(
+			Class<STATE> stateLabelClass, Class<EVENT> eventClass) {
 		return new StateMachineBuilder<>(stateLabelClass);
 	}
 
@@ -61,8 +61,8 @@ public class StateMachine<S, E> {
 	 *                          event type
 	 * @return state machine builder
 	 */
-	public static <STATE, EVENT> StateMachineBuilder<STATE, EVENT> beginStateMachine(Class<STATE> stateLabelClass,
-			Class<EVENT> eventClass, Match matchStrategy) {
+	public static <STATE, EVENT> StateMachineBuilder<STATE, EVENT> beginStateMachine(
+			Class<STATE> stateLabelClass, Class<EVENT> eventClass, Match matchStrategy) {
 		return new StateMachineBuilder<>(stateLabelClass, matchStrategy);
 	}
 
@@ -74,6 +74,7 @@ public class StateMachine<S, E> {
 	private final Map<S, State<S, E>> stateMap;
 	private final Map<S, List<Transition<S, E>>> transitionMap;
 	private StateMachineTracer<S, E> tracer;
+	private boolean ignoreUnknownEvents;
 
 	/**
 	 * Starts the definition building for this state machine.
@@ -143,6 +144,17 @@ public class StateMachine<S, E> {
 	 */
 	public void setDescription(String description) {
 		this.description = description;
+	}
+
+	/**
+	 * If set to {@code true}, events for which no transition is defined, are silently ignored. By
+	 * default, a runtime exception is thrown.
+	 * 
+	 * @param ignoreUnknownEvents
+	 *                              if unhandled events should be ignored
+	 */
+	public void setIgnoreUnknownEvents(boolean ignoreUnknownEvents) {
+		this.ignoreUnknownEvents = ignoreUnknownEvents;
 	}
 
 	/**
@@ -394,8 +406,8 @@ public class StateMachine<S, E> {
 	}
 
 	/**
-	 * Updates (reads input, fires first matching transition) this state machine. If the event queue
-	 * is empty, the machine looks for a transition that doesn't need input and executes it. If no such
+	 * Updates (reads input, fires first matching transition) this state machine. If the event queue is
+	 * empty, the machine looks for a transition that doesn't need input and executes it. If no such
 	 * transition exists, the {@code onTick} action of the current state is executed.
 	 * 
 	 * @throws IllegalStateException
@@ -414,8 +426,10 @@ public class StateMachine<S, E> {
 		}
 		if (eventOrNull != null) {
 			tracer.unhandledEvent(eventOrNull);
-			throw new IllegalStateException(String.format("%s: No transition defined for state '%s' and event '%s'",
-					description, current, eventOrNull));
+			if (!ignoreUnknownEvents) {
+				throw new IllegalStateException(String.format(
+						"%s: No transition defined for state '%s' and event '%s'", description, current, eventOrNull));
+			}
 		}
 		state(current).onTick();
 		state(current).updateTimer();
