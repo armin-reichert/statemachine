@@ -66,6 +66,13 @@ public class StateMachine<S, E> {
 		return new StateMachineBuilder<>(stateLabelClass, matchStrategy);
 	}
 
+	/**
+	 * Starts the definition building for this state machine.
+	 */
+	public StateMachineBuilder<S, E> beginStateMachine() {
+		return new StateMachineBuilder<>(this);
+	}
+
 	private String description;
 	private S initialState;
 	private S current;
@@ -75,13 +82,6 @@ public class StateMachine<S, E> {
 	private final Map<S, List<Transition<S, E>>> transitionMap;
 	private StateMachineTracer<S, E> tracer;
 	private boolean ignoreUnknownEvents;
-
-	/**
-	 * Starts the definition building for this state machine.
-	 */
-	public StateMachineBuilder<S, E> beginStateMachine() {
-		return new StateMachineBuilder<>(this);
-	}
 
 	/**
 	 * Creates a new state machine.
