@@ -1,5 +1,7 @@
 package de.amr.statemachine;
 
+import static java.lang.String.format;
+
 import java.util.function.IntSupplier;
 import java.util.logging.Logger;
 
@@ -27,18 +29,17 @@ public class StateMachineTracer<S, E> implements StateMachineListener<S, E> {
 
 	@Override
 	public void stateCreated(S state) {
-		log.info(String.format("%s created state '%s'", sm.getDescription(), state));
+		log.info(format("%s created state '%s'", sm.getDescription(), state));
 	}
 
 	@Override
 	public void unhandledEvent(E event) {
-		log.info(
-				String.format("%s in state %s could not handle '%s'", sm.getDescription(), sm.getState(), event));
+		log.info(format("%s in state %s could not handle '%s'", sm.getDescription(), sm.getState(), event));
 	}
 
 	@Override
 	public void enteringInitialState(S initialState) {
-		log.info(String.format("%s entering initial state:", sm.getDescription()));
+		log.info(format("%s entering initial state:", sm.getDescription()));
 		enteringState(initialState);
 	}
 
@@ -47,16 +48,16 @@ public class StateMachineTracer<S, E> implements StateMachineListener<S, E> {
 		int duration = sm.state(enteredState).fnTimer.getAsInt();
 		if (duration != State.ENDLESS) {
 			float seconds = (float) duration / fnTicksPerSecond.getAsInt();
-			log.info(String.format("%s entering state '%s' for %.2f seconds (%d frames)", sm.getDescription(),
+			log.info(format("%s entering state '%s' for %.2f seconds (%d frames)", sm.getDescription(),
 					enteredState, seconds, duration));
 		} else {
-			log.info(String.format("%s entering state '%s'", sm.getDescription(), enteredState));
+			log.info(format("%s entering state '%s'", sm.getDescription(), enteredState));
 		}
 	}
 
 	@Override
 	public void exitingState(S exitedState) {
-		log.info(String.format("%s exiting state '%s'", sm.getDescription(), exitedState));
+		log.info(format("%s exiting state '%s'", sm.getDescription(), exitedState));
 	}
 
 	@Override
@@ -64,20 +65,18 @@ public class StateMachineTracer<S, E> implements StateMachineListener<S, E> {
 		if (event == null) {
 			if (t.from != t.to) {
 				if (t.timeout) {
-					log.info(
-							String.format("%s changing from '%s' to '%s' on timeout", sm.getDescription(), t.from, t.to));
+					log.info(format("%s (on timeout) changing from '%s' to '%s'", sm.getDescription(), t.from, t.to));
 				} else {
-					log.info(String.format("%s changing from '%s' to '%s'", sm.getDescription(), t.from, t.to));
+					log.info(format("%s changing from '%s' to '%s'", sm.getDescription(), t.from, t.to));
 				}
 			} else {
-				log.info(String.format("%s stays '%s'", sm.getDescription(), t.from));
+				log.info(format("%s stays '%s'", sm.getDescription(), t.from));
 			}
 		} else {
 			if (t.from != t.to) {
-				log.info(
-						String.format("%s changing from '%s' to '%s' on '%s'", sm.getDescription(), t.from, t.to, event));
+				log.info(format("%s changing from '%s' to '%s' on '%s'", sm.getDescription(), t.from, t.to, event));
 			} else {
-				log.info(String.format("%s stays '%s' on '%s'", sm.getDescription(), t.from, event));
+				log.info(format("%s stays '%s' on '%s'", sm.getDescription(), t.from, event));
 			}
 		}
 	}
