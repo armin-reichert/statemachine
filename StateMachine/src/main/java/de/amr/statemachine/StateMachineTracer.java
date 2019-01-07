@@ -65,7 +65,7 @@ public class StateMachineTracer<S, E> implements StateMachineListener<S, E> {
 		if (event == null) {
 			if (t.from != t.to) {
 				if (t.timeout) {
-					log.info(format("%s (on timeout) changing from '%s' to '%s'", sm.getDescription(), t.from, t.to));
+					log.info(format("%s changing from '%s' to '%s (timeout)'", sm.getDescription(), t.from, t.to));
 				} else {
 					log.info(format("%s changing from '%s' to '%s'", sm.getDescription(), t.from, t.to));
 				}
