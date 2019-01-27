@@ -6,6 +6,11 @@ import java.util.function.IntSupplier;
 /**
  * Implementation of a state in a finite state machine.
  * 
+ * @param <S>
+ *          state type, normally some enum type
+ * @param <E>
+ *          event type, e.g. event classes with different attributes
+ * 
  * @author Armin Reichert
  */
 public class State<S, E> {
