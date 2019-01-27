@@ -19,6 +19,7 @@ public class StateMachineTest {
 				.states()
 					.state("Start")
 					.state("Intermediate")
+					.state("Final")
 				.transitions()
 					.when("Start").then("Start").on("E")
 					.when("Start").then("Intermediate").on("F")
