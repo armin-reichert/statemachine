@@ -17,7 +17,38 @@ A finite state machine implementation with the following features:
 
 The states are identified by some arbitrary type, normally an enumeration type, string or integer.
 
-Here is simple example (without using events) which represents the controller for a Pong game:
+Example 1 (traffic light):
+
+```java
+public class TrafficLight extends StateMachine<Light, Void> implements Controller {
+
+	public enum Light {
+		OFF, RED, YELLOW, GREEN;
+	}
+
+	public TrafficLight() {
+		//@formatter:off
+		super(Light.class);
+		beginStateMachine()
+			.description("Traffic Light")
+			.initialState(OFF)
+			.states()
+				.state(OFF)
+				.state(RED).timeoutAfter(() -> app().clock.sec(3))
+				.state(YELLOW).timeoutAfter(() -> app().clock.sec(2))
+				.state(GREEN).timeoutAfter(() -> app().clock.sec(5))
+			.transitions()
+				.when(OFF).then(RED).condition(() -> Keyboard.keyPressedOnce(KeyEvent.VK_SPACE))
+				.when(RED).then(GREEN).onTimeout()
+				.when(GREEN).then(YELLOW).onTimeout()
+				.when(YELLOW).then(RED).onTimeout()
+		.endStateMachine();
+		//@formatter:off
+	}
+}
+```
+
+Example 2 (controller for a Pong game):
 
 ```java
 
