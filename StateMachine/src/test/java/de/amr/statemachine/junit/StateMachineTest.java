@@ -18,6 +18,19 @@ public class StateMachineTest {
 	}
 
 	private StateMachine<State, Event> fsm;
+	private int entryActionExecuted, exitActionExecuted, tickActionExecuted;
+
+	private void entryAction() {
+		entryActionExecuted++;
+	}
+
+	private void exitAction() {
+		exitActionExecuted++;
+	}
+
+	private void tickAction() {
+		tickActionExecuted++;
+	}
 
 	@Before
 	public void buildMachine() {
@@ -25,15 +38,24 @@ public class StateMachineTest {
 		fsm = StateMachine.beginStateMachine(State.class, Event.class, Match.BY_EQUALITY)
 				.initialState(State.S1)
 				.states()
-					.state(State.S1)
+					.state(State.S1).onEntry(this::entryAction)
 					.state(State.S2)
+						.onExit(this::exitAction)
 					.state(State.S3)
+						.timeoutAfter(() -> 10)
+						.onTick(this::tickAction)
 				.transitions()
 					.when(State.S1).then(State.S1).on(Event.E1)
 					.when(State.S1).then(State.S2).on(Event.E2)
 					.when(State.S2).then(State.S3).on(Event.E3)
 		.endStateMachine();
 		/*@formatter:on*/
+		entryActionExecuted = exitActionExecuted = tickActionExecuted = 0;
+	}
+
+	@Test(expected = IllegalStateException.class)
+	public void testNotInitialized() {
+		fsm.process(Event.E1);
 	}
 
 	@Test
@@ -70,4 +92,30 @@ public class StateMachineTest {
 		fsm.process(Event.E3);
 		Assert.assertEquals(State.S3, fsm.getState());
 	}
+
+	@Test
+	public void testEntryAction() {
+		fsm.init();
+		Assert.assertEquals(1, entryActionExecuted);
+	}
+	
+	@Test
+	public void testExitAction() {
+		fsm.init();
+		fsm.process(Event.E2);
+		fsm.process(Event.E3);
+		Assert.assertEquals(1, exitActionExecuted);
+	}
+	
+	@Test
+	public void testTickAction() {
+		fsm.init();
+		fsm.process(Event.E2);
+		fsm.process(Event.E3);
+		while (!fsm.state().isTerminated()) {
+			fsm.update();
+		}
+		Assert.assertEquals(fsm.state(State.S3).getDuration(), tickActionExecuted);
+	}
+	
 }
