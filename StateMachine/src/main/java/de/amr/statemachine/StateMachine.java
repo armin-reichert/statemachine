@@ -335,7 +335,7 @@ public class StateMachine<S, E> {
 	/**
 	 * @return the state object of the current state
 	 */
-	public <T extends State<S, E>> T state() {
+	public <StateType extends State<S, E>> StateType state() {
 		if (current == null) {
 			throw new IllegalStateException("Cannot access current state object, state machine not initialized.");
 		}
@@ -345,24 +345,24 @@ public class StateMachine<S, E> {
 	/**
 	 * Returns the object representing the given state. It is created on-demand.
 	 * 
-	 * @param       <T>
+	 * @param       <StateType>
 	 *                subtype of default state class
 	 * @param state
 	 *                a state identifier
 	 * @return the state object for the given state identifier
 	 */
 	@SuppressWarnings("unchecked")
-	public <T extends State<S, E>> T state(S state) {
+	public <StateType extends State<S, E>> StateType state(S state) {
 		if (!stateMap.containsKey(state)) {
-			return (T) realizeState(state, new State<>());
+			return (StateType) realizeState(state, new State<>());
 		}
-		return (T) stateMap.get(state);
+		return (StateType) stateMap.get(state);
 	}
 
 	/**
 	 * Creates or replaces the state object for the given state by the given object.
 	 * 
-	 * @param             <T>
+	 * @param             <StateType>
 	 *                      subtype of default state class used for representing the given state
 	 * @param state
 	 *                      state identifier
@@ -370,7 +370,7 @@ public class StateMachine<S, E> {
 	 *                      state object
 	 * @return the new state object
 	 */
-	public <T extends State<S, E>> T realizeState(S state, T stateObject) {
+	public <StateType extends State<S, E>> StateType realizeState(S state, StateType stateObject) {
 		stateObject.id = state;
 		stateObject.machine = this;
 		stateMap.put(state, stateObject);
