@@ -5,16 +5,17 @@ import org.junit.Before;
 import org.junit.Test;
 
 import de.amr.statemachine.Match;
+import de.amr.statemachine.State;
 import de.amr.statemachine.StateMachine;
 
 public class StateMachineTest {
 
-	public enum State {
-		S1, S2, S3
+	public enum States {
+		S1, S2, S3, S4
 	}
 
-	public enum Event {
-		E1, E2, E3
+	public enum Events {
+		E1, E2, E3, E4
 	}
 
 	private static class Action implements Runnable {
@@ -27,8 +28,18 @@ public class StateMachineTest {
 		}
 	}
 
-	private StateMachine<State, Event> fsm;
-	private Action entryAction, exitAction, tickAction, timeoutAction;
+	private static class StateImpl extends State<States, Events> {
+
+		int entryCount;
+
+		@Override
+		public void onEntry() {
+			entryCount++;
+		}
+	}
+
+	private StateMachine<States, Events> fsm;
+	private Action entryAction, exitAction, tickAction, timeoutAction, selfLoopAction;
 
 	@Before
 	public void buildMachine() {
@@ -36,63 +47,67 @@ public class StateMachineTest {
 		exitAction = new Action();
 		tickAction = new Action();
 		timeoutAction = new Action();
+		selfLoopAction = new Action();
 		/*@formatter:off*/
-		fsm = StateMachine.beginStateMachine(State.class, Event.class, Match.BY_EQUALITY)
-				.initialState(State.S1)
+		fsm = StateMachine.beginStateMachine(States.class, Events.class, Match.BY_EQUALITY)
+				.initialState(States.S1)
 				.states()
-					.state(State.S1).onEntry(entryAction)
-					.state(State.S2)
+					.state(States.S1).onEntry(entryAction)
+					.state(States.S2)
 						.onExit(exitAction)
-					.state(State.S3)
+					.state(States.S3)
 						.timeoutAfter(() -> 10)
 						.onTick(tickAction)
+					.state(States.S4).impl(new StateImpl())
 				.transitions()
-					.when(State.S1).then(State.S1).on(Event.E1)
-					.when(State.S1).then(State.S2).on(Event.E2)
-					.when(State.S2).then(State.S3).on(Event.E3)
-					.stay(State.S3).onTimeout().act(timeoutAction)
+					.when(States.S1).then(States.S1).on(Events.E1)
+					.when(States.S1).then(States.S2).on(Events.E2)
+					.when(States.S1).then(States.S4).on(Events.E4)
+					.when(States.S2).then(States.S3).on(Events.E3)
+					.stay(States.S3).onTimeout().act(timeoutAction)
+					.stay(States.S4).on(Events.E4).act(selfLoopAction)
 		.endStateMachine();
 		/*@formatter:on*/
 	}
 
 	@Test(expected = IllegalStateException.class)
 	public void testNotInitialized() {
-		fsm.process(Event.E1);
+		fsm.process(Events.E1);
 	}
 
 	@Test
 	public void testInitialization() {
 		fsm.init();
-		Assert.assertEquals(State.S1, fsm.getState());
+		Assert.assertEquals(States.S1, fsm.getState());
 	}
 
 	@Test(expected = IllegalStateException.class)
 	public void testNoTransition() {
 		fsm.init();
-		fsm.process(Event.E3);
+		fsm.process(Events.E3);
 	}
 
 	@Test
 	public void testSelfTransition() {
 		fsm.init();
-		fsm.process(Event.E1);
-		Assert.assertEquals(State.S1, fsm.getState());
+		fsm.process(Events.E1);
+		Assert.assertEquals(States.S1, fsm.getState());
 	}
 
 	@Test
 	public void testTransition() {
 		fsm.init();
-		fsm.process(Event.E2);
-		Assert.assertEquals(State.S2, fsm.getState());
+		fsm.process(Events.E2);
+		Assert.assertEquals(States.S2, fsm.getState());
 	}
 
 	@Test
 	public void testThreeTransitions() {
 		fsm.init();
-		fsm.process(Event.E1);
-		fsm.process(Event.E2);
-		fsm.process(Event.E3);
-		Assert.assertEquals(State.S3, fsm.getState());
+		fsm.process(Events.E1);
+		fsm.process(Events.E2);
+		fsm.process(Events.E3);
+		Assert.assertEquals(States.S3, fsm.getState());
 	}
 
 	@Test
@@ -104,31 +119,45 @@ public class StateMachineTest {
 	@Test
 	public void testExitAction() {
 		fsm.init();
-		fsm.process(Event.E2);
-		fsm.process(Event.E3);
+		fsm.process(Events.E2);
+		fsm.process(Events.E3);
 		Assert.assertEquals(1, exitAction.count);
 	}
 
 	@Test
 	public void testTickAction() {
 		fsm.init();
-		fsm.process(Event.E2);
-		fsm.process(Event.E3);
+		fsm.process(Events.E2);
+		fsm.process(Events.E3);
 		while (!fsm.state().isTerminated()) {
 			fsm.update();
 		}
-		Assert.assertEquals(fsm.state(State.S3).getDuration(), tickAction.count);
+		Assert.assertEquals(fsm.state(States.S3).getDuration(), tickAction.count);
 	}
 
 	@Test
 	public void testTimeoutAction() {
 		fsm.init();
-		fsm.process(Event.E2);
-		fsm.process(Event.E3);
+		fsm.process(Events.E2);
+		fsm.process(Events.E3);
 		while (!fsm.state().isTerminated()) {
 			fsm.update();
 		}
 		Assert.assertEquals(1, timeoutAction.count);
+	}
+
+	@Test
+	public void testStateImpl() {
+		fsm.init();
+		fsm.process(Events.E4);
+		Assert.assertEquals(States.S4, fsm.getState());
+		Assert.assertEquals(StateImpl.class, fsm.state().getClass());
+		StateImpl s4 = (StateImpl) fsm.state(States.S4);
+		Assert.assertTrue(s4 == fsm.state());
+		Assert.assertEquals(1, s4.entryCount);
+		fsm.process(Events.E4);
+		Assert.assertEquals(States.S4, fsm.getState());
+		Assert.assertEquals(1, selfLoopAction.count);
 	}
 
 }
