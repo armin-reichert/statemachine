@@ -418,8 +418,7 @@ public class StateMachine<S, E> {
 			throw new IllegalStateException("Cannot update state, state machine not initialized.");
 		}
 		E eventOrNull = eventQ.poll();
-		Optional<Transition<S, E>> matchingTransition = transitions(current).stream()
-				.filter(t -> isMatching(t, eventOrNull)).findFirst();
+		Optional<Transition<S, E>> matchingTransition = findMatchingTransition(eventOrNull);
 		if (matchingTransition.isPresent()) {
 			fireTransition(matchingTransition.get(), eventOrNull);
 			return;
@@ -432,7 +431,14 @@ public class StateMachine<S, E> {
 			}
 		}
 		state(current).onTick();
-		state(current).updateTimer();
+		boolean timeout = state(current).updateTimer();
+		if (timeout) {
+			findMatchingTransition(null).ifPresent(t -> fireTransition(t, null));
+		}
+	}
+
+	private Optional<Transition<S, E>> findMatchingTransition(E eventOrNull) {
+		return transitions(current).stream().filter(t -> isMatching(t, eventOrNull)).findFirst();
 	}
 
 	private boolean isMatching(Transition<S, E> t, E eventOrNull) {

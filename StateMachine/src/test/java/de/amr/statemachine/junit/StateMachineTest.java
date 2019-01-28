@@ -17,40 +17,42 @@ public class StateMachineTest {
 		E1, E2, E3
 	}
 
+	private static class Action implements Runnable {
+
+		int count;
+
+		@Override
+		public void run() {
+			count++;
+		}
+	}
+
 	private StateMachine<State, Event> fsm;
-	private int entryActionExecuted, exitActionExecuted, tickActionExecuted;
-
-	private void entryAction() {
-		entryActionExecuted++;
-	}
-
-	private void exitAction() {
-		exitActionExecuted++;
-	}
-
-	private void tickAction() {
-		tickActionExecuted++;
-	}
+	private Action entryAction, exitAction, tickAction, timeoutAction;
 
 	@Before
 	public void buildMachine() {
+		entryAction = new Action();
+		exitAction = new Action();
+		tickAction = new Action();
+		timeoutAction = new Action();
 		/*@formatter:off*/
 		fsm = StateMachine.beginStateMachine(State.class, Event.class, Match.BY_EQUALITY)
 				.initialState(State.S1)
 				.states()
-					.state(State.S1).onEntry(this::entryAction)
+					.state(State.S1).onEntry(entryAction)
 					.state(State.S2)
-						.onExit(this::exitAction)
+						.onExit(exitAction)
 					.state(State.S3)
 						.timeoutAfter(() -> 10)
-						.onTick(this::tickAction)
+						.onTick(tickAction)
 				.transitions()
 					.when(State.S1).then(State.S1).on(Event.E1)
 					.when(State.S1).then(State.S2).on(Event.E2)
 					.when(State.S2).then(State.S3).on(Event.E3)
+					.stay(State.S3).onTimeout().act(timeoutAction)
 		.endStateMachine();
 		/*@formatter:on*/
-		entryActionExecuted = exitActionExecuted = tickActionExecuted = 0;
 	}
 
 	@Test(expected = IllegalStateException.class)
@@ -96,17 +98,17 @@ public class StateMachineTest {
 	@Test
 	public void testEntryAction() {
 		fsm.init();
-		Assert.assertEquals(1, entryActionExecuted);
+		Assert.assertEquals(1, entryAction.count);
 	}
-	
+
 	@Test
 	public void testExitAction() {
 		fsm.init();
 		fsm.process(Event.E2);
 		fsm.process(Event.E3);
-		Assert.assertEquals(1, exitActionExecuted);
+		Assert.assertEquals(1, exitAction.count);
 	}
-	
+
 	@Test
 	public void testTickAction() {
 		fsm.init();
@@ -115,7 +117,18 @@ public class StateMachineTest {
 		while (!fsm.state().isTerminated()) {
 			fsm.update();
 		}
-		Assert.assertEquals(fsm.state(State.S3).getDuration(), tickActionExecuted);
+		Assert.assertEquals(fsm.state(State.S3).getDuration(), tickAction.count);
 	}
-	
+
+	@Test
+	public void testTimeoutAction() {
+		fsm.init();
+		fsm.process(Event.E2);
+		fsm.process(Event.E3);
+		while (!fsm.state().isTerminated()) {
+			fsm.update();
+		}
+		Assert.assertEquals(1, timeoutAction.count);
+	}
+
 }

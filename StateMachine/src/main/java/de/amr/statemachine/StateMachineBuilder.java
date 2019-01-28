@@ -106,9 +106,9 @@ public class StateMachineBuilder<S, E> {
 
 		private StateBuilder commit() {
 			State<S, E> stateObject = sm.state(state);
-			stateObject.entry = entry;
-			stateObject.exit = exit;
-			stateObject.update = update;
+			stateObject.entryAction = entry;
+			stateObject.exitAction = exit;
+			stateObject.tickAction = update;
 			if (fnTimer != null) {
 				stateObject.fnTimer = fnTimer;
 			}

@@ -25,13 +25,13 @@ public class State<S, E> {
 	StateMachine<S, E> machine;
 
 	/** The client code executed when entering this state. */
-	Runnable entry;
+	Runnable entryAction;
 
-	/** The client code executed when an update occurs for this state. */
-	Runnable update;
+	/** The client code executed when a tick occurs for this state. */
+	Runnable tickAction;
 
 	/** The client code executed when leaving this state. */
-	Runnable exit;
+	Runnable exitAction;
 
 	/** Function providing the timer duration for this state. */
 	IntSupplier fnTimer;
@@ -41,6 +41,12 @@ public class State<S, E> {
 
 	/** Ticks remaining until time-out */
 	int ticksRemaining;
+
+	private void runAction(Runnable actionOrNull) {
+		if (actionOrNull != null) {
+			actionOrNull.run();
+		}
+	}
 
 	protected State() {
 		fnTimer = () -> ENDLESS;
@@ -53,35 +59,29 @@ public class State<S, E> {
 
 	public void setOnEntry(Runnable action) {
 		Objects.requireNonNull(action);
-		entry = action;
+		entryAction = action;
 	}
 
 	public void onEntry() {
-		if (entry != null) {
-			entry.run();
-		}
+		runAction(entryAction);
 	}
 
 	public void setOnExit(Runnable action) {
 		Objects.requireNonNull(action);
-		exit = action;
+		exitAction = action;
 	}
 
 	public void onExit() {
-		if (exit != null) {
-			exit.run();
-		}
+		runAction(exitAction);
 	}
 
 	public void setOnTick(Runnable action) {
 		Objects.requireNonNull(action);
-		update = action;
+		tickAction = action;
 	}
 
 	public void onTick() {
-		if (update != null) {
-			update.run();
-		}
+		runAction(tickAction);
 	}
 
 	/** Tells if this state has timed out. */
@@ -97,10 +97,14 @@ public class State<S, E> {
 		ticksRemaining = duration = fnTimer.getAsInt();
 	}
 
-	void updateTimer() {
+	boolean updateTimer() {
 		if (duration != ENDLESS && ticksRemaining > 0) {
 			--ticksRemaining;
+			if (ticksRemaining == 0) {
+				return true; // timeout
+			}
 		}
+		return false;
 	}
 
 	/**
