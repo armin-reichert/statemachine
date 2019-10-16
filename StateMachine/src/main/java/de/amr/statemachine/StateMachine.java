@@ -248,7 +248,8 @@ public class StateMachine<S, E> {
 			Class<? extends E> eventClass) {
 		Objects.requireNonNull(eventClass);
 		if (matchEventsBy != Match.BY_CLASS) {
-			throw new IllegalStateException("Cannot add transition, wrong match strategy: " + matchEventsBy);
+			throw new IllegalStateException(
+					"Cannot add transition, wrong match strategy: " + matchEventsBy);
 		}
 		addTransition(from, to, guard, action, null, eventClass, false);
 	}
@@ -268,7 +269,8 @@ public class StateMachine<S, E> {
 	 * @param event
 	 *                 event object used for matching the current event
 	 */
-	public void addTransitionOnEventObject(S from, S to, BooleanSupplier guard, Consumer<E> action, E event) {
+	public void addTransitionOnEventObject(S from, S to, BooleanSupplier guard, Consumer<E> action,
+			E event) {
 		Objects.requireNonNull(event);
 		if (matchEventsBy != Match.BY_EQUALITY) {
 			throw new IllegalStateException("Cannot add transition, wrong match strategy");
@@ -337,7 +339,8 @@ public class StateMachine<S, E> {
 	 */
 	public <StateType extends State<S, E>> StateType state() {
 		if (current == null) {
-			throw new IllegalStateException("Cannot access current state object, state machine not initialized.");
+			throw new IllegalStateException(
+					"Cannot access current state object, state machine not initialized.");
 		}
 		return state(current);
 	}
@@ -406,16 +409,17 @@ public class StateMachine<S, E> {
 	}
 
 	/**
-	 * Updates (reads input, fires first matching transition) this state machine. If the event queue is
-	 * empty, the machine looks for a transition that doesn't need input and executes it. If no such
-	 * transition exists, the {@code onTick} action of the current state is executed.
+	 * Updates (reads input, fires first matching transition) this state machine. If the event queue
+	 * is empty, the machine looks for a transition that doesn't need input and executes it. If no
+	 * such transition exists, the {@code onTick} action of the current state is executed.
 	 * 
 	 * @throws IllegalStateException
 	 *                                 if no matching transition is found
 	 */
 	public void update() {
 		if (current == null) {
-			throw new IllegalStateException("Cannot update state, state machine not initialized.");
+			throw new IllegalStateException(String
+					.format("Cannot update state, state machine '%s' not initialized.", getDescription()));
 		}
 		E eventOrNull = eventQ.poll();
 		Optional<Transition<S, E>> matchingTransition = findMatchingTransition(eventOrNull);
@@ -426,8 +430,9 @@ public class StateMachine<S, E> {
 		if (eventOrNull != null) {
 			tracer.unhandledEvent(eventOrNull);
 			if (!ignoreUnknownEvents) {
-				throw new IllegalStateException(String.format(
-						"%s: No transition defined for state '%s' and event '%s'", description, current, eventOrNull));
+				throw new IllegalStateException(
+						String.format("%s: No transition defined for state '%s' and event '%s'", description,
+								current, eventOrNull));
 			}
 		}
 		state(current).onTick();
@@ -453,7 +458,8 @@ public class StateMachine<S, E> {
 		}
 		if (matchEventsBy == Match.BY_CLASS) {
 			return eventOrNull.getClass().equals(t.eventClass);
-		} else if (matchEventsBy == Match.BY_EQUALITY) {
+		}
+		else if (matchEventsBy == Match.BY_EQUALITY) {
 			return eventOrNull.equals(t.event);
 		}
 		return false;
@@ -464,7 +470,8 @@ public class StateMachine<S, E> {
 		if (current == t.to) {
 			// keep state: don't execute exit/entry actions
 			t.action.accept(eventOrNull);
-		} else {
+		}
+		else {
 			// change to new state, execute exit and entry actions
 			State<S, E> oldState = state(current);
 			State<S, E> newState = state(t.to);
