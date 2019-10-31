@@ -301,7 +301,7 @@ public class StateMachine<S, E> {
 	 *                some input/event
 	 */
 	public void enqueue(E event) {
-		Objects.nonNull(event);
+		Objects.requireNonNull(event);
 		eventQ.add(event);
 	}
 
