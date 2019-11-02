@@ -108,12 +108,12 @@ public class State<S, E> {
 	}
 
 	/**
-	 * Sets a timer for this state.
+	 * Sets a timer function for this state.
 	 * 
 	 * @param fnTimer
 	 *                  function providing the time for this state
 	 */
-	public void setTimer(IntSupplier fnTimer) {
+	public void setTimerFunction(IntSupplier fnTimer) {
 		Objects.requireNonNull(fnTimer);
 		this.fnTimer = fnTimer;
 	}
