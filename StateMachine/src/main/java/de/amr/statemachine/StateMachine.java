@@ -17,10 +17,8 @@ import java.util.logging.Logger;
 /**
  * A finite state machine.
  *
- * @param <S>
- *          type for identifying states, for example an enumeration type.
- * @param <E>
- *          type of events/inputs.
+ * @param <S> type for identifying states, for example an enumeration type.
+ * @param <E> type of events/inputs.
  * 
  * @author Armin Reichert
  */
@@ -29,40 +27,31 @@ public class StateMachine<S, E> {
 	/**
 	 * Creates a new state machine instance and starts its definition building.
 	 * 
-	 * @param stateLabelClass
-	 *                          state label class
-	 * @param eventClass
-	 *                          event class
+	 * @param stateLabelClass state label class
+	 * @param eventClass      event class
 	 * 
-	 * @param                 <STATE>
-	 *                          state type
-	 * @param                 <EVENT>
-	 *                          event type
+	 * @param <STATE>         state type
+	 * @param <EVENT>         event type
 	 * @return state machine builder
 	 */
-	public static <STATE, EVENT> StateMachineBuilder<STATE, EVENT> beginStateMachine(
-			Class<STATE> stateLabelClass, Class<EVENT> eventClass) {
+	public static <STATE, EVENT> StateMachineBuilder<STATE, EVENT> beginStateMachine(Class<STATE> stateLabelClass,
+			Class<EVENT> eventClass) {
 		return new StateMachineBuilder<>(stateLabelClass);
 	}
 
 	/**
 	 * Creates a new state machine instance and starts its definition building.
 	 * 
-	 * @param stateLabelClass
-	 *                          state label class
-	 * @param eventClass
-	 *                          event class
-	 * @param matchStrategy
-	 *                          event match strategy
+	 * @param stateLabelClass state label class
+	 * @param eventClass      event class
+	 * @param matchStrategy   event match strategy
 	 * 
-	 * @param                 <STATE>
-	 *                          state type
-	 * @param                 <EVENT>
-	 *                          event type
+	 * @param <STATE>         state type
+	 * @param <EVENT>         event type
 	 * @return state machine builder
 	 */
-	public static <STATE, EVENT> StateMachineBuilder<STATE, EVENT> beginStateMachine(
-			Class<STATE> stateLabelClass, Class<EVENT> eventClass, Match matchStrategy) {
+	public static <STATE, EVENT> StateMachineBuilder<STATE, EVENT> beginStateMachine(Class<STATE> stateLabelClass,
+			Class<EVENT> eventClass, Match matchStrategy) {
 		return new StateMachineBuilder<>(stateLabelClass, matchStrategy);
 	}
 
@@ -86,10 +75,8 @@ public class StateMachine<S, E> {
 	/**
 	 * Creates a new state machine.
 	 * 
-	 * @param stateLabelClass
-	 *                          type for state identifiers
-	 * @param matchStrategy
-	 *                          strategy for matching events
+	 * @param stateLabelClass type for state identifiers
+	 * @param matchStrategy   strategy for matching events
 	 */
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public StateMachine(Class<S> stateLabelClass, Match matchStrategy) {
@@ -103,8 +90,7 @@ public class StateMachine<S, E> {
 	/**
 	 * Creates a new state machine with a default match strategy of "by class".
 	 * 
-	 * @param stateLabelClass
-	 *                          type for state identifiers
+	 * @param stateLabelClass type for state identifiers
 	 */
 	public StateMachine(Class<S> stateLabelClass) {
 		this(stateLabelClass, Match.BY_CLASS);
@@ -113,10 +99,8 @@ public class StateMachine<S, E> {
 	/**
 	 * Forwards tracing to the given logger.
 	 * 
-	 * @param log
-	 *                           a logger
-	 * @param fnTicksPerSecond
-	 *                           the update frequency for this machine
+	 * @param log              a logger
+	 * @param fnTicksPerSecond the update frequency for this machine
 	 */
 	public void traceTo(Logger log, IntSupplier fnTicksPerSecond) {
 		tracer = new StateMachineTracer<>(this, log, fnTicksPerSecond);
@@ -139,19 +123,17 @@ public class StateMachine<S, E> {
 	/**
 	 * Sets the description text for this state machine.
 	 * 
-	 * @param description
-	 *                      description text (used by tracing)
+	 * @param description description text (used by tracing)
 	 */
 	public void setDescription(String description) {
 		this.description = description;
 	}
 
 	/**
-	 * If set to {@code true}, events for which no transition is defined, are silently ignored. By
-	 * default, a runtime exception is thrown.
+	 * If set to {@code true}, events for which no transition is defined, are
+	 * silently ignored. By default, a runtime exception is thrown.
 	 * 
-	 * @param ignoreUnknownEvents
-	 *                              if unhandled events should be ignored
+	 * @param ignoreUnknownEvents if unhandled events should be ignored
 	 */
 	public void setIgnoreUnknownEvents(boolean ignoreUnknownEvents) {
 		this.ignoreUnknownEvents = ignoreUnknownEvents;
@@ -160,8 +142,7 @@ public class StateMachine<S, E> {
 	/**
 	 * Sets the initial state for this state machine.
 	 * 
-	 * @param initialState
-	 *                       initial state
+	 * @param initialState initial state
 	 */
 	public void setInitialState(S initialState) {
 		if (initialState == null) {
@@ -187,24 +168,17 @@ public class StateMachine<S, E> {
 	/**
 	 * Adds a state transition.
 	 * 
-	 * @param from
-	 *                     transition source state
-	 * @param to
-	 *                     transition target state
-	 * @param guard
-	 *                     condition guarding transition
-	 * @param action
-	 *                     action for transition
-	 * @param event
-	 *                     event for matching transition
-	 * @param eventClass
-	 *                     event class for matching transition
-	 * @param timeout
-	 *                     tells if this should be a timeout transition
+	 * @param from       transition source state
+	 * @param to         transition target state
+	 * @param guard      condition guarding transition
+	 * @param action     action for transition
+	 * @param event      event for matching transition
+	 * @param eventClass event class for matching transition
+	 * @param timeout    tells if this should be a timeout transition
 	 * 
 	 */
-	void addTransition(S from, S to, BooleanSupplier guard, Consumer<E> action, E event,
-			Class<? extends E> eventClass, boolean timeout) {
+	void addTransition(S from, S to, BooleanSupplier guard, Consumer<E> action, E event, Class<? extends E> eventClass,
+			boolean timeout) {
 		Objects.requireNonNull(from);
 		Objects.requireNonNull(to);
 		guard = (guard != null) ? guard : () -> true;
@@ -216,61 +190,45 @@ public class StateMachine<S, E> {
 	/**
 	 * Adds a timeout transition.
 	 * 
-	 * @param from
-	 *                 transition source state
-	 * @param to
-	 *                 transition target state
-	 * @param guard
-	 *                 condition guarding transition
-	 * @param action
-	 *                 action for transition
+	 * @param from   transition source state
+	 * @param to     transition target state
+	 * @param guard  condition guarding transition
+	 * @param action action for transition
 	 */
 	public void addTransitionOnTimeout(S from, S to, BooleanSupplier guard, Consumer<E> action) {
 		addTransition(from, to, guard, action, null, null, true);
 	}
 
 	/**
-	 * Adds a transition which is fired if the guard condition holds and the current input's class
-	 * equals the given event class.
+	 * Adds a transition which is fired if the guard condition holds and the current
+	 * input's class equals the given event class.
 	 * 
-	 * @param from
-	 *                     transition source state
-	 * @param to
-	 *                     transition target state
-	 * @param guard
-	 *                     condition guarding transition
-	 * @param action
-	 *                     action for transition
-	 * @param eventClass
-	 *                     class used for matching the current event
+	 * @param from       transition source state
+	 * @param to         transition target state
+	 * @param guard      condition guarding transition
+	 * @param action     action for transition
+	 * @param eventClass class used for matching the current event
 	 */
 	public void addTransitionOnEventType(S from, S to, BooleanSupplier guard, Consumer<E> action,
 			Class<? extends E> eventClass) {
 		Objects.requireNonNull(eventClass);
 		if (matchEventsBy != Match.BY_CLASS) {
-			throw new IllegalStateException(
-					"Cannot add transition, wrong match strategy: " + matchEventsBy);
+			throw new IllegalStateException("Cannot add transition, wrong match strategy: " + matchEventsBy);
 		}
 		addTransition(from, to, guard, action, null, eventClass, false);
 	}
 
 	/**
-	 * Adds a transition which is fired if the guard condition holds and the current input equals the
-	 * given event.
+	 * Adds a transition which is fired if the guard condition holds and the current
+	 * input equals the given event.
 	 * 
-	 * @param from
-	 *                 transition source state
-	 * @param to
-	 *                 transition target state
-	 * @param guard
-	 *                 condition guarding transition
-	 * @param action
-	 *                 action for transition
-	 * @param event
-	 *                 event object used for matching the current event
+	 * @param from   transition source state
+	 * @param to     transition target state
+	 * @param guard  condition guarding transition
+	 * @param action action for transition
+	 * @param event  event object used for matching the current event
 	 */
-	public void addTransitionOnEventObject(S from, S to, BooleanSupplier guard, Consumer<E> action,
-			E event) {
+	public void addTransitionOnEventObject(S from, S to, BooleanSupplier guard, Consumer<E> action, E event) {
 		Objects.requireNonNull(event);
 		if (matchEventsBy != Match.BY_EQUALITY) {
 			throw new IllegalStateException("Cannot add transition, wrong match strategy");
@@ -281,14 +239,10 @@ public class StateMachine<S, E> {
 	/**
 	 * Adds a transition which is fired when the guard condition holds.
 	 * 
-	 * @param from
-	 *                 transition source state
-	 * @param to
-	 *                 transition target state
-	 * @param guard
-	 *                 condition guarding transition
-	 * @param action
-	 *                 action for transition
+	 * @param from   transition source state
+	 * @param to     transition target state
+	 * @param guard  condition guarding transition
+	 * @param action action for transition
 	 */
 	public void addTransition(S from, S to, BooleanSupplier guard, Consumer<E> action) {
 		addTransition(from, to, guard, action, null, null, false);
@@ -297,8 +251,7 @@ public class StateMachine<S, E> {
 	/**
 	 * Adds an input (event) to the input queue of this state machine.
 	 * 
-	 * @param event
-	 *                some input/event
+	 * @param event some input/event
 	 */
 	public void enqueue(E event) {
 		Objects.requireNonNull(event);
@@ -308,8 +261,7 @@ public class StateMachine<S, E> {
 	/**
 	 * Processes the given event.
 	 * 
-	 * @param event
-	 *                some input / event
+	 * @param event some input / event
 	 */
 	public void process(E event) {
 		enqueue(event);
@@ -324,10 +276,10 @@ public class StateMachine<S, E> {
 	}
 
 	/**
-	 * Sets state machine directly to the given state. The state's entry action is executed.
+	 * Sets state machine directly to the given state. The state's entry action is
+	 * executed.
 	 * 
-	 * @param state
-	 *                new state
+	 * @param state new state
 	 */
 	public void setState(S state) {
 		current = state;
@@ -339,8 +291,7 @@ public class StateMachine<S, E> {
 	 */
 	public <StateType extends State<S, E>> StateType state() {
 		if (current == null) {
-			throw new IllegalStateException(
-					"Cannot access current state object, state machine not initialized.");
+			throw new IllegalStateException("Cannot access current state object, state machine not initialized.");
 		}
 		return state(current);
 	}
@@ -348,10 +299,8 @@ public class StateMachine<S, E> {
 	/**
 	 * Returns the object representing the given state. It is created on-demand.
 	 * 
-	 * @param       <StateType>
-	 *                subtype of default state class
-	 * @param state
-	 *                a state identifier
+	 * @param <StateType> subtype of default state class
+	 * @param state       a state identifier
 	 * @return the state object for the given state identifier
 	 */
 	@SuppressWarnings("unchecked")
@@ -365,12 +314,10 @@ public class StateMachine<S, E> {
 	/**
 	 * Creates or replaces the state object for the given state by the given object.
 	 * 
-	 * @param             <StateType>
-	 *                      subtype of default state class used for representing the given state
-	 * @param state
-	 *                      state identifier
-	 * @param stateObject
-	 *                      state object
+	 * @param <StateType> subtype of default state class used for representing the
+	 *                    given state
+	 * @param state       state identifier
+	 * @param stateObject state object
 	 * @return the new state object
 	 */
 	public <StateType extends State<S, E>> StateType realizeState(S state, StateType stateObject) {
@@ -381,22 +328,8 @@ public class StateMachine<S, E> {
 	}
 
 	/**
-	 * Resets the timer of the current state.
-	 */
-	public void resetTimer() {
-		state().resetTimer();
-	}
-
-	/**
-	 * Returns the number of remaining ticks for the current state.
-	 */
-	public int getTicksRemaining() {
-		return state().getTicksRemaining();
-	}
-
-	/**
-	 * Initializes this state machine by switching to the initial state and executing the initial
-	 * state's (optional) entry action.
+	 * Initializes this state machine by switching to the initial state and
+	 * executing the initial state's (optional) entry action.
 	 */
 	public void init() {
 		if (initialState == null) {
@@ -409,17 +342,17 @@ public class StateMachine<S, E> {
 	}
 
 	/**
-	 * Updates (reads input, fires first matching transition) this state machine. If the event queue
-	 * is empty, the machine looks for a transition that doesn't need input and executes it. If no
-	 * such transition exists, the {@code onTick} action of the current state is executed.
+	 * Updates (reads input, fires first matching transition) this state machine. If
+	 * the event queue is empty, the machine looks for a transition that doesn't
+	 * need input and executes it. If no such transition exists, the {@code onTick}
+	 * action of the current state is executed.
 	 * 
-	 * @throws IllegalStateException
-	 *                                 if no matching transition is found
+	 * @throws IllegalStateException if no matching transition is found
 	 */
 	public void update() {
 		if (current == null) {
-			throw new IllegalStateException(String
-					.format("Cannot update state, state machine '%s' not initialized.", getDescription()));
+			throw new IllegalStateException(
+					String.format("Cannot update state, state machine '%s' not initialized.", getDescription()));
 		}
 		E eventOrNull = eventQ.poll();
 		Optional<Transition<S, E>> matchingTransition = findMatchingTransition(eventOrNull);
@@ -430,9 +363,8 @@ public class StateMachine<S, E> {
 		if (eventOrNull != null) {
 			tracer.unhandledEvent(eventOrNull);
 			if (!ignoreUnknownEvents) {
-				throw new IllegalStateException(
-						String.format("%s: No transition defined for state '%s' and event '%s'", description,
-								current, eventOrNull));
+				throw new IllegalStateException(String.format("%s: No transition defined for state '%s' and event '%s'",
+						description, current, eventOrNull));
 			}
 		}
 		state(current).onTick();
@@ -458,8 +390,7 @@ public class StateMachine<S, E> {
 		}
 		if (matchEventsBy == Match.BY_CLASS) {
 			return eventOrNull.getClass().equals(t.eventClass);
-		}
-		else if (matchEventsBy == Match.BY_EQUALITY) {
+		} else if (matchEventsBy == Match.BY_EQUALITY) {
 			return eventOrNull.equals(t.event);
 		}
 		return false;
@@ -470,8 +401,7 @@ public class StateMachine<S, E> {
 		if (current == t.to) {
 			// keep state: don't execute exit/entry actions
 			t.action.accept(eventOrNull);
-		}
-		else {
+		} else {
 			// change to new state, execute exit and entry actions
 			State<S, E> oldState = state(current);
 			State<S, E> newState = state(t.to);
