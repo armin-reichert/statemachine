@@ -9,10 +9,8 @@ import java.util.function.IntSupplier;
  * 
  * @author Armin Reichert
  *
- * @param <S>
- *          Type for identifying states
- * @param <E>
- *          Type of events
+ * @param <S> Type for identifying states
+ * @param <E> Type of events
  */
 public class StateMachineBuilder<S, E> {
 
@@ -27,8 +25,8 @@ public class StateMachineBuilder<S, E> {
 	public StateMachineBuilder(Class<S> stateLabelType) {
 		sm = new StateMachine<>(stateLabelType);
 	}
-	
-	public StateMachineBuilder(StateMachine<S,E> sm) {
+
+	public StateMachineBuilder(StateMachine<S, E> sm) {
 		this.sm = sm;
 	}
 
@@ -89,6 +87,14 @@ public class StateMachineBuilder<S, E> {
 			return this;
 		}
 
+		public StateBuilder timeoutAfter(int fixedTime) {
+			if (fixedTime < 0) {
+				throw new IllegalStateException("Timer value must be positive for state " + state);
+			}
+			this.fnTimer = () -> fixedTime;
+			return this;
+		}
+
 		public StateBuilder onEntry(Runnable entry) {
 			this.entry = entry;
 			return this;
@@ -125,7 +131,7 @@ public class StateMachineBuilder<S, E> {
 	}
 
 	public class TransitionBuilder {
-		
+
 		private boolean started;
 		private S from;
 		private S to;
@@ -242,15 +248,14 @@ public class StateMachineBuilder<S, E> {
 
 		private TransitionBuilder commit() {
 			if (timeout && event != null) {
-				throw new IllegalStateException(
-						"Cannot specify both timeout and event object for the same transition");
+				throw new IllegalStateException("Cannot specify both timeout and event object for the same transition");
 			}
 			if (timeout && eventType != null) {
 				throw new IllegalStateException("Cannot specify both timeout and event type for the same transition");
 			}
 			if (timeout) {
 				sm.addTransitionOnTimeout(from, to, guard, action);
-			} else  {
+			} else {
 				sm.addTransition(from, to, guard, action, event, eventType, false);
 			}
 			clear();
