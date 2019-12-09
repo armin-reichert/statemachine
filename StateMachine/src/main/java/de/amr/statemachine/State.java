@@ -106,13 +106,23 @@ public class State<S, E> {
 	}
 
 	/**
-	 * Sets a timer function for this state.
+	 * Sets a timer function for this state and resets the timer.
 	 * 
 	 * @param fnTimer function providing the time for this state
 	 */
 	public void setTimerFunction(IntSupplier fnTimer) {
 		Objects.requireNonNull(fnTimer);
 		this.fnTimer = fnTimer;
+		resetTimer();
+	}
+
+	/**
+	 * Sets a constant timer function for this state and resets the timer.
+	 * 
+	 * @param fixedTime constant time for this state
+	 */
+	public void setConstantTimer(int fixedTime) {
+		setTimerFunction(() -> fixedTime);
 	}
 
 	/**
