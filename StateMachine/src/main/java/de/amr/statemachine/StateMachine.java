@@ -24,6 +24,10 @@ import java.util.logging.Logger;
  */
 public class StateMachine<S, E> {
 
+	public enum MissingTransitionBehavior {
+		IGNORE, LOG, EXCEPTION;
+	}
+
 	/**
 	 * Creates a new state machine instance and starts its definition building.
 	 * 
@@ -70,7 +74,7 @@ public class StateMachine<S, E> {
 	private final Map<S, State<S, E>> stateMap;
 	private final Map<S, List<Transition<S, E>>> transitionMap;
 	private StateMachineTracer<S, E> tracer;
-	private boolean ignoreUnknownEvents;
+	private MissingTransitionBehavior missingTransitionBehavior;
 
 	/**
 	 * Creates a new state machine.
@@ -85,6 +89,7 @@ public class StateMachine<S, E> {
 		stateMap = stateLabelClass.isEnum() ? new EnumMap(stateLabelClass) : new HashMap<>(7);
 		transitionMap = new HashMap<>(7);
 		tracer = new StateMachineTracer<>(this, Logger.getGlobal(), () -> 60);
+		missingTransitionBehavior = MissingTransitionBehavior.EXCEPTION;
 	}
 
 	/**
@@ -130,13 +135,12 @@ public class StateMachine<S, E> {
 	}
 
 	/**
-	 * If set to {@code true}, events for which no transition is defined, are
-	 * silently ignored. By default, a runtime exception is thrown.
+	 * Defines how the state machine reacts to missing transitions.
 	 * 
-	 * @param ignoreUnknownEvents if unhandled events should be ignored
+	 * @param missingTransitionBehavior behavior in case no transition is available
 	 */
-	public void setIgnoreUnknownEvents(boolean ignoreUnknownEvents) {
-		this.ignoreUnknownEvents = ignoreUnknownEvents;
+	public void setMissingTransitionBehavior(MissingTransitionBehavior missingTransitionBehavior) {
+		this.missingTransitionBehavior = missingTransitionBehavior;
 	}
 
 	/**
@@ -361,10 +365,17 @@ public class StateMachine<S, E> {
 			return;
 		}
 		if (eventOrNull != null) {
-			tracer.unhandledEvent(eventOrNull);
-			if (!ignoreUnknownEvents) {
+			switch (missingTransitionBehavior) {
+			case EXCEPTION:
 				throw new IllegalStateException(String.format("%s: No transition defined for state '%s' and event '%s'",
 						description, current, eventOrNull));
+			case IGNORE:
+				break;
+			case LOG:
+				tracer.unhandledEvent(eventOrNull);
+				break;
+			default:
+				throw new IllegalArgumentException("Illegal missing transition behavior: " + missingTransitionBehavior);
 			}
 		}
 		state(current).onTick();
