@@ -2,6 +2,7 @@ package de.amr.statemachine;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Deque;
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -68,7 +69,7 @@ public class StateMachine<S, E> {
 
 	private String description;
 	private S initialState;
-	private S current;
+	private S currentState;
 	private final Match matchEventsBy;
 	private final Deque<E> eventQ;
 	private final Map<S, State<S, E>> stateMap;
@@ -276,7 +277,16 @@ public class StateMachine<S, E> {
 	 * @return the current state (identifier)
 	 */
 	public S getState() {
-		return current;
+		return currentState;
+	}
+
+	/**
+	 * @param states list of states
+	 * @return if this state machine currently is in one of the given states
+	 */
+	@SuppressWarnings("unchecked")
+	public boolean is(S... states) {
+		return Arrays.stream(states).anyMatch(s -> s.equals(getState()));
 	}
 
 	/**
@@ -286,7 +296,7 @@ public class StateMachine<S, E> {
 	 * @param state new state
 	 */
 	public void setState(S state) {
-		current = state;
+		currentState = state;
 		state().onEntry();
 	}
 
@@ -294,10 +304,10 @@ public class StateMachine<S, E> {
 	 * @return the state object of the current state
 	 */
 	public <StateType extends State<S, E>> StateType state() {
-		if (current == null) {
+		if (currentState == null) {
 			throw new IllegalStateException("Cannot access current state object, state machine not initialized.");
 		}
-		return state(current);
+		return state(currentState);
 	}
 
 	/**
@@ -340,9 +350,9 @@ public class StateMachine<S, E> {
 			throw new IllegalStateException("Cannot initialize state machine, no initial state defined.");
 		}
 		tracer.enteringInitialState(initialState);
-		current = initialState;
-		state(current).resetTimer();
-		state(current).onEntry();
+		currentState = initialState;
+		state(currentState).resetTimer();
+		state(currentState).onEntry();
 	}
 
 	/**
@@ -354,7 +364,7 @@ public class StateMachine<S, E> {
 	 * @throws IllegalStateException if no matching transition is found
 	 */
 	public void update() {
-		if (current == null) {
+		if (currentState == null) {
 			throw new IllegalStateException(
 					String.format("Cannot update state, state machine '%s' not initialized.", getDescription()));
 		}
@@ -368,7 +378,7 @@ public class StateMachine<S, E> {
 			switch (missingTransitionBehavior) {
 			case EXCEPTION:
 				throw new IllegalStateException(String.format("%s: No transition defined for state '%s' and event '%s'",
-						description, current, eventOrNull));
+						description, currentState, eventOrNull));
 			case IGNORE:
 				break;
 			case LOG:
@@ -378,15 +388,15 @@ public class StateMachine<S, E> {
 				throw new IllegalArgumentException("Illegal missing transition behavior: " + missingTransitionBehavior);
 			}
 		}
-		state(current).onTick();
-		boolean timeout = state(current).updateTimer();
+		state(currentState).onTick();
+		boolean timeout = state(currentState).updateTimer();
 		if (timeout) {
 			findMatchingTransition(null).ifPresent(t -> fireTransition(t, null));
 		}
 	}
 
 	private Optional<Transition<S, E>> findMatchingTransition(E eventOrNull) {
-		return transitions(current).stream().filter(t -> isMatching(t, eventOrNull)).findFirst();
+		return transitions(currentState).stream().filter(t -> isMatching(t, eventOrNull)).findFirst();
 	}
 
 	private boolean isMatching(Transition<S, E> t, E eventOrNull) {
@@ -409,17 +419,17 @@ public class StateMachine<S, E> {
 
 	private void fireTransition(Transition<S, E> t, E eventOrNull) {
 		tracer.firingTransition(t, eventOrNull);
-		if (current == t.to) {
+		if (currentState == t.to) {
 			// keep state: don't execute exit/entry actions
 			t.action.accept(eventOrNull);
 		} else {
 			// change to new state, execute exit and entry actions
-			State<S, E> oldState = state(current);
+			State<S, E> oldState = state(currentState);
 			State<S, E> newState = state(t.to);
-			tracer.exitingState(current);
+			tracer.exitingState(currentState);
 			oldState.onExit();
 			t.action.accept(eventOrNull);
-			current = t.to;
+			currentState = t.to;
 			tracer.enteringState(t.to);
 			newState.resetTimer();
 			newState.onEntry();
