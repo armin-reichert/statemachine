@@ -6,8 +6,10 @@ import java.util.function.IntSupplier;
 /**
  * Implementation of a state in a finite state machine.
  * 
- * @param <S> state type, normally some enum type
- * @param <E> event type, e.g. event classes with different attributes
+ * @param <S>
+ *          state type, normally some enum type
+ * @param <E>
+ *          event type, e.g. event classes with different attributes
  * 
  * @author Armin Reichert
  */
@@ -49,6 +51,19 @@ public class State<S, E> {
 	protected State() {
 		fnTimer = () -> ENDLESS;
 		resetTimer();
+	}
+
+	@Override
+	public String toString() {
+		String s = String.format("(%s:%s", machine.getDescription(), id);
+		if (entryAction != null)
+			s += " entry";
+		if (tickAction != null)
+			s += " tick";
+		if (exitAction != null)
+			s += " exit";
+		s += ")";
+		return s;
 	}
 
 	public S id() {
@@ -108,7 +123,8 @@ public class State<S, E> {
 	/**
 	 * Sets a timer function for this state and resets the timer.
 	 * 
-	 * @param fnTimer function providing the time for this state
+	 * @param fnTimer
+	 *                  function providing the time for this state
 	 */
 	public void setTimerFunction(IntSupplier fnTimer) {
 		Objects.requireNonNull(fnTimer);
@@ -119,7 +135,8 @@ public class State<S, E> {
 	/**
 	 * Sets a constant timer function for this state and resets the timer.
 	 * 
-	 * @param fixedTime constant time for this state
+	 * @param fixedTime
+	 *                    constant time for this state
 	 */
 	public void setConstantTimer(int fixedTime) {
 		setTimerFunction(() -> fixedTime);
@@ -144,8 +161,7 @@ public class State<S, E> {
 	}
 
 	/**
-	 * The number of updates since the (optional) timer for this state was started
-	 * or reset.
+	 * The number of updates since the (optional) timer for this state was started or reset.
 	 * 
 	 * @return number of updates since timer started or reset
 	 */
