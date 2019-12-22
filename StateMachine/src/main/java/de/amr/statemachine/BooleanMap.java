@@ -3,8 +3,10 @@ package de.amr.statemachine;
 import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -16,19 +18,30 @@ import java.util.Set;
  */
 public class BooleanMap<V> implements Map<Boolean, V> {
 
-	private V valueFalse, valueTrue;
+	private final Entry<Boolean, V> f;
+	private final Entry<Boolean, V> t;
+
+	private Set<Boolean> keySet;
+
+	public BooleanMap() {
+		f = new AbstractMap.SimpleEntry<>(false, null);
+		t = new AbstractMap.SimpleEntry<>(true, null);
+	}
 
 	@Override
 	public int size() {
-		if (valueFalse != null) {
-			return valueTrue != null ? 2 : 1;
+		if (f.getValue() == null && t.getValue() == null) {
+			return 0;
 		}
-		return valueTrue != null ? 1 : 0;
+		if (f.getValue() != null && t.getValue() != null) {
+			return 2;
+		}
+		return 1;
 	}
 
 	@Override
 	public boolean isEmpty() {
-		return valueFalse == null && valueTrue == null;
+		return size() == 0;
 	}
 
 	@Override
@@ -37,33 +50,31 @@ public class BooleanMap<V> implements Map<Boolean, V> {
 			return false;
 		}
 		boolean booleanKey = (Boolean) key;
-		return booleanKey ? valueTrue != null : valueFalse != null;
+		return booleanKey ? t.getValue() != null : f.getValue() != null;
 	}
 
 	@Override
 	public boolean containsValue(Object value) {
-		if (value == null) {
-			return false;
-		}
-		return value.equals(valueTrue) || value.equals(valueFalse);
+		Objects.requireNonNull(value);
+		return value.equals(f.getValue()) || value.equals(t.getValue());
 	}
 
 	@Override
 	public V get(Object key) {
-		if (key != null) {
-			boolean booleanKey = (Boolean) key;
-			return booleanKey ? valueTrue : valueFalse;
+		if (key == null) {
+			return null;
 		}
-		return null;
+		boolean b = (Boolean) key;
+		return b ? t.getValue() : f.getValue();
 	}
 
 	@Override
 	public V put(Boolean key, V value) {
 		V oldValue = get(key);
 		if (key) {
-			valueTrue = value;
+			t.setValue(value);
 		} else {
-			valueFalse = value;
+			f.setValue(value);
 		}
 		return oldValue;
 	}
@@ -71,11 +82,11 @@ public class BooleanMap<V> implements Map<Boolean, V> {
 	@Override
 	public V remove(Object key) {
 		V oldValue = get(key);
-		boolean booleanKey = (Boolean) key;
-		if (booleanKey) {
-			valueTrue = null;
+		boolean b = (Boolean) key;
+		if (b) {
+			t.setValue(null);
 		} else {
-			valueFalse = null;
+			f.setValue(null);
 		}
 		return oldValue;
 	}
@@ -87,17 +98,18 @@ public class BooleanMap<V> implements Map<Boolean, V> {
 
 	@Override
 	public void clear() {
-		valueFalse = valueTrue = null;
+		f.setValue(null);
+		t.setValue(null);
 	}
-
-	private Set<Boolean> keySet;
 
 	@Override
 	public Set<Boolean> keySet() {
 		if (keySet == null) {
 			keySet = new HashSet<Boolean>(2);
-			keySet.add(true);
-			keySet.add(false);
+			if (f.getValue() != null)
+				keySet.add(false);
+			if (t.getValue() != null)
+				keySet.add(true);
 		}
 		return keySet;
 	}
@@ -105,13 +117,25 @@ public class BooleanMap<V> implements Map<Boolean, V> {
 	@Override
 	public Set<Entry<Boolean, V>> entrySet() {
 		Set<Entry<Boolean, V>> entrySet = new HashSet<Map.Entry<Boolean, V>>();
-		entrySet.add(new AbstractMap.SimpleEntry<>(false, valueFalse));
-		entrySet.add(new AbstractMap.SimpleEntry<>(true, valueTrue));
+		if (f.getValue() != null)
+			entrySet.add(f);
+		if (t.getValue() != null)
+			entrySet.add(t);
 		return entrySet;
 	}
 
+	// TODO this is not a correct implementation of the Map interface contract
 	@Override
 	public Collection<V> values() {
-		return Arrays.asList(valueFalse, valueTrue);
+		if (f.getValue() != null && t.getValue() != null) {
+			return Arrays.asList(f.getValue(), t.getValue());
+		}
+		if (f.getValue() != null) {
+			return Arrays.asList(f.getValue());
+		}
+		if (t.getValue() != null) {
+			return Arrays.asList(t.getValue());
+		}
+		return Collections.emptyList();
 	}
 }
