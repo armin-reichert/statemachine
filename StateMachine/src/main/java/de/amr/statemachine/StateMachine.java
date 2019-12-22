@@ -87,7 +87,8 @@ public class StateMachine<S, E> {
 	public StateMachine(Class<S> stateLabelClass, Match matchStrategy) {
 		this.matchEventsBy = matchStrategy;
 		eventQ = new ArrayDeque<>();
-		stateMap = stateLabelClass.isEnum() ? new EnumMap(stateLabelClass) : new HashMap<>(7);
+		stateMap = stateLabelClass.isEnum() ? new EnumMap(stateLabelClass)
+				: stateLabelClass == Boolean.class ? new BooleanMap() : new HashMap<>(7);
 		transitionMap = new HashMap<>(7);
 		tracer = new StateMachineTracer<>(this, Logger.getGlobal(), () -> 60);
 		missingTransitionBehavior = MissingTransitionBehavior.EXCEPTION;
