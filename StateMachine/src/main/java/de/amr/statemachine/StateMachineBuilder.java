@@ -3,6 +3,7 @@ package de.amr.statemachine;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.IntSupplier;
+import java.util.logging.Logger;
 
 /**
  * Builder for state machine instances.
@@ -13,6 +14,8 @@ import java.util.function.IntSupplier;
  * @param <E> Type of events
  */
 public class StateMachineBuilder<S, E> {
+
+	private final Logger log = Logger.getGlobal();
 
 	private StateMachine<S, E> sm;
 	private String description;
@@ -47,16 +50,14 @@ public class StateMachineBuilder<S, E> {
 	public class StateBuilder {
 
 		private S state;
-		private Runnable entry;
-		private Runnable exit;
-		private Runnable update;
+		private Runnable entryAction, exitAction, tickAction;
+		private boolean entryActionSet, exitActionSet, tickActionSet;
 		private IntSupplier fnTimer;
 
 		private void clear() {
 			state = null;
-			entry = null;
-			exit = null;
-			update = null;
+			entryAction = exitAction = tickAction = null;
+			entryActionSet = exitActionSet = tickActionSet = false;
 			fnTimer = null;
 		}
 
@@ -95,26 +96,44 @@ public class StateMachineBuilder<S, E> {
 			return this;
 		}
 
-		public StateBuilder onEntry(Runnable entry) {
-			this.entry = entry;
+		public StateBuilder onEntry(Runnable action) {
+			if (entryActionSet) {
+				log.info(() -> String.format("ERROR: entry action already set: state %s in FSM %s", state,
+						StateMachineBuilder.this.description));
+				throw new IllegalStateException();
+			}
+			entryAction = action;
+			entryActionSet = true;
 			return this;
 		}
 
-		public StateBuilder onExit(Runnable exit) {
-			this.exit = exit;
+		public StateBuilder onExit(Runnable action) {
+			if (exitActionSet) {
+				log.info(() -> String.format("ERROR: exit action already set: state %s in FSM %s", state,
+						StateMachineBuilder.this.description));
+				throw new IllegalStateException();
+			}
+			exitAction = action;
+			exitActionSet = true;
 			return this;
 		}
 
-		public StateBuilder onTick(Runnable update) {
-			this.update = update;
+		public StateBuilder onTick(Runnable action) {
+			if (tickActionSet) {
+				log.info(() -> String.format("ERROR: tick action already set: state %s in FSM %s", state,
+						StateMachineBuilder.this.description));
+				throw new IllegalStateException();
+			}
+			tickAction = action;
+			tickActionSet = true;
 			return this;
 		}
 
 		private StateBuilder commit() {
 			State<S, E> stateObject = sm.state(state);
-			stateObject.entryAction = entry;
-			stateObject.exitAction = exit;
-			stateObject.tickAction = update;
+			stateObject.entryAction = entryAction;
+			stateObject.exitAction = exitAction;
+			stateObject.tickAction = tickAction;
 			if (fnTimer != null) {
 				stateObject.fnTimer = fnTimer;
 			}
