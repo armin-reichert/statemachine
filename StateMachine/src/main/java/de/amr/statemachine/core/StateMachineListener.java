@@ -1,4 +1,4 @@
-package de.amr.statemachine;
+package de.amr.statemachine.core;
 
 public interface StateMachineListener<S, E> {
 

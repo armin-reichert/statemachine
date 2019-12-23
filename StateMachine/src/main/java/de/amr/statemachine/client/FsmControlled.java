@@ -2,8 +2,8 @@ package de.amr.statemachine.client;
 
 import java.util.function.Consumer;
 
-import de.amr.statemachine.State;
-import de.amr.statemachine.StateMachine;
+import de.amr.statemachine.core.State;
+import de.amr.statemachine.core.StateMachine;
 
 /**
  * This interface is implemented by entities which are controlled by a

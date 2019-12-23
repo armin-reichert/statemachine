@@ -1,4 +1,4 @@
-package de.amr.statemachine;
+package de.amr.statemachine.core;
 
 import static java.lang.String.format;
 

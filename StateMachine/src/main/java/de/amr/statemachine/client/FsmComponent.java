@@ -6,8 +6,8 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
 
-import de.amr.statemachine.State;
-import de.amr.statemachine.StateMachine;
+import de.amr.statemachine.core.State;
+import de.amr.statemachine.core.StateMachine;
 
 /**
  * Prototypical implementation of the {@link FsmControlled} interface which can

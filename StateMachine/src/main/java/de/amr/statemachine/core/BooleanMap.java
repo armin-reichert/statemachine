@@ -1,4 +1,4 @@
-package de.amr.statemachine;
+package de.amr.statemachine.core;
 
 import java.util.AbstractMap;
 import java.util.Arrays;

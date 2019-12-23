@@ -1,4 +1,4 @@
-package de.amr.statemachine;
+package de.amr.statemachine.core;
 
 import java.util.Objects;
 import java.util.function.IntSupplier;

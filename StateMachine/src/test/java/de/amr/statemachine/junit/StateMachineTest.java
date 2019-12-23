@@ -4,9 +4,9 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import de.amr.statemachine.Match;
-import de.amr.statemachine.State;
-import de.amr.statemachine.StateMachine;
+import de.amr.statemachine.core.Match;
+import de.amr.statemachine.core.State;
+import de.amr.statemachine.core.StateMachine;
 
 public class StateMachineTest {
 

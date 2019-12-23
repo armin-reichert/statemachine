@@ -1,4 +1,4 @@
-package de.amr.statemachine;
+package de.amr.statemachine.core;
 
 /**
  * Enumerates the event matching strategies of a state machine. Events are either matched by event
