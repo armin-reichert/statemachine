@@ -56,7 +56,7 @@ public class StateMachine<S, E> {
 	 * @return state machine builder
 	 */
 	public static <STATE, EVENT> StateMachineBuilder<STATE, EVENT> beginStateMachine(Class<STATE> stateLabelClass,
-			Class<EVENT> eventClass, Match matchStrategy) {
+			Class<EVENT> eventClass, EventMatchStrategy matchStrategy) {
 		return new StateMachineBuilder<>(stateLabelClass, matchStrategy);
 	}
 
@@ -70,7 +70,7 @@ public class StateMachine<S, E> {
 	private String description;
 	private S initialState;
 	private S currentState;
-	private final Match matchEventsBy;
+	private final EventMatchStrategy matchEventsBy;
 	private final Deque<E> eventQ;
 	private final Map<S, State<S, E>> stateMap;
 	private final Map<S, List<Transition<S, E>>> transitionMap;
@@ -84,7 +84,7 @@ public class StateMachine<S, E> {
 	 * @param matchStrategy   strategy for matching events
 	 */
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	public StateMachine(Class<S> stateLabelClass, Match matchStrategy) {
+	public StateMachine(Class<S> stateLabelClass, EventMatchStrategy matchStrategy) {
 		this.matchEventsBy = matchStrategy;
 		eventQ = new ArrayDeque<>();
 		stateMap = stateLabelClass.isEnum() ? new EnumMap(stateLabelClass)
@@ -100,7 +100,7 @@ public class StateMachine<S, E> {
 	 * @param stateLabelClass type for state identifiers
 	 */
 	public StateMachine(Class<S> stateLabelClass) {
-		this(stateLabelClass, Match.BY_CLASS);
+		this(stateLabelClass, EventMatchStrategy.BY_CLASS);
 	}
 
 	/**
@@ -116,7 +116,7 @@ public class StateMachine<S, E> {
 	/**
 	 * @return the event match strategy
 	 */
-	public Match getMatchStrategy() {
+	public EventMatchStrategy getMatchStrategy() {
 		return matchEventsBy;
 	}
 
@@ -218,7 +218,7 @@ public class StateMachine<S, E> {
 	public void addTransitionOnEventType(S from, S to, BooleanSupplier guard, Consumer<E> action,
 			Class<? extends E> eventClass) {
 		Objects.requireNonNull(eventClass);
-		if (matchEventsBy != Match.BY_CLASS) {
+		if (matchEventsBy != EventMatchStrategy.BY_CLASS) {
 			throw new IllegalStateException("Cannot add transition, wrong match strategy: " + matchEventsBy);
 		}
 		addTransition(from, to, guard, action, null, eventClass, false);
@@ -236,7 +236,7 @@ public class StateMachine<S, E> {
 	 */
 	public void addTransitionOnEventObject(S from, S to, BooleanSupplier guard, Consumer<E> action, E event) {
 		Objects.requireNonNull(event);
-		if (matchEventsBy != Match.BY_EQUALITY) {
+		if (matchEventsBy != EventMatchStrategy.BY_EQUALITY) {
 			throw new IllegalStateException("Cannot add transition, wrong match strategy");
 		}
 		addTransition(from, to, guard, action, event, null, false);
@@ -410,9 +410,9 @@ public class StateMachine<S, E> {
 		if (eventOrNull == null) {
 			return t.event == null && t.eventClass == null;
 		}
-		if (matchEventsBy == Match.BY_CLASS) {
+		if (matchEventsBy == EventMatchStrategy.BY_CLASS) {
 			return eventOrNull.getClass().equals(t.eventClass);
-		} else if (matchEventsBy == Match.BY_EQUALITY) {
+		} else if (matchEventsBy == EventMatchStrategy.BY_EQUALITY) {
 			return eventOrNull.equals(t.event);
 		}
 		return false;

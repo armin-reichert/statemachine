@@ -4,7 +4,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import de.amr.statemachine.core.Match;
+import de.amr.statemachine.core.EventMatchStrategy;
 import de.amr.statemachine.core.State;
 import de.amr.statemachine.core.StateMachine;
 
@@ -49,7 +49,7 @@ public class StateMachineTest {
 		timeoutAction = new Action();
 		selfLoopAction = new Action();
 		/*@formatter:off*/
-		fsm = StateMachine.beginStateMachine(States.class, Events.class, Match.BY_EQUALITY)
+		fsm = StateMachine.beginStateMachine(States.class, Events.class, EventMatchStrategy.BY_EQUALITY)
 				.initialState(States.S1)
 				.states()
 					.state(States.S1).onEntry(entryAction)
@@ -58,7 +58,7 @@ public class StateMachineTest {
 					.state(States.S3)
 						.timeoutAfter(() -> 10)
 						.onTick(tickAction)
-					.state(States.S4).impl(new StateImpl())
+					.state(States.S4).customState(new StateImpl())
 				.transitions()
 					.when(States.S1).then(States.S1).on(Events.E1)
 					.when(States.S1).then(States.S2).on(Events.E2)

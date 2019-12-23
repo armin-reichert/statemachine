@@ -6,6 +6,6 @@ package de.amr.statemachine.core;
  * 
  * @author Armin Reichert
  */
-public enum Match {
+public enum EventMatchStrategy {
 	BY_EQUALITY, BY_CLASS
 }

@@ -21,84 +21,154 @@ public class StateMachineBuilder<S, E> {
 	private String description;
 	private S initialState;
 
-	public StateMachineBuilder(Class<S> stateLabelType, Match matchStrategy) {
-		sm = new StateMachine<>(stateLabelType, matchStrategy);
+	/**
+	 * Creates a builder for a state machine of the given state type and event match
+	 * strategy.
+	 * 
+	 * @param stateType     type used for state identification
+	 * @param matchStrategy how events are matched
+	 */
+	public StateMachineBuilder(Class<S> stateType, EventMatchStrategy matchStrategy) {
+		sm = new StateMachine<>(stateType, matchStrategy);
 	}
 
-	public StateMachineBuilder(Class<S> stateLabelType) {
-		sm = new StateMachine<>(stateLabelType);
+	/**
+	 * Creates a builder for a state machine of the given state type and a
+	 * class-based event match strategy.
+	 * 
+	 * @param stateType type used for state identification
+	 */
+	public StateMachineBuilder(Class<S> stateType) {
+		sm = new StateMachine<>(stateType);
 	}
 
-	public StateMachineBuilder(StateMachine<S, E> sm) {
+	/**
+	 * Internal constructor for builder.
+	 * 
+	 * @param sm state machine using this builder
+	 */
+	StateMachineBuilder(StateMachine<S, E> sm) {
 		this.sm = sm;
 	}
 
+	/**
+	 * Assigns the given description to the constructed state machine.
+	 * 
+	 * @param description some description
+	 * @return the builder
+	 */
 	public StateMachineBuilder<S, E> description(String description) {
 		this.description = description != null ? description : getClass().getSimpleName();
 		return this;
 	}
 
+	/**
+	 * Defines the initial state of the constructed state machine.
+	 * 
+	 * @param initialState the initial state
+	 * @return the builder
+	 */
 	public StateMachineBuilder<S, E> initialState(S initialState) {
 		this.initialState = initialState;
 		return this;
 	}
 
+	/**
+	 * Starts the state building section.
+	 * 
+	 * @return the state builder
+	 */
 	public StateBuilder states() {
 		return new StateBuilder();
 	}
 
+	/**
+	 * Builder for the states.
+	 */
 	public class StateBuilder {
 
-		private S state;
+		private S stateId;
 		private Runnable entryAction, exitAction, tickAction;
 		private boolean entryActionSet, exitActionSet, tickActionSet;
 		private IntSupplier fnTimer;
 
 		private void clear() {
-			state = null;
+			stateId = null;
 			entryAction = exitAction = tickAction = null;
 			entryActionSet = exitActionSet = tickActionSet = false;
 			fnTimer = null;
 		}
 
-		public StateBuilder state(S state) {
+		/**
+		 * Starts the construction of a state.
+		 * 
+		 * @param stateId state identifier
+		 * @return the builder
+		 */
+		public StateBuilder state(S stateId) {
 			// commit previous build if any
-			if (this.state != null) {
+			if (this.stateId != null) {
 				commit();
 			}
 			clear();
 			// start new build
-			this.state = state;
+			this.stateId = stateId;
 			return this;
 		}
 
-		public <C extends State<S, E>> StateBuilder impl(C customStateObject) {
-			if (customStateObject == null) {
+		/**
+		 * Replaces the standard state instance by the given custom state instance.
+		 * 
+		 * @param <C>                 type of state instance
+		 * @param customStateInstance custom state instance
+		 * @return the builder
+		 */
+		public <C extends State<S, E>> StateBuilder customState(C customStateInstance) {
+			if (customStateInstance == null) {
 				throw new IllegalArgumentException("Custom state object cannot be NULL");
 			}
-			sm.realizeState(state, customStateObject);
+			sm.realizeState(stateId, customStateInstance);
 			return this;
 		}
 
+		/**
+		 * Defines the timer function for this state.
+		 * 
+		 * @param fnTimer timer function (returning duration in ticks)
+		 * @return the builder
+		 */
 		public StateBuilder timeoutAfter(IntSupplier fnTimer) {
 			if (fnTimer == null) {
-				throw new IllegalStateException("Timer function cannot be null for state " + state);
+				throw new IllegalStateException("Timer function cannot be null for state " + stateId);
 			}
 			this.fnTimer = fnTimer;
 			return this;
 		}
 
+		/**
+		 * Defines a constant timer for this state.
+		 * 
+		 * @param fixedTime number of state updates until timeout
+		 * @return the builder
+		 */
 		public StateBuilder timeoutAfter(int fixedTime) {
 			if (fixedTime < 0) {
-				throw new IllegalStateException("Timer value must be positive for state " + state);
+				throw new IllegalStateException("Timer value must be positive for state " + stateId);
 			}
 			this.fnTimer = () -> fixedTime;
 			return this;
 		}
 
+		/**
+		 * Defines the action to be executed when this state is entered. Calling this
+		 * method twice leads to an error.
+		 * 
+		 * @param action some action
+		 * @return the builder
+		 */
 		public StateBuilder onEntry(Runnable action) {
 			if (entryActionSet) {
-				log.info(() -> String.format("ERROR: entry action already set: state %s in FSM %s", state,
+				log.info(() -> String.format("ERROR: entry action already set: state %s in FSM %s", stateId,
 						StateMachineBuilder.this.description));
 				throw new IllegalStateException();
 			}
@@ -107,9 +177,16 @@ public class StateMachineBuilder<S, E> {
 			return this;
 		}
 
+		/**
+		 * Defines the action to be executed when this state is left. Calling this
+		 * method twice leads to an error.
+		 * 
+		 * @param action some action
+		 * @return the builder
+		 */
 		public StateBuilder onExit(Runnable action) {
 			if (exitActionSet) {
-				log.info(() -> String.format("ERROR: exit action already set: state %s in FSM %s", state,
+				log.info(() -> String.format("ERROR: exit action already set: state %s in FSM %s", stateId,
 						StateMachineBuilder.this.description));
 				throw new IllegalStateException();
 			}
@@ -118,9 +195,17 @@ public class StateMachineBuilder<S, E> {
 			return this;
 		}
 
+		/**
+		 * Defines the action to be executed when this state is ticked. Calling this
+		 * method twice leads to an error.
+		 * 
+		 * @param action some action
+		 * @return the builder
+		 */
+
 		public StateBuilder onTick(Runnable action) {
 			if (tickActionSet) {
-				log.info(() -> String.format("ERROR: tick action already set: state %s in FSM %s", state,
+				log.info(() -> String.format("ERROR: tick action already set: state %s in FSM %s", stateId,
 						StateMachineBuilder.this.description));
 				throw new IllegalStateException();
 			}
@@ -130,7 +215,7 @@ public class StateMachineBuilder<S, E> {
 		}
 
 		private StateBuilder commit() {
-			State<S, E> stateObject = sm.state(state);
+			State<S, E> stateObject = sm.state(stateId);
 			stateObject.entryAction = entryAction;
 			stateObject.exitAction = exitAction;
 			stateObject.tickAction = tickAction;
@@ -140,125 +225,189 @@ public class StateMachineBuilder<S, E> {
 			return this;
 		}
 
+		/**
+		 * Starts the transition building section.
+		 * 
+		 * @return the transition builder
+		 */
 		public TransitionBuilder transitions() {
 			// commit previous build if any
-			if (this.state != null) {
+			if (this.stateId != null) {
 				commit();
 			}
 			return new TransitionBuilder();
 		}
 	}
 
+	/**
+	 * Transition builder.
+	 */
 	public class TransitionBuilder {
 
-		private boolean started;
-		private S from;
-		private S to;
+		private boolean transitionBuildingStarted;
+		private S sourceStateId;
+		private S targetStateId;
 		private BooleanSupplier guard;
-		private boolean timeout;
+		private boolean timeoutCondition;
 		private E event;
 		private Class<? extends E> eventType;
 		private Consumer<E> action;
 
 		private void clear() {
-			started = false;
-			from = null;
-			to = null;
+			transitionBuildingStarted = false;
+			sourceStateId = null;
+			targetStateId = null;
 			guard = null;
-			timeout = false;
+			timeoutCondition = false;
 			event = null;
 			eventType = null;
 			action = null;
 		}
 
-		public TransitionBuilder stay(S state) {
-			return when(state);
+		/**
+		 * Builds a loop transition for the given state.
+		 * 
+		 * @param stateId state identfier
+		 * @return the builder
+		 */
+		public TransitionBuilder stay(S stateId) {
+			return when(stateId);
 		}
 
-		public TransitionBuilder when(S from) {
-			if (from == null) {
+		/**
+		 * Starts a transition from the given state.
+		 * 
+		 * @param sourceStateId source state identifier
+		 * @return the builder
+		 */
+		public TransitionBuilder when(S sourceStateId) {
+			if (sourceStateId == null) {
 				throw new IllegalArgumentException("Transition source state must not be NULL");
 			}
-			if (this.from != null) {
+			if (this.sourceStateId != null) {
 				commit();
 			}
 			clear();
-			started = true;
-			this.from = this.to = from;
+			transitionBuildingStarted = true;
+			this.sourceStateId = this.targetStateId = sourceStateId;
 			return this;
 		}
 
-		public TransitionBuilder then(S to) {
-			if (to == null) {
+		/**
+		 * Finishes a transition to the given target state.
+		 * 
+		 * @param targetStateId target state identifier
+		 * @return the builder
+		 */
+		public TransitionBuilder then(S targetStateId) {
+			if (targetStateId == null) {
 				throw new IllegalArgumentException("Transition target state must not be NULL");
 			}
-			if (!started) {
+			if (!transitionBuildingStarted) {
 				throw new IllegalArgumentException("Transition building must be started with when(...) or stay(...)");
 			}
-			this.to = to;
+			this.targetStateId = targetStateId;
 			return this;
 		}
 
+		/**
+		 * Sets a condition (guard) for the currently constructed transition.
+		 * 
+		 * @param guard condition that must be fulfilled for firing this transition
+		 * @return the builder
+		 */
 		public TransitionBuilder condition(BooleanSupplier guard) {
 			if (guard == null) {
 				throw new IllegalArgumentException("Transition guard must not be NULL");
 			}
-			if (!started) {
+			if (!transitionBuildingStarted) {
 				throw new IllegalArgumentException("Transition building must be started with when(...) or stay(...)");
 			}
 			this.guard = guard;
 			return this;
 		}
 
+		/**
+		 * Specifies that this transition should fire when the timer (if any) of the
+		 * source state expires.
+		 * 
+		 * @return the builder
+		 */
 		public TransitionBuilder onTimeout() {
-			if (timeout) {
-				throw new IllegalArgumentException("Transition timeout must only be set once");
+			if (timeoutCondition) {
+				throw new IllegalArgumentException("Transition timeout condition must only be set once");
 			}
-			if (!started) {
+			if (!transitionBuildingStarted) {
 				throw new IllegalArgumentException("Transition building must be started with when(...) or stay(...)");
 			}
-			this.timeout = true;
+			this.timeoutCondition = true;
 			return this;
 		}
 
+		/**
+		 * Specifies that this transition should fire when an event of the given type
+		 * has been processed.
+		 * 
+		 * @param eventType event type
+		 * @return the builder
+		 */
 		public TransitionBuilder on(Class<? extends E> eventType) {
 			if (eventType == null) {
 				throw new IllegalArgumentException("Event type of transition must not be NULL");
 			}
-			if (!started) {
+			if (!transitionBuildingStarted) {
 				throw new IllegalArgumentException("Transition building must be started with when(...) or stay(...)");
 			}
 			this.eventType = eventType;
 			return this;
 		}
 
-		public TransitionBuilder on(E eventObject) {
-			if (eventObject == null) {
-				throw new IllegalArgumentException("Event object of transition must not be NULL");
+		/**
+		 * Specifies that this transition should fire when the given input has been
+		 * processed.
+		 * 
+		 * @param input input to the machine
+		 * @return the builder
+		 */
+		public TransitionBuilder on(E input) {
+			if (input == null) {
+				throw new IllegalArgumentException("Input of transition must not be NULL");
 			}
-			if (!started) {
+			if (!transitionBuildingStarted) {
 				throw new IllegalArgumentException("Transition building must be started with when(...) or stay(...)");
 			}
-			this.event = eventObject;
+			this.event = input;
 			return this;
 		}
 
+		/**
+		 * Specifies the action that is executed when this transition fires.
+		 * 
+		 * @param action some action consuming the event leading to this transition
+		 * @return the builder
+		 */
 		public TransitionBuilder act(Consumer<E> action) {
 			if (action == null) {
 				throw new IllegalArgumentException("Transition action must not be NULL");
 			}
-			if (!started) {
+			if (!transitionBuildingStarted) {
 				throw new IllegalArgumentException("Transition building must be started with when(...) or stay(...)");
 			}
 			this.action = action;
 			return this;
 		}
 
+		/**
+		 * Specifies the action that is executed when this transition fires.
+		 * 
+		 * @param action some action
+		 * @return the builder
+		 */
 		public TransitionBuilder act(Runnable action) {
 			if (action == null) {
 				throw new IllegalArgumentException("Transition action must not be NULL");
 			}
-			if (!started) {
+			if (!transitionBuildingStarted) {
 				throw new IllegalArgumentException("Transition building must be started with when(...) or stay(...)");
 			}
 			this.action = e -> action.run();
@@ -266,23 +415,28 @@ public class StateMachineBuilder<S, E> {
 		}
 
 		private TransitionBuilder commit() {
-			if (timeout && event != null) {
+			if (timeoutCondition && event != null) {
 				throw new IllegalStateException("Cannot specify both timeout and event object for the same transition");
 			}
-			if (timeout && eventType != null) {
+			if (timeoutCondition && eventType != null) {
 				throw new IllegalStateException("Cannot specify both timeout and event type for the same transition");
 			}
-			if (timeout) {
-				sm.addTransitionOnTimeout(from, to, guard, action);
+			if (timeoutCondition) {
+				sm.addTransitionOnTimeout(sourceStateId, targetStateId, guard, action);
 			} else {
-				sm.addTransition(from, to, guard, action, event, eventType, false);
+				sm.addTransition(sourceStateId, targetStateId, guard, action, event, eventType, false);
 			}
 			clear();
 			return this;
 		}
 
+		/**
+		 * Ends building of the state machine.
+		 * 
+		 * @return the constructed state machine
+		 */
 		public StateMachine<S, E> endStateMachine() {
-			if (from != null) {
+			if (sourceStateId != null) {
 				commit();
 			}
 			sm.setDescription(description == null ? sm.getClass().getSimpleName() : description);
