@@ -1,6 +1,8 @@
 package de.amr.statemachine.client;
 
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -10,31 +12,36 @@ import de.amr.statemachine.core.State;
 import de.amr.statemachine.core.StateMachine;
 
 /**
- * Prototypical implementation of the {@link FsmControlled} interface which can
- * be used as a delegate by an entity class.
+ * Prototypical implementation of the {@link FsmControlled} interface which can be used as a
+ * delegate by an entity class.
  * <p>
- * When an entity cannot inherit directly from the {@link StateMachine} class,
- * it can implement the {@link FsmContainer} interface which delegates to an
- * instance of this class.
+ * When an entity cannot inherit directly from the {@link StateMachine} class, it can implement the
+ * {@link FsmContainer} interface which delegates to an instance of this class.
  * 
  * @author Armin Reichert
  *
- * @param <S> state type of the finite-state machine
- * @param <E> event type of the finite-state machine
+ * @param <S>
+ *          state type of the finite-state machine
+ * @param <E>
+ *          event type of the finite-state machine
  * 
  */
 public class FsmComponent<S, E> implements FsmControlled<S, E> {
 
-	public final StateMachine<S, E> fsm;
-	public final Set<Consumer<E>> listeners;
-	public Predicate<E> publishedEventIsLogged;
-	public Logger logger;
+	private final StateMachine<S, E> fsm;
+	private final Set<Consumer<E>> listeners;
+	private final List<Predicate<E>> loggingBlacklist;
+	private Logger logger;
 
 	public FsmComponent(StateMachine<S, E> fsm) {
 		this.fsm = fsm;
-		publishedEventIsLogged = event -> true;
+		loggingBlacklist = new ArrayList<>();
 		listeners = new LinkedHashSet<>();
 		logger = Logger.getGlobal();
+	}
+
+	public void doNotLog(Predicate<E> condition) {
+		loggingBlacklist.add(condition);
 	}
 
 	@Override
@@ -59,7 +66,7 @@ public class FsmComponent<S, E> implements FsmControlled<S, E> {
 
 	@Override
 	public void publish(E event) {
-		if (publishedEventIsLogged.test(event)) {
+		if (loggingBlacklist.stream().noneMatch(condition -> condition.test(event))) {
 			logger.info(() -> String.format("%s published event '%s'", name(), event));
 		}
 		listeners.forEach(listener -> listener.accept(event));
