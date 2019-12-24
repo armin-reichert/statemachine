@@ -22,7 +22,7 @@ public interface FsmContainer<S, E> extends FsmControlled<S, E> {
 	 * 
 	 * @return delegate component
 	 */
-	FsmControlled<S, E> fsmComponent();
+	FsmComponent<S, E> fsmComponent();
 
 	@Override
 	default StateMachine<S, E> fsm() {
@@ -37,6 +37,11 @@ public interface FsmContainer<S, E> extends FsmControlled<S, E> {
 	@Override
 	default void removeEventListener(Consumer<E> listener) {
 		fsmComponent().removeEventListener(listener);
+	}
+
+	@Override
+	default void publish(E event) {
+		fsmComponent().publish(event);
 	}
 
 	@Override

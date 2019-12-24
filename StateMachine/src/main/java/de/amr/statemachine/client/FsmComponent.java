@@ -57,6 +57,7 @@ public class FsmComponent<S, E> implements FsmControlled<S, E> {
 		listeners.remove(listener);
 	}
 
+	@Override
 	public void publish(E event) {
 		if (publishedEventIsLogged.test(event)) {
 			logger.info(() -> String.format("%s published event '%s'", name(), event));

@@ -52,6 +52,13 @@ public interface FsmControlled<S, E> {
 	void removeEventListener(Consumer<E> listener);
 
 	/**
+	 * Published an event to the registered listeners.
+	 * 
+	 * @param event event to be published
+	 */
+	void publish(E event);
+
+	/**
 	 * Sets the new state of this entity. Normally not used directly.
 	 * 
 	 * @param state the new state
