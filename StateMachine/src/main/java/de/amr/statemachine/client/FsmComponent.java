@@ -40,6 +40,13 @@ public class FsmComponent<S, E> implements FsmControlled<S, E> {
 		logger = Logger.getGlobal();
 	}
 
+	@Override
+	public String toString() {
+		String duration = state().getDuration() == State.ENDLESS ? Character.toString('\u221E')
+				: String.valueOf(state().getDuration());
+		return String.format("(%s, %s, %d of %s ticks consumed]", name(), getState(), state().getTicksConsumed(), duration);
+	}
+
 	public void doNotLog(Predicate<E> condition) {
 		loggingBlacklist.add(condition);
 	}
@@ -67,7 +74,7 @@ public class FsmComponent<S, E> implements FsmControlled<S, E> {
 	@Override
 	public void publish(E event) {
 		if (loggingBlacklist.stream().noneMatch(condition -> condition.test(event))) {
-			logger.info(() -> String.format("%s published event '%s'", name(), event));
+			logger.info(() -> String.format("%s published event '%s'", this, event));
 		}
 		listeners.forEach(listener -> listener.accept(event));
 	}
