@@ -12,7 +12,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
-import java.util.function.IntSupplier;
 import java.util.logging.Logger;
 
 /**
@@ -71,11 +70,12 @@ public class StateMachine<S, E> {
 	private S initialState;
 	private S currentState;
 	private final EventMatchStrategy matchEventsBy;
+	private MissingTransitionBehavior missingTransitionBehavior;
 	private final Deque<E> eventQ;
 	private final Map<S, State<S, E>> stateMap;
 	private final Map<S, List<Transition<S, E>>> transitionMap;
 	private StateMachineTracer<S, E> tracer;
-	private MissingTransitionBehavior missingTransitionBehavior;
+	private int ticksPerSecond = 60;
 
 	/**
 	 * Creates a new state machine.
@@ -90,7 +90,7 @@ public class StateMachine<S, E> {
 		stateMap = stateLabelClass.isEnum() ? new EnumMap(stateLabelClass)
 				: stateLabelClass == Boolean.class ? new BooleanMap() : new HashMap<>(7);
 		transitionMap = new HashMap<>(7);
-		tracer = new StateMachineTracer<>(this, Logger.getGlobal(), () -> 60);
+		tracer = new StateMachineTracer<>(this, Logger.getGlobal(), ticksPerSecond);
 		missingTransitionBehavior = MissingTransitionBehavior.EXCEPTION;
 	}
 
@@ -106,11 +106,20 @@ public class StateMachine<S, E> {
 	/**
 	 * Forwards tracing to the given logger.
 	 * 
-	 * @param log              a logger
-	 * @param fnTicksPerSecond the update frequency for this machine
+	 * @param logger a logger
 	 */
-	public void traceTo(Logger log, IntSupplier fnTicksPerSecond) {
-		tracer = new StateMachineTracer<>(this, log, fnTicksPerSecond);
+	public void setLogger(Logger logger) {
+		tracer.setLogger(logger);
+	}
+
+	/**
+	 * Sets the frame rate (ticks per second) with which this machine works (used by
+	 * tracer).
+	 * 
+	 * @param ticksPerSecond ticks per second
+	 */
+	public void setFPS(int ticksPerSecond) {
+		this.ticksPerSecond = ticksPerSecond;
 	}
 
 	/**

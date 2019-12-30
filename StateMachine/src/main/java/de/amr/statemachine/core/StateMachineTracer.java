@@ -2,7 +2,6 @@ package de.amr.statemachine.core;
 
 import static java.lang.String.format;
 
-import java.util.function.IntSupplier;
 import java.util.logging.Logger;
 
 /**
@@ -10,54 +9,56 @@ import java.util.logging.Logger;
  * 
  * @author Armin Reichert
  *
- * @param   <S>
- *            state identifier type
- * @param E
- *            event type
+ * @param <S> state identifier type
+ * @param E   event type
  */
 public class StateMachineTracer<S, E> implements StateMachineListener<S, E> {
 
-	private final StateMachine<S, ?> sm;
-	private final Logger log;
-	private final IntSupplier fnTicksPerSecond;
+	private final StateMachine<S, ?> fsm;
+	private final int ticksPerSecond;
+	private Logger logger;
 
-	public StateMachineTracer(StateMachine<S, ?> sm, Logger log, IntSupplier fnTicksPerSecond) {
-		this.sm = sm;
-		this.log = log;
-		this.fnTicksPerSecond = fnTicksPerSecond;
+	public StateMachineTracer(StateMachine<S, ?> sm, Logger log, int ticksPerSecond) {
+		this.fsm = sm;
+		this.logger = log;
+		this.ticksPerSecond = ticksPerSecond;
+	}
+
+	public void setLogger(Logger logger) {
+		this.logger = logger;
 	}
 
 	@Override
 	public void stateCreated(S state) {
-		log.info(format("%s created state '%s'", sm.getDescription(), state));
+		logger.info(format("%s created state '%s'", fsm.getDescription(), state));
 	}
 
 	@Override
 	public void unhandledEvent(E event) {
-		log.info(format("%s in state %s could not handle '%s'", sm.getDescription(), sm.getState(), event));
+		logger.info(format("%s in state %s could not handle '%s'", fsm.getDescription(), fsm.getState(), event));
 	}
 
 	@Override
 	public void enteringInitialState(S initialState) {
-		log.info(format("%s entering initial state:", sm.getDescription()));
+		logger.info(format("%s entering initial state:", fsm.getDescription()));
 		enteringState(initialState);
 	}
 
 	@Override
 	public void enteringState(S enteredState) {
-		int duration = sm.state(enteredState).fnTimer.getAsInt();
+		int duration = fsm.state(enteredState).fnTimer.getAsInt();
 		if (duration != State.ENDLESS) {
-			float seconds = (float) duration / fnTicksPerSecond.getAsInt();
-			log.info(format("%s entering state '%s' for %.2f seconds (%d frames)", sm.getDescription(),
-					enteredState, seconds, duration));
+			float seconds = (float) duration / ticksPerSecond;
+			logger.info(format("%s entering state '%s' for %.2f seconds (%d frames)", fsm.getDescription(), enteredState,
+					seconds, duration));
 		} else {
-			log.info(format("%s entering state '%s'", sm.getDescription(), enteredState));
+			logger.info(format("%s entering state '%s'", fsm.getDescription(), enteredState));
 		}
 	}
 
 	@Override
 	public void exitingState(S exitedState) {
-		log.info(format("%s exiting state '%s'", sm.getDescription(), exitedState));
+		logger.info(format("%s exiting state '%s'", fsm.getDescription(), exitedState));
 	}
 
 	@Override
@@ -65,18 +66,18 @@ public class StateMachineTracer<S, E> implements StateMachineListener<S, E> {
 		if (event == null) {
 			if (t.from != t.to) {
 				if (t.timeout) {
-					log.info(format("%s changing from '%s' to '%s (timeout)'", sm.getDescription(), t.from, t.to));
+					logger.info(format("%s changing from '%s' to '%s (timeout)'", fsm.getDescription(), t.from, t.to));
 				} else {
-					log.info(format("%s changing from '%s' to '%s'", sm.getDescription(), t.from, t.to));
+					logger.info(format("%s changing from '%s' to '%s'", fsm.getDescription(), t.from, t.to));
 				}
 			} else {
-				log.info(format("%s stays '%s'", sm.getDescription(), t.from));
+				logger.info(format("%s stays '%s'", fsm.getDescription(), t.from));
 			}
 		} else {
 			if (t.from != t.to) {
-				log.info(format("%s changing from '%s' to '%s' on '%s'", sm.getDescription(), t.from, t.to, event));
+				logger.info(format("%s changing from '%s' to '%s' on '%s'", fsm.getDescription(), t.from, t.to, event));
 			} else {
-				log.info(format("%s stays '%s' on '%s'", sm.getDescription(), t.from, event));
+				logger.info(format("%s stays '%s' on '%s'", fsm.getDescription(), t.from, event));
 			}
 		}
 	}
