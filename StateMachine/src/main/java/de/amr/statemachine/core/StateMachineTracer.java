@@ -30,17 +30,17 @@ public class StateMachineTracer<S, E> implements StateMachineListener<S, E> {
 
 	@Override
 	public void stateCreated(S state) {
-		logger.info(format("%s created state '%s'", fsm.getDescription(), state));
+		logger.info(() -> format("%s created state '%s'", fsm.getDescription(), state));
 	}
 
 	@Override
 	public void unhandledEvent(E event) {
-		logger.info(format("%s in state %s could not handle '%s'", fsm.getDescription(), fsm.getState(), event));
+		logger.info(() -> format("%s in state %s could not handle '%s'", fsm.getDescription(), fsm.getState(), event));
 	}
 
 	@Override
 	public void enteringInitialState(S initialState) {
-		logger.info(format("%s entering initial state:", fsm.getDescription()));
+		logger.info(() -> format("%s entering initial state (%s)", fsm.getDescription(), initialState));
 		enteringState(initialState);
 	}
 
@@ -49,16 +49,16 @@ public class StateMachineTracer<S, E> implements StateMachineListener<S, E> {
 		int duration = fsm.state(enteredState).fnTimer.getAsInt();
 		if (duration != State.ENDLESS) {
 			float seconds = (float) duration / ticksPerSecond;
-			logger.info(format("%s entering state '%s' for %.2f seconds (%d frames)", fsm.getDescription(), enteredState,
-					seconds, duration));
+			logger.info(() -> format("%s entering state '%s' for %.2f seconds (%d frames)", fsm.getDescription(),
+					enteredState, seconds, duration));
 		} else {
-			logger.info(format("%s entering state '%s'", fsm.getDescription(), enteredState));
+			logger.info(() -> format("%s entering state '%s'", fsm.getDescription(), enteredState));
 		}
 	}
 
 	@Override
 	public void exitingState(S exitedState) {
-		logger.info(format("%s exiting state '%s'", fsm.getDescription(), exitedState));
+		logger.info(() -> format("%s exiting state  '%s'", fsm.getDescription(), exitedState));
 	}
 
 	@Override
@@ -66,18 +66,18 @@ public class StateMachineTracer<S, E> implements StateMachineListener<S, E> {
 		if (event == null) {
 			if (t.from != t.to) {
 				if (t.timeout) {
-					logger.info(format("%s changing from '%s' to '%s (timeout)'", fsm.getDescription(), t.from, t.to));
+					logger.info(() -> format("%s changing from  '%s' to '%s (timeout)'", fsm.getDescription(), t.from, t.to));
 				} else {
-					logger.info(format("%s changing from '%s' to '%s'", fsm.getDescription(), t.from, t.to));
+					logger.info(() -> format("%s changing from  '%s' to '%s'", fsm.getDescription(), t.from, t.to));
 				}
 			} else {
-				logger.info(format("%s stays '%s'", fsm.getDescription(), t.from));
+				logger.info(() -> format("%s stays '%s'", fsm.getDescription(), t.from));
 			}
 		} else {
 			if (t.from != t.to) {
-				logger.info(format("%s changing from '%s' to '%s' on '%s'", fsm.getDescription(), t.from, t.to, event));
+				logger.info(() -> format("%s changing from '%s' to '%s' on '%s'", fsm.getDescription(), t.from, t.to, event));
 			} else {
-				logger.info(format("%s stays '%s' on '%s'", fsm.getDescription(), t.from, event));
+				logger.info(() -> format("%s stays '%s' on '%s'", fsm.getDescription(), t.from, event));
 			}
 		}
 	}
