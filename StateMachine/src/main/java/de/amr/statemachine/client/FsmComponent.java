@@ -12,18 +12,17 @@ import de.amr.statemachine.core.State;
 import de.amr.statemachine.core.StateMachine;
 
 /**
- * Prototypical implementation of the {@link FsmControlled} interface which can be used as a
- * delegate by an entity class.
+ * Prototypical implementation of the {@link FsmControlled} interface which can
+ * be used as a delegate by an entity class.
  * <p>
- * When an entity cannot inherit directly from the {@link StateMachine} class, it can implement the
- * {@link FsmContainer} interface which delegates to an instance of this class.
+ * When an entity cannot inherit directly from the {@link StateMachine} class,
+ * it can implement the {@link FsmContainer} interface which delegates to an
+ * instance of this class.
  * 
  * @author Armin Reichert
  *
- * @param <S>
- *          state type of the finite-state machine
- * @param <E>
- *          event type of the finite-state machine
+ * @param <S> state type of the finite-state machine
+ * @param <E> event type of the finite-state machine
  * 
  */
 public class FsmComponent<S, E> implements FsmControlled<S, E> {
@@ -47,7 +46,7 @@ public class FsmComponent<S, E> implements FsmControlled<S, E> {
 		return String.format("(%s, %s, %d of %s ticks consumed]", name(), getState(), state().getTicksConsumed(), duration);
 	}
 
-	public void doNotLog(Predicate<E> condition) {
+	public void doNotLogEventPublishingIf(Predicate<E> condition) {
 		loggingBlacklist.add(condition);
 	}
 

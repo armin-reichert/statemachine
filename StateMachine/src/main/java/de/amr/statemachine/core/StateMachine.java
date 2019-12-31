@@ -12,6 +12,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.logging.Logger;
 
 /**
@@ -110,6 +111,15 @@ public class StateMachine<S, E> {
 	 */
 	public void setLogger(Logger logger) {
 		tracer.setLogger(logger);
+	}
+
+	/**
+	 * Supresses logging for an event.
+	 * 
+	 * @param condition when event is not logged
+	 */
+	public void doNotLogEventProcessingIf(Predicate<E> condition) {
+		tracer.doNotLog(condition);
 	}
 
 	/**

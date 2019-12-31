@@ -2,6 +2,10 @@ package de.amr.statemachine.core;
 
 import static java.lang.String.format;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 /**
@@ -14,18 +18,30 @@ import java.util.logging.Logger;
  */
 public class StateMachineTracer<S, E> implements StateMachineListener<S, E> {
 
-	private final StateMachine<S, ?> fsm;
+	private final StateMachine<S, E> fsm;
 	private final int ticksPerSecond;
 	private Logger logger;
+	private final List<Predicate<E>> loggingBlacklist;
 
-	public StateMachineTracer(StateMachine<S, ?> sm, Logger log, int ticksPerSecond) {
+	public StateMachineTracer(StateMachine<S, E> sm, Logger log, int ticksPerSecond) {
 		this.fsm = sm;
 		this.logger = log;
 		this.ticksPerSecond = ticksPerSecond;
+		this.loggingBlacklist = new ArrayList<>();
 	}
 
 	public void setLogger(Logger logger) {
 		this.logger = logger;
+	}
+
+	public void doNotLog(Predicate<E> condition) {
+		loggingBlacklist.add(condition);
+	}
+
+	private void eventInfo(E event, Supplier<String> fnMessage) {
+		if (loggingBlacklist.stream().noneMatch(condition -> condition.test(event))) {
+			logger.info(fnMessage);
+		}
 	}
 
 	@Override
@@ -75,9 +91,10 @@ public class StateMachineTracer<S, E> implements StateMachineListener<S, E> {
 			}
 		} else {
 			if (t.from != t.to) {
-				logger.info(() -> format("%s changing from '%s' to '%s' on '%s'", fsm.getDescription(), t.from, t.to, event));
+				eventInfo(event,
+						() -> format("%s changing from '%s' to '%s' on '%s'", fsm.getDescription(), t.from, t.to, event));
 			} else {
-				logger.info(() -> format("%s stays '%s' on '%s'", fsm.getDescription(), t.from, event));
+				eventInfo(event, () -> format("%s stays '%s' on '%s'", fsm.getDescription(), t.from, event));
 			}
 		}
 	}
