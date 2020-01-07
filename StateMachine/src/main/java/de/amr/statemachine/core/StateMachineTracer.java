@@ -30,6 +30,10 @@ public class StateMachineTracer<S, E> implements StateMachineListener<S, E> {
 		this.loggingBlacklist = new ArrayList<>();
 	}
 
+	public Logger getLogger() {
+		return logger;
+	}
+
 	public void setLogger(Logger logger) {
 		this.logger = logger;
 	}

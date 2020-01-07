@@ -3,11 +3,10 @@ package de.amr.statemachine.client;
 import java.util.function.Consumer;
 
 import de.amr.statemachine.core.State;
-import de.amr.statemachine.core.StateMachine;
 
 /**
  * This interface is implemented by entities that implement the
- * {@link FsmControlled} interface by delegating to a component implementing
+ * {@link Fsm} interface by delegating to a component implementing
  * that interface.
  * 
  * @author Armin Reichert
@@ -15,19 +14,14 @@ import de.amr.statemachine.core.StateMachine;
  * @param <S> state type of the finite-state machine
  * @param <E> event type of the finite-state machine
  */
-public interface FsmContainer<S, E> extends FsmControlled<S, E> {
+public interface FsmContainer<S, E> extends Fsm<S, E> {
 
 	/**
-	 * The component (delegate) implementing the {@link FsmControlled} interface.
+	 * The component (delegate) implementing the {@link Fsm} interface.
 	 * 
 	 * @return delegate component
 	 */
 	FsmComponent<S, E> fsmComponent();
-
-	@Override
-	default StateMachine<S, E> fsm() {
-		return fsmComponent().fsm();
-	}
 
 	@Override
 	default void addEventListener(Consumer<E> listener) {
@@ -63,6 +57,11 @@ public interface FsmContainer<S, E> extends FsmControlled<S, E> {
 	@Override
 	default State<S, E> state() {
 		return fsmComponent().state();
+	}
+
+	@Override
+	default State<S, E> state(S state) {
+		return fsmComponent().state(state);
 	}
 
 	@Override

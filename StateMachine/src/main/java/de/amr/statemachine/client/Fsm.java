@@ -3,7 +3,6 @@ package de.amr.statemachine.client;
 import java.util.function.Consumer;
 
 import de.amr.statemachine.core.State;
-import de.amr.statemachine.core.StateMachine;
 
 /**
  * This interface is implemented by entities which are controlled by a
@@ -15,7 +14,7 @@ import de.amr.statemachine.core.StateMachine;
  * @param <S> state type of the finite-state machine
  * @param <E> event type of the finite-state machine
  */
-public interface FsmControlled<S, E> {
+public interface Fsm<S, E> {
 
 	/**
 	 * Initialization hook.
@@ -26,16 +25,6 @@ public interface FsmControlled<S, E> {
 	 * Update hook.
 	 */
 	void update();
-
-	/**
-	 * @return descriptive name, used by tracing
-	 */
-	String name();
-
-	/**
-	 * @return state machine controlling this entity
-	 */
-	StateMachine<S, E> fsm();
 
 	/**
 	 * Adds listener for events
@@ -83,6 +72,12 @@ public interface FsmControlled<S, E> {
 	 *         timer.
 	 */
 	State<S, E> state();
+
+	/**
+	 * @return internal state object corresponding to specified state. Gives access
+	 *         to timer.
+	 */
+	State<S, E> state(S state);
 
 	/**
 	 * Lets the controlling state machine immedialtely process the given event.

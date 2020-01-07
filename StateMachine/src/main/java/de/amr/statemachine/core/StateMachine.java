@@ -114,6 +114,13 @@ public class StateMachine<S, E> {
 	}
 
 	/**
+	 * @return the logger used for tracing this state machine's operation
+	 */
+	public Logger getLogger() {
+		return tracer.getLogger();
+	}
+
+	/**
 	 * Supresses logging for an event.
 	 * 
 	 * @param condition when event is not logged
