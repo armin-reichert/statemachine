@@ -330,7 +330,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 
 	/**
 	 * Sets state machine directly to the given state. The state's entry action is
-	 * executed.
+	 * executed and a state timer, if defined, gets reset.
 	 * 
 	 * @param state new state
 	 */
@@ -338,6 +338,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	public void setState(S state) {
 		currentState = state;
 		state().onEntry();
+		state().resetTimer();
 	}
 
 	/**
