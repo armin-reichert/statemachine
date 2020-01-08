@@ -1,13 +1,14 @@
-package de.amr.statemachine.client;
+package de.amr.statemachine.api;
 
 import java.util.function.Consumer;
+import java.util.function.Predicate;
+import java.util.logging.Logger;
 
 import de.amr.statemachine.core.State;
+import de.amr.statemachine.core.StateMachine.MissingTransitionBehavior;
 
 /**
- * This interface is implemented by entities which are controlled by a
- * finite-state machine and can register event listeners for their published
- * events.
+ * Interface for access by state machine clients.
  * 
  * @author Armin Reichert
  *
@@ -48,6 +49,34 @@ public interface Fsm<S, E> {
 	void publish(E event);
 
 	/**
+	 * Sets the logger where trace messages will be written.
+	 * 
+	 * @param logger the logger
+	 */
+	void setLogger(Logger logger);
+
+	/**
+	 * Supresses logging for an event.
+	 * 
+	 * @param condition when event is not logged
+	 */
+	void doNotLogEventProcessingIf(Predicate<E> condition);
+
+	/**
+	 * Supresses logging for publishing an event.
+	 * 
+	 * @param condition when event is not logged
+	 */
+	void doNotLogEventPublishingIf(Predicate<E> condition);
+
+	/**
+	 * Defines how the state machine reacts to missing transitions.
+	 * 
+	 * @param missingTransitionBehavior behavior in case no transition is available
+	 */
+	void setMissingTransitionBehavior(MissingTransitionBehavior missingTransitionBehavior);
+
+	/**
 	 * Sets the new state of this entity. Normally not used directly.
 	 * 
 	 * @param state the new state
@@ -71,13 +100,13 @@ public interface Fsm<S, E> {
 	 * @return internal state object corresponding to current state. Gives access to
 	 *         timer.
 	 */
-	State<S, E> state();
+	<StateType extends State<S, E>> StateType state();
 
 	/**
 	 * @return internal state object corresponding to specified state. Gives access
 	 *         to timer.
 	 */
-	State<S, E> state(S state);
+	<StateType extends State<S, E>> StateType state(S state);
 
 	/**
 	 * Lets the controlling state machine immedialtely process the given event.

@@ -6,14 +6,18 @@ import java.util.Arrays;
 import java.util.Deque;
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
+
+import de.amr.statemachine.api.Fsm;
 
 /**
  * A finite state machine.
@@ -23,7 +27,7 @@ import java.util.logging.Logger;
  * 
  * @author Armin Reichert
  */
-public class StateMachine<S, E> {
+public class StateMachine<S, E> implements Fsm<S, E> {
 
 	public enum MissingTransitionBehavior {
 		IGNORE, LOG, EXCEPTION;
@@ -77,6 +81,8 @@ public class StateMachine<S, E> {
 	private final Map<S, List<Transition<S, E>>> transitionMap;
 	private StateMachineTracer<S, E> tracer;
 	private int ticksPerSecond = 60;
+	private final Set<Consumer<E>> listeners = new LinkedHashSet<>();
+	private final List<Predicate<E>> loggingBlacklist = new ArrayList<>();
 
 	/**
 	 * Creates a new state machine.
@@ -109,6 +115,7 @@ public class StateMachine<S, E> {
 	 * 
 	 * @param logger a logger
 	 */
+	@Override
 	public void setLogger(Logger logger) {
 		tracer.setLogger(logger);
 	}
@@ -120,13 +127,14 @@ public class StateMachine<S, E> {
 		return tracer.getLogger();
 	}
 
-	/**
-	 * Supresses logging for an event.
-	 * 
-	 * @param condition when event is not logged
-	 */
+	@Override
 	public void doNotLogEventProcessingIf(Predicate<E> condition) {
 		tracer.doNotLog(condition);
+	}
+
+	@Override
+	public void doNotLogEventPublishingIf(Predicate<E> condition) {
+		loggingBlacklist.add(condition);
 	}
 
 	/**
@@ -167,6 +175,7 @@ public class StateMachine<S, E> {
 	 * 
 	 * @param missingTransitionBehavior behavior in case no transition is available
 	 */
+	@Override
 	public void setMissingTransitionBehavior(MissingTransitionBehavior missingTransitionBehavior) {
 		this.missingTransitionBehavior = missingTransitionBehavior;
 	}
@@ -295,6 +304,7 @@ public class StateMachine<S, E> {
 	 * 
 	 * @param event some input / event
 	 */
+	@Override
 	public void process(E event) {
 		enqueue(event);
 		update();
@@ -303,6 +313,7 @@ public class StateMachine<S, E> {
 	/**
 	 * @return the current state (identifier)
 	 */
+	@Override
 	public S getState() {
 		return currentState;
 	}
@@ -311,6 +322,7 @@ public class StateMachine<S, E> {
 	 * @param states list of states
 	 * @return if this state machine currently is in one of the given states
 	 */
+	@Override
 	@SuppressWarnings("unchecked")
 	public boolean is(S... states) {
 		return Arrays.stream(states).anyMatch(s -> s.equals(getState()));
@@ -322,6 +334,7 @@ public class StateMachine<S, E> {
 	 * 
 	 * @param state new state
 	 */
+	@Override
 	public void setState(S state) {
 		currentState = state;
 		state().onEntry();
@@ -330,6 +343,7 @@ public class StateMachine<S, E> {
 	/**
 	 * @return the state object of the current state
 	 */
+	@Override
 	public <StateType extends State<S, E>> StateType state() {
 		if (currentState == null) {
 			throw new IllegalStateException("Cannot access current state object, state machine not initialized.");
@@ -344,6 +358,7 @@ public class StateMachine<S, E> {
 	 * @param state       a state identifier
 	 * @return the state object for the given state identifier
 	 */
+	@Override
 	@SuppressWarnings("unchecked")
 	public <StateType extends State<S, E>> StateType state(S state) {
 		if (!stateMap.containsKey(state)) {
@@ -372,6 +387,7 @@ public class StateMachine<S, E> {
 	 * Initializes this state machine by switching to the initial state and
 	 * executing the initial state's (optional) entry action.
 	 */
+	@Override
 	public void init() {
 		if (initialState == null) {
 			throw new IllegalStateException("Cannot initialize state machine, no initial state defined.");
@@ -390,6 +406,7 @@ public class StateMachine<S, E> {
 	 * 
 	 * @throws IllegalStateException if no matching transition is found
 	 */
+	@Override
 	public void update() {
 		if (currentState == null) {
 			throw new IllegalStateException(
@@ -461,5 +478,23 @@ public class StateMachine<S, E> {
 			newState.resetTimer();
 			newState.onEntry();
 		}
+	}
+
+	@Override
+	public void addEventListener(Consumer<E> listener) {
+		listeners.add(listener);
+	}
+
+	@Override
+	public void removeEventListener(Consumer<E> listener) {
+		listeners.remove(listener);
+	}
+
+	@Override
+	public void publish(E event) {
+		if (loggingBlacklist.stream().noneMatch(condition -> condition.test(event))) {
+			getLogger().info(() -> String.format("%s published event '%s'", this, event));
+		}
+		listeners.forEach(listener -> listener.accept(event));
 	}
 }
