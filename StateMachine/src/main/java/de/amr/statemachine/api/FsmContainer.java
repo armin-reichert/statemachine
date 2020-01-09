@@ -66,6 +66,11 @@ public interface FsmContainer<S, E> extends Fsm<S, E> {
 	default void setState(S state) {
 		fsm().setState(state);
 	}
+	
+	@Override
+	default void resumeState(S state) {
+		fsm().resumeState(state);
+	}
 
 	@Override
 	default S getState() {
