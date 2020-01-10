@@ -124,20 +124,11 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 		this(stateLabelClass, EventMatchStrategy.BY_CLASS);
 	}
 
-	/**
-	 * Forwards tracing to the given logger.
-	 * 
-	 * @param logger
-	 *                 a logger
-	 */
 	@Override
 	public void setLogger(Logger logger) {
 		tracer.setLogger(logger);
 	}
 
-	/**
-	 * @return the logger used for tracing this state machine's operation
-	 */
 	public Logger getLogger() {
 		return tracer.getLogger();
 	}
@@ -335,6 +326,24 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 		addTransition(from, to, guard, action, null, null, false);
 	}
 
+	@Override
+	public void addEventListener(Consumer<E> listener) {
+		listeners.add(listener);
+	}
+
+	@Override
+	public void removeEventListener(Consumer<E> listener) {
+		listeners.remove(listener);
+	}
+
+	@Override
+	public void publish(E event) {
+		if (loggingBlacklist.stream().noneMatch(condition -> condition.test(event))) {
+			getLogger().info(() -> String.format("%s published event '%s'", this, event));
+		}
+		listeners.forEach(listener -> listener.accept(event));
+	}
+
 	/**
 	 * Adds an input (event) to the input queue of this state machine.
 	 * 
@@ -346,31 +355,17 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 		eventQ.add(event);
 	}
 
-	/**
-	 * Processes the given event.
-	 * 
-	 * @param event
-	 *                some input / event
-	 */
 	@Override
 	public void process(E event) {
 		enqueue(event);
 		update();
 	}
 
-	/**
-	 * @return the current state (identifier)
-	 */
 	@Override
 	public S getState() {
 		return currentState;
 	}
 
-	/**
-	 * @param states
-	 *                 list of states
-	 * @return if this state machine currently is in one of the given states
-	 */
 	@Override
 	@SuppressWarnings("unchecked")
 	public boolean is(S... states) {
@@ -398,15 +393,6 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 		return state(currentState);
 	}
 
-	/**
-	 * Returns the object representing the given state. It is created on-demand.
-	 * 
-	 * @param       <StateType>
-	 *                subtype of default state class
-	 * @param state
-	 *                a state identifier
-	 * @return the state object for the given state identifier
-	 */
 	@Override
 	@SuppressWarnings("unchecked")
 	public <StateType extends State<S, E>> StateType state(S state) {
@@ -434,10 +420,6 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 		return stateObject;
 	}
 
-	/**
-	 * Initializes this state machine by switching to the initial state and executing the initial state's (optional) entry
-	 * action.
-	 */
 	@Override
 	public void init() {
 		if (initialState == null) {
@@ -449,14 +431,6 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 		state(currentState).onEntry();
 	}
 
-	/**
-	 * Updates (reads input, fires first matching transition) this state machine. If the event queue is empty, the machine
-	 * looks for a transition that doesn't need input and executes it. If no such transition exists, the {@code onTick}
-	 * action of the current state is executed.
-	 * 
-	 * @throws IllegalStateException
-	 *                                 if no matching transition is found
-	 */
 	@Override
 	public void update() {
 		if (currentState == null) {
@@ -531,23 +505,5 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 			newState.resetTimer();
 			newState.onEntry();
 		}
-	}
-
-	@Override
-	public void addEventListener(Consumer<E> listener) {
-		listeners.add(listener);
-	}
-
-	@Override
-	public void removeEventListener(Consumer<E> listener) {
-		listeners.remove(listener);
-	}
-
-	@Override
-	public void publish(E event) {
-		if (loggingBlacklist.stream().noneMatch(condition -> condition.test(event))) {
-			getLogger().info(() -> String.format("%s published event '%s'", this, event));
-		}
-		listeners.forEach(listener -> listener.accept(event));
 	}
 }
