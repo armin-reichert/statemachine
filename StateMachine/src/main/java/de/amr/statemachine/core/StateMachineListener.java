@@ -3,6 +3,8 @@ package de.amr.statemachine.core;
 public interface StateMachineListener<S, E> {
 
 	void stateCreated(S state);
+	
+	void stateTimerReset(S state);
 
 	void unhandledEvent(E event);
 

@@ -142,6 +142,10 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 		return tracer.getLogger();
 	}
 
+	Optional<StateMachineTracer<S, E>> getTracer() {
+		return Optional.ofNullable(tracer);
+	}
+
 	@Override
 	public void doNotLogEventProcessingIf(Predicate<E> condition) {
 		tracer.doNotLog(condition);

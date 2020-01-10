@@ -13,8 +13,10 @@ import java.util.logging.Logger;
  * 
  * @author Armin Reichert
  *
- * @param <S> state identifier type
- * @param E   event type
+ * @param   <S>
+ *            state identifier type
+ * @param E
+ *            event type
  */
 public class StateMachineTracer<S, E> implements StateMachineListener<S, E> {
 
@@ -54,6 +56,11 @@ public class StateMachineTracer<S, E> implements StateMachineListener<S, E> {
 	}
 
 	@Override
+	public void stateTimerReset(S state) {
+		logger.info(() -> format("%s did reset timer for state '%s'", fsm.getDescription(), state));
+	}
+
+	@Override
 	public void unhandledEvent(E event) {
 		logger.info(() -> format("%s in state %s could not handle '%s'", fsm.getDescription(), fsm.getState(), event));
 	}
@@ -71,7 +78,8 @@ public class StateMachineTracer<S, E> implements StateMachineListener<S, E> {
 			float seconds = (float) duration / ticksPerSecond;
 			logger.info(() -> format("%s entering state '%s' for %.2f seconds (%d frames)", fsm.getDescription(),
 					enteredState, seconds, duration));
-		} else {
+		}
+		else {
 			logger.info(() -> format("%s entering state '%s'", fsm.getDescription(), enteredState));
 		}
 	}
@@ -87,17 +95,21 @@ public class StateMachineTracer<S, E> implements StateMachineListener<S, E> {
 			if (t.from != t.to) {
 				if (t.timeout) {
 					logger.info(() -> format("%s changing from  '%s' to '%s (timeout)'", fsm.getDescription(), t.from, t.to));
-				} else {
+				}
+				else {
 					logger.info(() -> format("%s changing from  '%s' to '%s'", fsm.getDescription(), t.from, t.to));
 				}
-			} else {
+			}
+			else {
 				logger.info(() -> format("%s stays '%s'", fsm.getDescription(), t.from));
 			}
-		} else {
+		}
+		else {
 			if (t.from != t.to) {
 				eventInfo(event,
 						() -> format("%s changing from '%s' to '%s' on '%s'", fsm.getDescription(), t.from, t.to, event));
-			} else {
+			}
+			else {
 				eventInfo(event, () -> format("%s stays '%s' on '%s'", fsm.getDescription(), t.from, event));
 			}
 		}

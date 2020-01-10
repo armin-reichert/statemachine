@@ -108,6 +108,9 @@ public class State<S, E> {
 			throw new IllegalStateException(String.format("Timer function is NULL in state '%s'", id));
 		}
 		ticksRemaining = duration = fnTimer.getAsInt();
+		if (machine != null) {
+			machine.getTracer().ifPresent(tracer -> tracer.stateTimerReset(id));
+		}
 	}
 
 	boolean updateTimer() {
