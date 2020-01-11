@@ -340,12 +340,13 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 		currentState = state;
 		state().onEntry();
 		state().restartTimer();
+		tracer.stateTimerRestarted(state);
 	}
 
 	@Override
 	public void restartTimer(S state) {
 		state(state).restartTimer();
-		getTracer().ifPresent(tracer -> tracer.stateTimerRestarted(state));
+		tracer.stateTimerRestarted(state);
 	}
 
 	@Override
@@ -394,6 +395,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 		tracer.enteringInitialState(initialState);
 		currentState = initialState;
 		state(currentState).restartTimer();
+		tracer.stateTimerRestarted(currentState);
 		state(currentState).onEntry();
 	}
 
@@ -467,6 +469,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 			currentState = t.to;
 			tracer.enteringState(t.to);
 			newState.restartTimer();
+			tracer.stateTimerRestarted(t.to);
 			newState.onEntry();
 		}
 	}
