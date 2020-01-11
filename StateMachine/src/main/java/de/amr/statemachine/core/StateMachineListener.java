@@ -4,7 +4,7 @@ public interface StateMachineListener<S, E> {
 
 	void stateCreated(S state);
 	
-	void stateTimerReset(S state);
+	void stateTimerRestarted(S state);
 
 	void unhandledEvent(E event);
 

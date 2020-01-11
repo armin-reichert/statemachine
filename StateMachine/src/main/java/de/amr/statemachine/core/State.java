@@ -21,9 +21,6 @@ public class State<S, E> {
 	/** The label used to identify this state. */
 	S id;
 
-	/** The state machine this state belongs to. */
-	StateMachine<S, E> machine;
-
 	/** The client code executed when entering this state. */
 	Runnable entryAction;
 
@@ -55,13 +52,12 @@ public class State<S, E> {
 	}
 
 	protected State() {
-		fnTimer = () -> ENDLESS;
-		resetTimer();
+		setTimerFunction(() -> ENDLESS);
 	}
 
 	@Override
 	public String toString() {
-		String s = String.format("(%s:%s", machine.getDescription(), id);
+		String s = String.format("(%s", id);
 		if (entryAction != null)
 			s += " entry";
 		if (tickAction != null)
@@ -114,14 +110,11 @@ public class State<S, E> {
 	}
 
 	/** Resets the timer to the complete state duration. */
-	public void resetTimer() {
+	void restartTimer() {
 		if (fnTimer == null) {
 			throw new IllegalStateException(String.format("Timer function is NULL in state '%s'", id));
 		}
 		ticksRemaining = duration = fnTimer.getAsInt();
-		if (machine != null) {
-			machine.getTracer().ifPresent(tracer -> tracer.stateTimerReset(id));
-		}
 	}
 
 	boolean updateTimer() {
@@ -142,7 +135,7 @@ public class State<S, E> {
 	public void setTimerFunction(IntSupplier fnTimer) {
 		Objects.requireNonNull(fnTimer);
 		this.fnTimer = fnTimer;
-		resetTimer();
+		restartTimer();
 	}
 
 	/**

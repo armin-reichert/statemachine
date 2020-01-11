@@ -56,7 +56,7 @@ public class StateMachineTracer<S, E> implements StateMachineListener<S, E> {
 	}
 
 	@Override
-	public void stateTimerReset(S state) {
+	public void stateTimerRestarted(S state) {
 		logger.info(() -> format("%s did reset timer for state '%s'", fsm.getDescription(), state));
 	}
 
