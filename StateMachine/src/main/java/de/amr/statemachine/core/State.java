@@ -3,13 +3,13 @@ package de.amr.statemachine.core;
 import java.util.Objects;
 import java.util.function.IntSupplier;
 
+import de.amr.statemachine.api.TickAction;
+
 /**
  * Implementation of a state in a finite state machine.
  * 
- * @param <S>
- *          state type, normally some enum type
- * @param <E>
- *          event type, e.g. event classes with different attributes
+ * @param <S> state type, normally some enum type
+ * @param <E> event type, e.g. event classes with different attributes
  * 
  * @author Armin Reichert
  */
@@ -28,7 +28,7 @@ public class State<S, E> {
 	Runnable entryAction;
 
 	/** The client code executed when a tick occurs for this state. */
-	Runnable tickAction;
+	TickAction<S> tickAction;
 
 	/** The client code executed when leaving this state. */
 	Runnable exitAction;
@@ -45,6 +45,12 @@ public class State<S, E> {
 	private void runAction(Runnable actionOrNull) {
 		if (actionOrNull != null) {
 			actionOrNull.run();
+		}
+	}
+
+	private void runTickAction(TickAction<S> actionOrNull) {
+		if (actionOrNull != null) {
+			actionOrNull.run(this, getTicksConsumed(), getTicksRemaining());
 		}
 	}
 
@@ -88,13 +94,18 @@ public class State<S, E> {
 		runAction(exitAction);
 	}
 
-	public void setOnTick(Runnable action) {
+	public void setOnTick(TickAction<S> action) {
 		Objects.requireNonNull(action);
 		tickAction = action;
 	}
 
+	public void setOnTick(Runnable action) {
+		Objects.requireNonNull(action);
+		tickAction = (state, ticksConsumed, ticksRemaining) -> action.run();
+	}
+
 	public void onTick() {
-		runAction(tickAction);
+		runTickAction(tickAction);
 	}
 
 	/** Tells if this state has timed out. */
@@ -126,8 +137,7 @@ public class State<S, E> {
 	/**
 	 * Sets a timer function for this state and resets the timer.
 	 * 
-	 * @param fnTimer
-	 *                  function providing the time for this state
+	 * @param fnTimer function providing the time for this state
 	 */
 	public void setTimerFunction(IntSupplier fnTimer) {
 		Objects.requireNonNull(fnTimer);
@@ -138,8 +148,7 @@ public class State<S, E> {
 	/**
 	 * Sets a constant timer function for this state and resets the timer.
 	 * 
-	 * @param fixedTime
-	 *                    constant time for this state
+	 * @param fixedTime constant time for this state
 	 */
 	public void setConstantTimer(int fixedTime) {
 		setTimerFunction(() -> fixedTime);
@@ -164,7 +173,8 @@ public class State<S, E> {
 	}
 
 	/**
-	 * The number of updates since the (optional) timer for this state was started or reset.
+	 * The number of updates since the (optional) timer for this state was started
+	 * or reset.
 	 * 
 	 * @return number of updates since timer started or reset
 	 */

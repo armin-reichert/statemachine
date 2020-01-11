@@ -5,6 +5,8 @@ import java.util.function.Consumer;
 import java.util.function.IntSupplier;
 import java.util.logging.Logger;
 
+import de.amr.statemachine.api.TickAction;
+
 /**
  * Builder for state machine instances.
  * 
@@ -88,13 +90,15 @@ public class StateMachineBuilder<S, E> {
 	public class StateBuilder {
 
 		private S stateId;
-		private Runnable entryAction, exitAction, tickAction;
+		private Runnable entryAction, exitAction;
+		private TickAction<S> tickAction;
 		private boolean entryActionSet, exitActionSet, tickActionSet;
 		private IntSupplier fnTimer;
 
 		private void clear() {
 			stateId = null;
-			entryAction = exitAction = tickAction = null;
+			entryAction = exitAction = null;
+			tickAction = null;
 			entryActionSet = exitActionSet = tickActionSet = false;
 			fnTimer = null;
 		}
@@ -202,8 +206,7 @@ public class StateMachineBuilder<S, E> {
 		 * @param action some action
 		 * @return the builder
 		 */
-
-		public StateBuilder onTick(Runnable action) {
+		public StateBuilder onTick(TickAction<S> action) {
 			if (tickActionSet) {
 				log.info(() -> String.format("ERROR: tick action already set: state %s in FSM %s", stateId,
 						StateMachineBuilder.this.description));
@@ -212,6 +215,17 @@ public class StateMachineBuilder<S, E> {
 			tickAction = action;
 			tickActionSet = true;
 			return this;
+		}
+
+		/**
+		 * Defines the action to be executed when this state is ticked. Calling this
+		 * method twice leads to an error.
+		 * 
+		 * @param action some action
+		 * @return the builder
+		 */
+		public StateBuilder onTick(Runnable action) {
+			return onTick((state, ticksConsumed, ticksRemaining) -> action.run());
 		}
 
 		private StateBuilder commit() {
