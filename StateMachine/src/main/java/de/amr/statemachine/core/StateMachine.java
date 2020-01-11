@@ -111,6 +111,11 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	}
 
 	@Override
+	public String toString() {
+		return description != null ? description : super.toString();
+	}
+
+	@Override
 	public void setLogger(Logger logger) {
 		tracer.setLogger(logger);
 	}
@@ -336,7 +341,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 		state().onEntry();
 		state().restartTimer();
 	}
-	
+
 	@Override
 	public void restartTimer(S state) {
 		state(state).restartTimer();
@@ -407,8 +412,8 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 		if (eventOrNull != null) {
 			switch (missingTransitionBehavior) {
 			case EXCEPTION:
-				throw new IllegalStateException(String.format("%s: No transition defined for state '%s' and event '%s'",
-						description, currentState, eventOrNull));
+				throw new IllegalStateException(
+						String.format("%s: No transition defined for state '%s' and event '%s'", this, currentState, eventOrNull));
 			case IGNORE:
 				break;
 			case LOG:
