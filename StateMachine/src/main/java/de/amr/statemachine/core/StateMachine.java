@@ -74,12 +74,12 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	private String description;
 	private S initialState;
 	private S currentState;
-	private final EventMatchStrategy matchEventsBy;
 	private MissingTransitionBehavior missingTransitionBehavior;
+	private final EventMatchStrategy matchEventsBy;
 	private final Deque<E> eventQ;
 	private final Map<S, State<S, E>> stateMap;
 	private final Map<S, List<Transition<S, E>>> transitionMap;
-	private StateMachineTracer<S, E> tracer;
+	private final StateMachineTracer<S, E> tracer;
 	private int ticksPerSecond = 60;
 	private final Set<Consumer<E>> listeners = new LinkedHashSet<>();
 	private final List<Predicate<E>> loggingBlacklist = new ArrayList<>();
