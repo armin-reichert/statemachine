@@ -15,6 +15,7 @@ import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 import de.amr.statemachine.api.Fsm;
@@ -71,7 +72,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 		return new StateMachineBuilder<>(this);
 	}
 
-	private String description;
+	private Supplier<String> fnDescription;
 	private S initialState;
 	private S currentState;
 	private MissingTransitionBehavior missingTransitionBehavior;
@@ -112,7 +113,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 
 	@Override
 	public String toString() {
-		return description != null ? description : super.toString();
+		return fnDescription != null ? fnDescription.get() : super.toString();
 	}
 
 	@Override
@@ -159,7 +160,16 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	 * @return the description text for this state machine (used by tracing)
 	 */
 	public String getDescription() {
-		return description;
+		return fnDescription.get();
+	}
+
+	/**
+	 * Sets the description text supplier for this state machine.
+	 * 
+	 * @param description description text (used by tracing)
+	 */
+	public void setDescription(Supplier<String> fnDescription) {
+		this.fnDescription = Objects.requireNonNull(fnDescription);
 	}
 
 	/**
@@ -168,7 +178,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	 * @param description description text (used by tracing)
 	 */
 	public void setDescription(String description) {
-		this.description = description;
+		this.fnDescription = () -> description;
 	}
 
 	/**
