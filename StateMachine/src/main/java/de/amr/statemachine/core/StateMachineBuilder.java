@@ -3,6 +3,7 @@ package de.amr.statemachine.core;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.IntSupplier;
+import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 import de.amr.statemachine.api.TickAction;
@@ -20,7 +21,7 @@ public class StateMachineBuilder<S, E> {
 	private final Logger log = Logger.getGlobal();
 
 	private StateMachine<S, E> sm;
-	private String description;
+	private Supplier<String> fnDescription = () -> null;
 	private S initialState;
 
 	/**
@@ -54,14 +55,24 @@ public class StateMachineBuilder<S, E> {
 	}
 
 	/**
+	 * Assigns the given description supplier to the constructed state machine.
+	 * 
+	 * @param fnDescription description supplier
+	 * @return the builder
+	 */
+	public StateMachineBuilder<S, E> description(Supplier<String> fnDescription) {
+		this.fnDescription = fnDescription != null ? fnDescription : () -> getClass().getSimpleName();
+		return this;
+	}
+
+	/**
 	 * Assigns the given description to the constructed state machine.
 	 * 
 	 * @param description some description
 	 * @return the builder
 	 */
 	public StateMachineBuilder<S, E> description(String description) {
-		this.description = description != null ? description : getClass().getSimpleName();
-		return this;
+		return description(() -> description);
 	}
 
 	/**
@@ -173,7 +184,7 @@ public class StateMachineBuilder<S, E> {
 		public StateBuilder onEntry(Runnable action) {
 			if (entryActionSet) {
 				log.info(() -> String.format("ERROR: entry action already set: state %s in FSM %s", stateId,
-						StateMachineBuilder.this.description));
+						StateMachineBuilder.this.fnDescription.get()));
 				throw new IllegalStateException();
 			}
 			entryAction = action;
@@ -191,7 +202,7 @@ public class StateMachineBuilder<S, E> {
 		public StateBuilder onExit(Runnable action) {
 			if (exitActionSet) {
 				log.info(() -> String.format("ERROR: exit action already set: state %s in FSM %s", stateId,
-						StateMachineBuilder.this.description));
+						StateMachineBuilder.this.fnDescription.get()));
 				throw new IllegalStateException();
 			}
 			exitAction = action;
@@ -209,7 +220,7 @@ public class StateMachineBuilder<S, E> {
 		public StateBuilder onTick(TickAction<S> action) {
 			if (tickActionSet) {
 				log.info(() -> String.format("ERROR: tick action already set: state %s in FSM %s", stateId,
-						StateMachineBuilder.this.description));
+						StateMachineBuilder.this.fnDescription.get()));
 				throw new IllegalStateException();
 			}
 			tickAction = action;
@@ -453,7 +464,7 @@ public class StateMachineBuilder<S, E> {
 			if (sourceStateId != null) {
 				commit();
 			}
-			sm.setDescription(description == null ? sm.getClass().getSimpleName() : description);
+			sm.setDescription(fnDescription);
 			sm.setInitialState(initialState);
 			return sm;
 		}
