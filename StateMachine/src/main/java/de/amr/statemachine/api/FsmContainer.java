@@ -9,14 +9,15 @@ import de.amr.statemachine.core.StateMachine;
 import de.amr.statemachine.core.StateMachine.MissingTransitionBehavior;
 
 /**
- * If a class cannot directly inherit from the {@link StateMachine} class it can
- * implement this interface and supply a state machine instance. This interface
- * then delegates all state machine operations to the supplied instance.
+ * If a class cannot directly inherit from the {@link StateMachine} class it can implement this interface and supply a
+ * state machine instance. This interface then delegates all state machine operations to the supplied instance.
  * 
  * @author Armin Reichert
  *
- * @param <S> state type of the finite-state machine
- * @param <E> event type of the finite-state machine
+ * @param <S>
+ *          state type of the finite-state machine
+ * @param <E>
+ *          event type of the finite-state machine
  */
 public interface FsmContainer<S, E> extends Fsm<S, E> {
 
@@ -26,6 +27,16 @@ public interface FsmContainer<S, E> extends Fsm<S, E> {
 	 * @return state machine instance
 	 */
 	Fsm<S, E> fsm();
+
+	@Override
+	default void init() {
+		fsm().init();
+	}
+
+	@Override
+	default void update() {
+		fsm().update();
+	}
 
 	@Override
 	default void setLogger(Logger logger) {
@@ -66,12 +77,12 @@ public interface FsmContainer<S, E> extends Fsm<S, E> {
 	default void setState(S state) {
 		fsm().setState(state);
 	}
-	
+
 	@Override
 	default void resumeState(S state) {
 		fsm().resumeState(state);
 	}
-	
+
 	@Override
 	default void restartTimer(S state) {
 		fsm().restartTimer(state);
