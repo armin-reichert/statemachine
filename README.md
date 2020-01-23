@@ -43,7 +43,7 @@ public class TrafficLight extends StateMachine<Light, Void> {
 				.when(GREEN).then(YELLOW).onTimeout()
 				.when(YELLOW).then(RED).onTimeout()
 		.endStateMachine();
-		//@formatter:off
+		//@formatter:on
 	}
 }
 ```
