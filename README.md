@@ -20,7 +20,7 @@ The states are identified by some arbitrary type, normally an enumeration type, 
 Example 1 (traffic light):
 
 ```java
-public class TrafficLight extends StateMachine<Light, Void> implements Controller {
+public class TrafficLight extends StateMachine<Light, Void> {
 
 	public enum Light {
 		OFF, RED, YELLOW, GREEN;
