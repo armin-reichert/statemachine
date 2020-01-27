@@ -17,7 +17,7 @@ A finite state machine implementation with the following features:
 
 The states are identified by some arbitrary type, normally an enumeration type, string or integer.
 
-Example 1 (traffic light):
+## Example 1: Traffic light
 
 ```java
 public class TrafficLight extends StateMachine<Light, Void> {
@@ -48,7 +48,7 @@ public class TrafficLight extends StateMachine<Light, Void> {
 }
 ```
 
-Example 2 (controller for a Pong game):
+## Example 2: Controller for Pong game
 
 ```java
 
@@ -79,4 +79,139 @@ StateMachine.define(PlayState.class, Void.class)
 .endStateMachine();
 ```
 
-More interesting examples can be found in my [Pac-Man](https://github.com/armin-reichert/pacman) game implementation.
+## Example 3: Pac-Man ghost behavior
+
+```java
+beginStateMachine(GhostState.class, PacManGameEvent.class)
+
+	.description(Ghost.this::toString)
+	.initialState(LOCKED)
+
+	.states()
+
+		.state(LOCKED)
+			.onEntry(() -> {
+				cast().placeOnSeat(this);
+				setVisible(true);
+				followState = getState();
+				sprites.select("color-" + moveDir());
+				sprites.forEach(Sprite::resetAnimation);
+			})
+			.onTick((state, t, remaining) -> {
+					step(cast().pacMan.hasPower() ? "frightened" : "color-" + moveDir());
+			})
+
+		.state(LEAVING_HOUSE)
+			.onEntry(() -> steering().init())
+			.onTick(() -> {
+				step("color-" + moveDir());
+			})
+
+		.state(ENTERING_HOUSE)
+			.onEntry(() -> steering().init())
+			.onTick(() -> step("eyes-" + moveDir()))
+
+		.state(SCATTERING)
+			.onTick(() -> {
+				step("color-" + moveDir());
+				checkPacManCollision();
+			})
+
+		.state(CHASING)
+			.onTick(() -> {
+				step("color-" + moveDir());
+				checkPacManCollision();
+			})
+
+		.state(FRIGHTENED)
+			.timeoutAfter(() -> sec(game().level().pacManPowerSeconds))
+			.onTick((state, t, remaining) -> {
+				step(remaining < sec(2) ? "flashing" : "frightened");
+				checkPacManCollision();
+			})
+
+		.state(DEAD)
+			.timeoutAfter(sec(1)) // "dying" time
+			.onEntry(() -> {
+				int points = POINTS_GHOST[game().level().ghostsKilledByEnergizer - 1];
+				sprites.select("points-" + points);
+			})
+			.onTick(() -> {
+				if (state().isTerminated()) { // "dead"
+					step("eyes-" + moveDir());
+				}
+			})
+
+	.transitions()
+
+		.when(LOCKED).then(LEAVING_HOUSE)
+			.on(GhostUnlockedEvent.class)
+
+		.stay(LOCKED)
+			.on(PacManGainsPowerEvent.class)
+
+		.when(LEAVING_HOUSE).then(SCATTERING)
+			.condition(() -> steering().isComplete() && followState == SCATTERING)
+			.act(() -> forceMove(Direction.LEFT))
+
+		.when(LEAVING_HOUSE).then(CHASING)
+			.condition(() -> steering().isComplete() && followState == CHASING)
+			.act(() -> forceMove(Direction.LEFT))
+
+		.stay(LEAVING_HOUSE)
+			.on(PacManGainsPowerEvent.class)
+
+		.when(ENTERING_HOUSE).then(LEAVING_HOUSE)
+			.condition(() -> steering().isComplete())
+
+		.stay(ENTERING_HOUSE)
+			.on(PacManGainsPowerEvent.class)
+
+		.when(CHASING).then(FRIGHTENED)
+			.on(PacManGainsPowerEvent.class)
+			.act(() -> turnBack())
+
+		.when(CHASING).then(DEAD)
+			.on(GhostKilledEvent.class)
+
+		.when(CHASING).then(SCATTERING)
+			.condition(() -> followState == SCATTERING)
+			.act(() -> turnBack())
+
+		.when(SCATTERING).then(FRIGHTENED)
+			.on(PacManGainsPowerEvent.class)
+			.act(() -> turnBack())
+
+		.when(SCATTERING).then(DEAD)
+			.on(GhostKilledEvent.class)
+
+		.when(SCATTERING).then(CHASING)
+			.condition(() -> followState == CHASING)
+			.act(() -> turnBack())
+
+		.stay(FRIGHTENED)
+			.on(PacManGainsPowerEvent.class)
+			.act(() -> restartTimer(FRIGHTENED))
+
+		.when(FRIGHTENED).then(DEAD)
+			.on(GhostKilledEvent.class)
+
+		.when(FRIGHTENED).then(SCATTERING)
+			.onTimeout()
+			.condition(() -> followState == SCATTERING)
+
+		.when(FRIGHTENED).then(CHASING)
+			.onTimeout()
+			.condition(() -> followState == CHASING)
+
+		.when(DEAD).then(ENTERING_HOUSE)
+			.condition(() -> maze().inFrontOfGhostHouseDoor(tile()))
+			.act(() -> {
+				tf.setPosition(cast().seatPosition(0));
+				setWishDir(Direction.DOWN);
+			})
+
+.endStateMachine();
+```
+
+More examples can be found in my [Pac-Man](https://github.com/armin-reichert/pacman) game implementation.
