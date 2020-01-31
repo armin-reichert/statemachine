@@ -52,8 +52,8 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	 *                          event type
 	 * @return state machine builder
 	 */
-	public static <STATE, EVENT> StateMachineBuilder<STATE, EVENT> beginStateMachine(Class<STATE> stateLabelClass,
-			Class<EVENT> eventClass) {
+	public static <STATE, EVENT> StateMachineBuilder<STATE, EVENT> beginStateMachine(
+			Class<STATE> stateLabelClass, Class<EVENT> eventClass) {
 		return new StateMachineBuilder<>(stateLabelClass);
 	}
 
@@ -73,8 +73,8 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	 *                          event type
 	 * @return state machine builder
 	 */
-	public static <STATE, EVENT> StateMachineBuilder<STATE, EVENT> beginStateMachine(Class<STATE> stateLabelClass,
-			Class<EVENT> eventClass, EventMatchStrategy matchStrategy) {
+	public static <STATE, EVENT> StateMachineBuilder<STATE, EVENT> beginStateMachine(
+			Class<STATE> stateLabelClass, Class<EVENT> eventClass, EventMatchStrategy matchStrategy) {
 		return new StateMachineBuilder<>(stateLabelClass, matchStrategy);
 	}
 
@@ -94,7 +94,6 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	private final Map<S, State<S, E>> stateMap;
 	private final Map<S, List<Transition<S, E>>> transitionMap;
 	private final StateMachineTracer<S, E> tracer;
-	private int ticksPerSecond = 60;
 	private final Set<Consumer<E>> listeners = new LinkedHashSet<>();
 	private final List<Predicate<E>> loggingBlacklist = new ArrayList<>();
 
@@ -113,7 +112,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 		stateMap = stateLabelClass.isEnum() ? new EnumMap(stateLabelClass)
 				: stateLabelClass == Boolean.class ? new BooleanMap() : new HashMap<>(7);
 		transitionMap = new HashMap<>(7);
-		tracer = new StateMachineTracer<>(this, Logger.getGlobal(), ticksPerSecond);
+		tracer = new StateMachineTracer<>(this, Logger.getGlobal());
 		missingTransitionBehavior = MissingTransitionBehavior.EXCEPTION;
 	}
 
@@ -141,8 +140,8 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 		return tracer.getLogger();
 	}
 
-	Optional<StateMachineTracer<S, E>> getTracer() {
-		return Optional.ofNullable(tracer);
+	public StateMachineTracer<S, E> getTracer() {
+		return tracer;
 	}
 
 	@Override
@@ -153,16 +152,6 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	@Override
 	public void doNotLogEventPublishingIf(Predicate<E> condition) {
 		loggingBlacklist.add(condition);
-	}
-
-	/**
-	 * Sets the frame rate (ticks per second) with which this machine works (used by tracer).
-	 * 
-	 * @param ticksPerSecond
-	 *                         ticks per second
-	 */
-	public void setFPS(int ticksPerSecond) {
-		this.ticksPerSecond = ticksPerSecond;
 	}
 
 	/**
@@ -256,8 +245,8 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	 *                     tells if this should be a timeout transition
 	 * 
 	 */
-	void addTransition(S from, S to, BooleanSupplier guard, Consumer<E> action, E event, Class<? extends E> eventClass,
-			boolean timeout) {
+	void addTransition(S from, S to, BooleanSupplier guard, Consumer<E> action, E event,
+			Class<? extends E> eventClass, boolean timeout) {
 		Objects.requireNonNull(from);
 		Objects.requireNonNull(to);
 		guard = (guard != null) ? guard : () -> true;
@@ -283,8 +272,8 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	}
 
 	/**
-	 * Adds a transition which is fired if the guard condition holds and the current input's class equals the given event
-	 * class.
+	 * Adds a transition which is fired if the guard condition holds and the current input's class
+	 * equals the given event class.
 	 * 
 	 * @param from
 	 *                     transition source state
@@ -307,7 +296,8 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	}
 
 	/**
-	 * Adds a transition which is fired if the guard condition holds and the current input equals the given event.
+	 * Adds a transition which is fired if the guard condition holds and the current input equals the
+	 * given event.
 	 * 
 	 * @param from
 	 *                 transition source state
@@ -475,15 +465,16 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 		if (eventOrNull != null) {
 			switch (missingTransitionBehavior) {
 			case EXCEPTION:
-				throw new IllegalStateException(
-						String.format("%s: No transition defined for state '%s' and event '%s'", this, currentState, eventOrNull));
+				throw new IllegalStateException(String.format(
+						"%s: No transition defined for state '%s' and event '%s'", this, currentState, eventOrNull));
 			case IGNORE:
 				break;
 			case LOG:
 				tracer.unhandledEvent(eventOrNull);
 				break;
 			default:
-				throw new IllegalArgumentException("Illegal missing transition behavior: " + missingTransitionBehavior);
+				throw new IllegalArgumentException(
+						"Illegal missing transition behavior: " + missingTransitionBehavior);
 			}
 		}
 		state(currentState).onTick();
@@ -509,8 +500,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 		}
 		if (matchEventsBy == EventMatchStrategy.BY_CLASS) {
 			return eventOrNull.getClass().equals(t.eventClass);
-		}
-		else if (matchEventsBy == EventMatchStrategy.BY_EQUALITY) {
+		} else if (matchEventsBy == EventMatchStrategy.BY_EQUALITY) {
 			return eventOrNull.equals(t.event);
 		}
 		return false;
@@ -521,8 +511,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 		if (currentState == t.to) {
 			// keep state: don't execute exit/entry actions
 			t.action.accept(eventOrNull);
-		}
-		else {
+		} else {
 			// change to new state, execute exit and entry actions
 			State<S, E> oldState = state(currentState);
 			State<S, E> newState = state(t.to);
