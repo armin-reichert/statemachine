@@ -87,13 +87,6 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 		return new StateMachineBuilder<>(stateLabelClass, matchStrategy);
 	}
 
-	/**
-	 * Starts the definition building for this state machine.
-	 */
-	public StateMachineBuilder<S, E> beginStateMachine() {
-		return new StateMachineBuilder<>(this);
-	}
-
 	private Supplier<String> fnDescription;
 	private S initialState;
 	private S currentState;
@@ -135,18 +128,16 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 		this(stateLabelClass, EventMatchStrategy.BY_CLASS);
 	}
 
+	/**
+	 * Starts building of state machine.
+	 */
+	public StateMachineBuilder<S, E> beginStateMachine() {
+		return new StateMachineBuilder<>(this);
+	}
+
 	@Override
 	public String toString() {
 		return fnDescription != null ? fnDescription.get() : super.toString();
-	}
-
-	@Override
-	public void setLogger(Logger logger) {
-		tracer.setLogger(logger);
-	}
-
-	public Logger getLogger() {
-		return tracer.getLogger();
 	}
 
 	public StateMachineTracer<S, E> getTracer() {
@@ -356,7 +347,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	@Override
 	public void publish(E event) {
 		if (loggingBlacklist.stream().noneMatch(condition -> condition.test(event))) {
-			getLogger().info(() -> String.format("%s published event '%s'", this, event));
+			tracer.getLogger().info(() -> String.format("%s published event '%s'", this, event));
 		}
 		listeners.forEach(listener -> listener.accept(event));
 	}

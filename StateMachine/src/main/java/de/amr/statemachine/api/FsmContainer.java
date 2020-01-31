@@ -2,15 +2,16 @@ package de.amr.statemachine.api;
 
 import java.util.function.Consumer;
 import java.util.function.Predicate;
-import java.util.logging.Logger;
 
 import de.amr.statemachine.core.State;
 import de.amr.statemachine.core.StateMachine;
 import de.amr.statemachine.core.StateMachine.MissingTransitionBehavior;
+import de.amr.statemachine.core.StateMachineTracer;
 
 /**
- * If a class cannot directly inherit from the {@link StateMachine} class it can implement this interface and supply a
- * state machine instance. This interface then delegates all state machine operations to the supplied instance.
+ * If a class cannot directly inherit from the {@link StateMachine} class it can implement this
+ * interface and supply a state machine instance. This interface then delegates all state machine
+ * operations to the supplied instance.
  * 
  * @author Armin Reichert
  *
@@ -39,8 +40,8 @@ public interface FsmContainer<S, E> extends Fsm<S, E> {
 	}
 
 	@Override
-	default void setLogger(Logger logger) {
-		fsm().setLogger(logger);
+	default StateMachineTracer<S, E> getTracer() {
+		return fsm().getTracer();
 	}
 
 	@Override
