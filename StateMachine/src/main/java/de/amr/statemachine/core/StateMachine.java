@@ -34,8 +34,17 @@ import de.amr.statemachine.api.Fsm;
  */
 public class StateMachine<S, E> implements Fsm<S, E> {
 
+	/**
+	 * Defines what happens when no transition is found. Either ignore silently, log a message or throw
+	 * an exception.
+	 */
 	public enum MissingTransitionBehavior {
-		IGNORE, LOG, EXCEPTION;
+		/** Ignore silently. */
+		IGNORE,
+		/** Log a message */
+		LOG,
+		/** Throw an exception. */
+		EXCEPTION;
 	}
 
 	/**
