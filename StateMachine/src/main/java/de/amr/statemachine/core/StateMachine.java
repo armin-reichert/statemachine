@@ -140,6 +140,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 		return fnDescription != null ? fnDescription.get() : super.toString();
 	}
 
+	@Override
 	public StateMachineTracer<S, E> getTracer() {
 		return tracer;
 	}
