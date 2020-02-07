@@ -387,16 +387,21 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 
 	@Override
 	public void setState(S state) {
+		if (currentState != null) {
+			state(currentState).onExit();
+		}
 		currentState = state;
-		state().onEntry();
-		state().restartTimer();
-		tracer.stateTimerRestarted(state);
+		state(currentState).onEntry();
+		restartTimer(state);
 	}
 
 	@Override
 	public void restartTimer(S state) {
-		state(state).restartTimer();
-		tracer.stateTimerRestarted(state);
+		StateTimer timer = state(state).timer;
+		if (timer != StateTimer.NEVER_ENDING_TIMER) {
+			timer.restart();
+			tracer.stateTimerRestarted(state);
+		}
 	}
 
 	@Override
@@ -446,8 +451,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 		}
 		tracer.enteringInitialState(initialState);
 		currentState = initialState;
-		state(currentState).restartTimer();
-		tracer.stateTimerRestarted(currentState);
+		restartTimer(currentState);
 		state(currentState).onEntry();
 	}
 
@@ -478,8 +482,8 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 						"Illegal missing transition behavior: " + missingTransitionBehavior);
 			}
 		}
+		boolean timeout = state(currentState).timer.tick();
 		state(currentState).onTick();
-		boolean timeout = state(currentState).updateTimer();
 		if (timeout) {
 			findMatchingTransition(null).ifPresent(t -> fireTransition(t, null));
 		}
@@ -507,23 +511,22 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 		return false;
 	}
 
-	private void fireTransition(Transition<S, E> t, E eventOrNull) {
-		tracer.firingTransition(t, eventOrNull);
-		if (currentState == t.to) {
-			// keep state: don't execute exit/entry actions
-			t.action.accept(eventOrNull);
+	private void fireTransition(Transition<S, E> transition, E eventOrNull) {
+		tracer.firingTransition(transition, eventOrNull);
+		if (currentState == transition.to) {
+			// loop: don't execute exit/entry actions, don't restart timer
+			transition.action.accept(eventOrNull);
 		} else {
-			// change to new state, execute exit and entry actions
-			State<S, E> oldState = state(currentState);
-			State<S, E> newState = state(t.to);
+			// exit state
 			tracer.exitingState(currentState);
-			oldState.onExit();
-			t.action.accept(eventOrNull);
-			currentState = t.to;
-			tracer.enteringState(t.to);
-			newState.restartTimer();
-			tracer.stateTimerRestarted(t.to);
-			newState.onEntry();
+			state(currentState).onExit();
+			// call action
+			transition.action.accept(eventOrNull);
+			// enter new state
+			currentState = transition.to;
+			tracer.enteringState(currentState);
+			restartTimer(currentState);
+			state(currentState).onEntry();
 		}
 	}
 }

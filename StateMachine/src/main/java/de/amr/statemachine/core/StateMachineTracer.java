@@ -54,12 +54,12 @@ public class StateMachineTracer<S, E> {
 		}
 	}
 
-	public void stateCreated(S state) {
-		logger.info(() -> format("%s created state '%s'", fsm.getDescription(), state));
+	public void stateCreated(S id) {
+		logger.info(() -> format("%s created state '%s'", fsm.getDescription(), id));
 	}
 
-	public void stateTimerRestarted(S state) {
-		logger.info(() -> format("%s did reset timer for state '%s'", fsm.getDescription(), state));
+	public void stateTimerRestarted(S id) {
+		logger.info(() -> format("%s did reset timer for state '%s'", fsm.getDescription(), id));
 	}
 
 	public void unhandledEvent(E event) {
@@ -67,24 +67,25 @@ public class StateMachineTracer<S, E> {
 				() -> format("%s in state %s could not handle '%s'", fsm.getDescription(), fsm.getState(), event));
 	}
 
-	public void enteringInitialState(S initialState) {
-		logger.info(() -> format("%s entering initial state (%s)", fsm.getDescription(), initialState));
-		enteringState(initialState);
+	public void enteringInitialState(S id) {
+		logger.info(() -> format("%s entering initial state (%s)", fsm.getDescription(), id));
+		enteringState(id);
 	}
 
-	public void enteringState(S enteredState) {
-		int duration = fsm.state(enteredState).fnTimer.getAsInt();
-		if (duration != State.ENDLESS) {
+	public void enteringState(S id) {
+		State<S, E> stateEntered = fsm.state(id);
+		if (stateEntered.hasTimer()) {
+			int duration = stateEntered.getDuration();
 			float seconds = fnTicksToSeconds.apply(duration);
 			logger.info(() -> format("%s entering state '%s' for %.2f seconds (%d frames)", fsm.getDescription(),
-					enteredState, seconds, duration));
+					id, seconds, duration));
 		} else {
-			logger.info(() -> format("%s entering state '%s'", fsm.getDescription(), enteredState));
+			logger.info(() -> format("%s entering state '%s'", fsm.getDescription(), id));
 		}
 	}
 
-	public void exitingState(S exitedState) {
-		logger.info(() -> format("%s exiting state  '%s'", fsm.getDescription(), exitedState));
+	public void exitingState(S id) {
+		logger.info(() -> format("%s exiting state  '%s'", fsm.getDescription(), id));
 	}
 
 	public void firingTransition(Transition<S, E> t, E event) {

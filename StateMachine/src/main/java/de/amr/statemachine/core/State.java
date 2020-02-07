@@ -6,19 +6,18 @@ import java.util.function.IntSupplier;
 import de.amr.statemachine.api.TickAction;
 
 /**
- * Implementation of a state in a finite state machine.
+ * A state in a finite-state machine.
  * 
- * @param <S> state type, normally some enum type
- * @param <E> event type, e.g. event classes with different attributes
+ * @param <S>
+ *          state identifier type, for example an enum
+ * @param <E>
+ *          event type
  * 
  * @author Armin Reichert
  */
 public class State<S, E> {
 
-	/** Constant for defining an unlimited duration. */
-	public static final int ENDLESS = Integer.MAX_VALUE;
-
-	/** The label used to identify this state. */
+	/** The identifier of this state. */
 	S id;
 
 	/** The client code executed when entering this state. */
@@ -30,29 +29,11 @@ public class State<S, E> {
 	/** The client code executed when leaving this state. */
 	Runnable exitAction;
 
-	/** Function providing the timer duration for this state. */
-	IntSupplier fnTimer;
-
-	/** The number of ticks this state will be active. */
-	int duration;
-
-	/** Ticks remaining until time-out */
-	int ticksRemaining;
-
-	private void runAction(Runnable actionOrNull) {
-		if (actionOrNull != null) {
-			actionOrNull.run();
-		}
-	}
-
-	private void runTickAction(TickAction<S> actionOrNull) {
-		if (actionOrNull != null) {
-			actionOrNull.run(this, getTicksConsumed(), getTicksRemaining());
-		}
-	}
+	/** Timer for this state. */
+	StateTimer timer;
 
 	protected State() {
-		setTimerFunction(() -> ENDLESS);
+		timer = StateTimer.NEVER_ENDING_TIMER;
 	}
 
 	@Override
@@ -64,87 +45,132 @@ public class State<S, E> {
 			s += " tick";
 		if (exitAction != null)
 			s += " exit";
+		if (timer != StateTimer.NEVER_ENDING_TIMER) {
+			s += " timer";
+		}
 		s += ")";
 		return s;
 	}
 
+	/**
+	 * The identifier of this state.
+	 * 
+	 * @return identifier
+	 */
 	public S id() {
 		return id;
 	}
 
+	/**
+	 * Sets the action to be executed whenever this state is entered, either via a transition of by
+	 * setting the state directly.
+	 * 
+	 * @param action
+	 *                 the entry action
+	 */
 	public void setOnEntry(Runnable action) {
-		Objects.requireNonNull(action);
-		entryAction = action;
+		entryAction = Objects.requireNonNull(action);
 	}
 
+	/**
+	 * Hook method called by the state machine when this state is entered. May be overridden by state
+	 * subclasses.
+	 */
 	public void onEntry() {
-		runAction(entryAction);
+		if (entryAction != null) {
+			entryAction.run();
+		}
 	}
 
+	/**
+	 * Sets the action to be executed whenever this state is left, either via a transition of by setting
+	 * a new state directly.
+	 * 
+	 * @param action
+	 *                 the exit action
+	 */
 	public void setOnExit(Runnable action) {
-		Objects.requireNonNull(action);
-		exitAction = action;
+		exitAction = Objects.requireNonNull(action);
 	}
 
+	/**
+	 * Hook method called by the state machine when this state is left. May be overridden by state
+	 * subclasses.
+	 */
 	public void onExit() {
-		runAction(exitAction);
+		if (exitAction != null) {
+			exitAction.run();
+		}
 	}
 
-	public void setOnTick(TickAction<S> action) {
-		Objects.requireNonNull(action);
-		tickAction = action;
-	}
-
+	/**
+	 * Sets the action to be executed whenever this state is "ticked".
+	 * 
+	 * @param action
+	 *                 the tick action
+	 */
 	public void setOnTick(Runnable action) {
 		Objects.requireNonNull(action);
 		tickAction = (state, ticksConsumed, ticksRemaining) -> action.run();
 	}
 
+	/**
+	 * Sets the action to be executed whenever this state is "ticked".
+	 * 
+	 * @param action
+	 *                 the tick action. When called, the closure contains the state, the ticks consumed
+	 *                 and the ticks remaining.
+	 */
+	public void setOnTick(TickAction<S> action) {
+		tickAction = Objects.requireNonNull(action);
+	}
+
+	/**
+	 * Hook method called by the state machine when this state is "ticked". May be overridden by state
+	 * subclasses.
+	 */
 	public void onTick() {
-		runTickAction(tickAction);
+		if (tickAction != null) {
+			tickAction.run(this, getTicksConsumed(), getTicksRemaining());
+		}
 	}
 
-	/** Tells if this state has timed out. */
+	// Timer stuff
+
+	/**
+	 * Sets a timer for this state and restarts the timer.
+	 * 
+	 * @param fnDuration
+	 *                     function providing the duration
+	 */
+	public void setTimer(IntSupplier fnDuration) {
+		timer = new StateTimer(fnDuration);
+		timer.restart();
+	}
+
+	/**
+	 * Sets a constant timer for this state and restarts the timer.
+	 * 
+	 * @param ticks
+	 *                duration as number of ticks
+	 */
+	public void setTimer(int ticks) {
+		setTimer(() -> ticks);
+	}
+
+	/** Tells if this state has a timer. */
+	public boolean hasTimer() {
+		return timer != StateTimer.NEVER_ENDING_TIMER;
+	}
+
+	/** Removes the timer of this state. */
+	public void removeTimer() {
+		timer = StateTimer.NEVER_ENDING_TIMER;
+	}
+
+	/** Tells if this state timer, if any, reached its end. */
 	public boolean isTerminated() {
-		return ticksRemaining == 0;
-	}
-
-	/** Resets the timer to the complete state duration. */
-	void restartTimer() {
-		if (fnTimer == null) {
-			throw new IllegalStateException(String.format("Timer function is NULL in state '%s'", id));
-		}
-		ticksRemaining = duration = fnTimer.getAsInt();
-	}
-
-	boolean updateTimer() {
-		if (duration != ENDLESS && ticksRemaining > 0) {
-			--ticksRemaining;
-			if (ticksRemaining == 0) {
-				return true; // timeout
-			}
-		}
-		return false;
-	}
-
-	/**
-	 * Sets a timer function for this state and resets the timer.
-	 * 
-	 * @param fnTimer function providing the time for this state
-	 */
-	public void setTimerFunction(IntSupplier fnTimer) {
-		Objects.requireNonNull(fnTimer);
-		this.fnTimer = fnTimer;
-		restartTimer();
-	}
-
-	/**
-	 * Sets a constant timer function for this state and resets the timer.
-	 * 
-	 * @param fixedTime constant time for this state
-	 */
-	public void setConstantTimer(int fixedTime) {
-		setTimerFunction(() -> fixedTime);
+		return timer.remaining == 0;
 	}
 
 	/**
@@ -153,7 +179,7 @@ public class State<S, E> {
 	 * @return the state duration (number of updates until this state times out)
 	 */
 	public int getDuration() {
-		return duration;
+		return timer.duration;
 	}
 
 	/**
@@ -162,16 +188,15 @@ public class State<S, E> {
 	 * @return the number of updates until timeout occurs
 	 */
 	public int getTicksRemaining() {
-		return ticksRemaining;
+		return timer.remaining;
 	}
 
 	/**
-	 * The number of updates since the (optional) timer for this state was started
-	 * or reset.
+	 * The number of updates since the (optional) timer for this state was started or reset.
 	 * 
 	 * @return number of updates since timer started or reset
 	 */
 	public int getTicksConsumed() {
-		return duration == ENDLESS ? 0 : duration - ticksRemaining;
+		return hasTimer() ? timer.duration - timer.remaining : 0;
 	}
 }
