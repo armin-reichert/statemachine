@@ -7,6 +7,10 @@ class StateTimer {
 
 	static final StateTimer NEVER_ENDING_TIMER = new StateTimer(() -> Integer.MAX_VALUE);
 
+	static {
+		NEVER_ENDING_TIMER.restart();
+	}
+
 	/** Function providing the duration for this timer. */
 	IntSupplier fnDuration;
 
@@ -18,6 +22,7 @@ class StateTimer {
 
 	StateTimer(IntSupplier fnDuration) {
 		this.fnDuration = Objects.requireNonNull(fnDuration);
+		// NOTE: in general, timer functions cannot be executed at this point in time
 	}
 
 	void restart() {
