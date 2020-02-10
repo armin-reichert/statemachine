@@ -6,6 +6,7 @@ import java.util.function.IntSupplier;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
+import de.amr.statemachine.api.EventMatchStrategy;
 import de.amr.statemachine.api.TickAction;
 
 /**

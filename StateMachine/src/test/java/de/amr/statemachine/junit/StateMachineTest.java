@@ -4,7 +4,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import de.amr.statemachine.core.EventMatchStrategy;
+import de.amr.statemachine.api.EventMatchStrategy;
 import de.amr.statemachine.core.State;
 import de.amr.statemachine.core.StateMachine;
 
