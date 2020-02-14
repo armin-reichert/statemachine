@@ -362,8 +362,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	 *                some input/event
 	 */
 	public void enqueue(E event) {
-		Objects.requireNonNull(event);
-		eventQ.add(event);
+		eventQ.add(Objects.requireNonNull(event));
 	}
 
 	protected Collection<E> eventQ() {
@@ -463,67 +462,84 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 			throw new IllegalStateException(
 					String.format("Cannot update state, state machine '%s' not initialized.", getDescription()));
 		}
-		E eventOrNull = eventQ.poll();
-		Optional<Transition<S, E>> matchingTransition = findMatchingTransition(eventOrNull);
-		if (matchingTransition.isPresent()) {
-			fireTransition(matchingTransition.get(), eventOrNull);
+
+		// Check if event and/or condition triggers state transition
+		Optional<E> optEvent = Optional.ofNullable(eventQ.poll());
+		Optional<Transition<S, E>> match = findMatchingTransition(currentState, optEvent);
+		if (match.isPresent()) {
+			fireTransition(match.get(), optEvent);
 			return;
+		} else {
+			optEvent.ifPresent(event -> {
+				switch (missingTransitionBehavior) {
+				case IGNORE:
+					break;
+				case LOG:
+					tracer.unhandledEvent(event);
+					break;
+				case EXCEPTION:
+					throw new IllegalStateException(String
+							.format("%s: No transition defined for state '%s' and event '%s'", this, currentState, event));
+				default:
+					throw new IllegalArgumentException("Illegal value: " + missingTransitionBehavior);
+				}
+			});
 		}
-		if (eventOrNull != null) {
-			switch (missingTransitionBehavior) {
-			case EXCEPTION:
-				throw new IllegalStateException(String.format(
-						"%s: No transition defined for state '%s' and event '%s'", this, currentState, eventOrNull));
-			case IGNORE:
-				break;
-			case LOG:
-				tracer.unhandledEvent(eventOrNull);
-				break;
-			default:
-				throw new IllegalArgumentException(
-						"Illegal missing transition behavior: " + missingTransitionBehavior);
+
+		state(currentState).onTick();
+
+		// Check if expired timer triggers state transition
+		boolean timeout = state(currentState).timer.tick();
+		if (timeout) {
+			match = findMatchingTimeoutTransition(currentState);
+			if (match.isPresent()) {
+				fireTransition(match.get(), Optional.empty());
 			}
 		}
-		boolean timeout = state(currentState).timer.tick();
-		state(currentState).onTick();
-		if (timeout) {
-			findMatchingTransition(null).ifPresent(t -> fireTransition(t, null));
-		}
 	}
 
-	private Optional<Transition<S, E>> findMatchingTransition(E eventOrNull) {
-		return transitions(currentState).stream().filter(t -> isMatching(t, eventOrNull)).findFirst();
+	private Optional<Transition<S, E>> findMatchingTimeoutTransition(S state) {
+		return transitions(state).stream().filter(t -> t.timeout && t.guard.getAsBoolean()).findFirst();
 	}
 
-	private boolean isMatching(Transition<S, E> t, E eventOrNull) {
-		if (!t.guard.getAsBoolean()) {
+	private Optional<Transition<S, E>> findMatchingTransition(S state, Optional<E> event) {
+		return transitions(state).stream().filter(t -> isTransitionMatching(t, event)).findFirst();
+	}
+
+	private boolean isTransitionMatching(Transition<S, E> t, Optional<E> event) {
+		if (t.timeout) {
+			// transition matches only timeout event
 			return false;
 		}
-		if (t.timeout) {
-			return state(t.from).isTerminated();
+		if (!t.guard.getAsBoolean()) {
+			// guard condition not fulfilled
+			return false;
 		}
-		if (eventOrNull == null) {
+		if (!event.isPresent()) {
+			// no event but guard fulfilled
 			return t.event == null && t.eventClass == null;
 		}
 		if (matchEventsBy == EventMatchStrategy.BY_CLASS) {
-			return eventOrNull.getClass().equals(t.eventClass);
+			// event class matches, guard condition fulfilled
+			return event.isPresent() && event.get().getClass().equals(t.eventClass);
 		} else if (matchEventsBy == EventMatchStrategy.BY_EQUALITY) {
-			return eventOrNull.equals(t.event);
+			// event matches, guard condition fulfilled
+			return event.isPresent() && event.get().equals(t.event);
 		}
 		return false;
 	}
 
-	private void fireTransition(Transition<S, E> transition, E eventOrNull) {
-		tracer.firingTransition(transition, eventOrNull);
+	private void fireTransition(Transition<S, E> transition, Optional<E> event) {
+		tracer.firingTransition(transition, event);
 		if (currentState == transition.to) {
 			// loop: don't execute exit/entry actions, don't restart timer
-			transition.action.accept(eventOrNull);
+			transition.action.accept(event.orElse(null));
 		} else {
 			// exit state
 			tracer.exitingState(currentState);
 			state(currentState).onExit();
 			// call action
-			transition.action.accept(eventOrNull);
+			transition.action.accept(event.orElse(null));
 			// enter new state
 			currentState = transition.to;
 			tracer.enteringState(currentState);

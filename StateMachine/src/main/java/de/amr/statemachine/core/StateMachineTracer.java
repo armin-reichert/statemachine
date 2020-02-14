@@ -4,6 +4,7 @@ import static java.lang.String.format;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -88,8 +89,8 @@ public class StateMachineTracer<S, E> {
 		logger.info(() -> format("%s exiting state  '%s'", fsm.getDescription(), id));
 	}
 
-	public void firingTransition(Transition<S, E> t, E event) {
-		if (event == null) {
+	public void firingTransition(Transition<S, E> t, Optional<E> event) {
+		if (!event.isPresent()) {
 			if (t.from != t.to) {
 				if (t.timeout) {
 					logger.info(
@@ -102,10 +103,11 @@ public class StateMachineTracer<S, E> {
 			}
 		} else {
 			if (t.from != t.to) {
-				eventInfo(event,
-						() -> format("%s changing from '%s' to '%s' on '%s'", fsm.getDescription(), t.from, t.to, event));
+				eventInfo(event.get(), () -> format("%s changing from '%s' to '%s' on '%s'", fsm.getDescription(),
+						t.from, t.to, event.get()));
 			} else {
-				eventInfo(event, () -> format("%s stays '%s' on '%s'", fsm.getDescription(), t.from, event));
+				eventInfo(event.get(),
+						() -> format("%s stays '%s' on '%s'", fsm.getDescription(), t.from, event.get()));
 			}
 		}
 	}
