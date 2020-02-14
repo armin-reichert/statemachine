@@ -110,6 +110,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	 */
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public StateMachine(Class<S> stateLabelClass, EventMatchStrategy matchStrategy) {
+		fnDescription = () -> "[unnamed FSM]";
 		this.matchEventsBy = matchStrategy;
 		eventQ = new ArrayDeque<>();
 		stateMap = stateLabelClass.isEnum() ? new EnumMap(stateLabelClass)
