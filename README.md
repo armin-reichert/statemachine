@@ -54,7 +54,6 @@ public class TrafficLight extends StateMachine<Light, Void> {
 
 ```java
 beginStateMachine()
-//@formatter:off
 	.description("Pong Menu")
 	.initialState(Player1_Player2)
 
@@ -88,7 +87,7 @@ public enum PlayState {
 	INIT, PLAYING, SERVING, GAME_OVER;
 }
 
-StateMachine.define(PlayState.class, Void.class)
+beginStateMachine()
 	.description("Pong")	
 	.initialState(INIT)
 
