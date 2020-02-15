@@ -48,10 +48,42 @@ public class TrafficLight extends StateMachine<Light, Void> {
 }
 ```
 
-## Example 2: Controller for Pong game
+## Example 2: Menu and controller for Pong game
+
+### Menu controller
 
 ```java
+beginStateMachine()
+//@formatter:off
+	.description("Pong Menu")
+	.initialState(Player1_Player2)
 
+	.states()
+
+		// for clarity, all states are listed, would also work without!
+		.state(Player1_Player2)
+		.state(Player1_Computer)
+		.state(Computer_Player2)
+		.state(Computer_Computer)
+
+	.transitions()
+
+		.when(Player1_Player2)	.then(Player1_Computer)	.condition(this::nextEntrySelected)
+		.when(Player1_Computer)	.then(Computer_Player2)	.condition(this::nextEntrySelected)
+		.when(Computer_Player2)	.then(Computer_Computer).condition(this::nextEntrySelected)
+		.when(Computer_Computer).then(Player1_Player2)	.condition(this::nextEntrySelected)
+
+		.when(Player1_Player2)	.then(Computer_Computer).condition(this::prevEntrySelected)
+		.when(Computer_Computer).then(Computer_Player2)	.condition(this::prevEntrySelected)
+		.when(Computer_Player2)	.then(Player1_Computer)	.condition(this::prevEntrySelected)
+		.when(Player1_Computer)	.then(Player1_Player2)	.condition(this::prevEntrySelected)
+
+.endStateMachine();
+```
+
+### Game Controller:
+
+```java
 public enum PlayState {
 	INIT, PLAYING, SERVING, GAME_OVER;
 }
