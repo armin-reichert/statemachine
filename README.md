@@ -48,7 +48,7 @@ public class TrafficLight extends StateMachine<Light, Void> {
 }
 ```
 
-## Example 2: Menu and controller for Pong game
+## Example 2: Menu and controller for [Pong game](https://github.com/armin-reichert/pong)
 
 ### Menu controller
 
