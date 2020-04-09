@@ -15,10 +15,8 @@ import java.util.logging.Logger;
  * 
  * @author Armin Reichert
  *
- * @param   <S>
- *            state identifier type
- * @param E
- *            event type
+ * @param <S> state identifier type
+ * @param E   event type
  */
 public class StateMachineTracer<S, E> {
 
@@ -64,8 +62,7 @@ public class StateMachineTracer<S, E> {
 	}
 
 	public void unhandledEvent(E event) {
-		logger.info(
-				() -> format("%s in state %s could not handle '%s'", fsm.getDescription(), fsm.getState(), event));
+		logger.info(() -> format("%s in state %s could not handle '%s'", fsm.getDescription(), fsm.getState(), event));
 	}
 
 	public void enteringInitialState(S id) {
@@ -74,12 +71,12 @@ public class StateMachineTracer<S, E> {
 	}
 
 	public void enteringState(S id) {
-		State<S, E> stateEntered = fsm.state(id);
+		State<S> stateEntered = fsm.state(id);
 		if (stateEntered.hasTimer()) {
 			int duration = stateEntered.getDuration();
 			float seconds = fnTicksToSeconds.apply(duration);
-			logger.info(() -> format("%s entering state '%s' for %.2f seconds (%d frames)", fsm.getDescription(),
-					id, seconds, duration));
+			logger.info(() -> format("%s entering state '%s' for %.2f seconds (%d frames)", fsm.getDescription(), id, seconds,
+					duration));
 		} else {
 			logger.info(() -> format("%s entering state '%s'", fsm.getDescription(), id));
 		}
@@ -93,8 +90,7 @@ public class StateMachineTracer<S, E> {
 		if (!event.isPresent()) {
 			if (t.from != t.to) {
 				if (t.timeout) {
-					logger.info(
-							() -> format("%s changing from  '%s' to '%s (timeout)'", fsm.getDescription(), t.from, t.to));
+					logger.info(() -> format("%s changing from  '%s' to '%s (timeout)'", fsm.getDescription(), t.from, t.to));
 				} else {
 					logger.info(() -> format("%s changing from  '%s' to '%s'", fsm.getDescription(), t.from, t.to));
 				}
@@ -103,11 +99,10 @@ public class StateMachineTracer<S, E> {
 			}
 		} else {
 			if (t.from != t.to) {
-				eventInfo(event.get(), () -> format("%s changing from '%s' to '%s' on '%s'", fsm.getDescription(),
-						t.from, t.to, event.get()));
-			} else {
 				eventInfo(event.get(),
-						() -> format("%s stays '%s' on '%s'", fsm.getDescription(), t.from, event.get()));
+						() -> format("%s changing from '%s' to '%s' on '%s'", fsm.getDescription(), t.from, t.to, event.get()));
+			} else {
+				eventInfo(event.get(), () -> format("%s stays '%s' on '%s'", fsm.getDescription(), t.from, event.get()));
 			}
 		}
 	}

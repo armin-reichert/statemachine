@@ -148,7 +148,7 @@ public class StateMachineBuilder<S, E> {
 		 *                              custom state instance
 		 * @return the builder
 		 */
-		public <C extends State<S, E>> StateBuilder customState(C customStateInstance) {
+		public <C extends State<S>> StateBuilder customState(C customStateInstance) {
 			if (customStateInstance == null) {
 				throw new IllegalArgumentException("Custom state object cannot be NULL");
 			}
@@ -256,7 +256,7 @@ public class StateMachineBuilder<S, E> {
 		}
 
 		private StateBuilder commit() {
-			State<S, E> state = sm.state(stateId);
+			State<S> state = sm.state(stateId);
 			state.entryAction = entryAction;
 			state.exitAction = exitAction;
 			state.tickAction = tickAction;

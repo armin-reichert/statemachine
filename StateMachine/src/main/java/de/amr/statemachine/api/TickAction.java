@@ -10,5 +10,5 @@ public interface TickAction<S> extends Runnable {
 		run(null, 0, 0);
 	}
 
-	void run(State<S, ?> state, int ticksConsumed, int ticksRemaining);
+	void run(State<S> state, int ticksConsumed, int ticksRemaining);
 }

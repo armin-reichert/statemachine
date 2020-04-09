@@ -26,18 +26,16 @@ import de.amr.statemachine.api.Fsm;
 /**
  * A finite state machine.
  *
- * @param <S>
- *          type for identifying states, for example an enumeration type.
- * @param <E>
- *          type of events/inputs.
+ * @param <S> type for identifying states, for example an enumeration type.
+ * @param <E> type of events/inputs.
  * 
  * @author Armin Reichert
  */
 public class StateMachine<S, E> implements Fsm<S, E> {
 
 	/**
-	 * Defines what happens when no transition is found. Either ignore silently, log a message or throw
-	 * an exception.
+	 * Defines what happens when no transition is found. Either ignore silently, log
+	 * a message or throw an exception.
 	 */
 	public enum MissingTransitionBehavior {
 		/** Ignore silently. */
@@ -51,40 +49,31 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	/**
 	 * Creates a new state machine instance and starts its definition building.
 	 * 
-	 * @param stateLabelClass
-	 *                          state label class
-	 * @param eventClass
-	 *                          event class
+	 * @param stateLabelClass state label class
+	 * @param eventClass      event class
 	 * 
-	 * @param                 <STATE>
-	 *                          state type
-	 * @param                 <EVENT>
-	 *                          event type
+	 * @param <STATE>         state type
+	 * @param <EVENT>         event type
 	 * @return state machine builder
 	 */
-	public static <STATE, EVENT> StateMachineBuilder<STATE, EVENT> beginStateMachine(
-			Class<STATE> stateLabelClass, Class<EVENT> eventClass) {
+	public static <STATE, EVENT> StateMachineBuilder<STATE, EVENT> beginStateMachine(Class<STATE> stateLabelClass,
+			Class<EVENT> eventClass) {
 		return new StateMachineBuilder<>(stateLabelClass);
 	}
 
 	/**
 	 * Creates a new state machine instance and starts its definition building.
 	 * 
-	 * @param stateLabelClass
-	 *                          state label class
-	 * @param eventClass
-	 *                          event class
-	 * @param matchStrategy
-	 *                          event match strategy
+	 * @param stateLabelClass state label class
+	 * @param eventClass      event class
+	 * @param matchStrategy   event match strategy
 	 * 
-	 * @param                 <STATE>
-	 *                          state type
-	 * @param                 <EVENT>
-	 *                          event type
+	 * @param <STATE>         state type
+	 * @param <EVENT>         event type
 	 * @return state machine builder
 	 */
-	public static <STATE, EVENT> StateMachineBuilder<STATE, EVENT> beginStateMachine(
-			Class<STATE> stateLabelClass, Class<EVENT> eventClass, EventMatchStrategy matchStrategy) {
+	public static <STATE, EVENT> StateMachineBuilder<STATE, EVENT> beginStateMachine(Class<STATE> stateLabelClass,
+			Class<EVENT> eventClass, EventMatchStrategy matchStrategy) {
 		return new StateMachineBuilder<>(stateLabelClass, matchStrategy);
 	}
 
@@ -94,7 +83,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	private MissingTransitionBehavior missingTransitionBehavior;
 	private final EventMatchStrategy matchEventsBy;
 	private final Deque<E> eventQ;
-	private final Map<S, State<S, E>> stateMap;
+	private final Map<S, State<S>> stateMap;
 	private final Map<S, List<Transition<S, E>>> transitionMap;
 	private final StateMachineTracer<S, E> tracer;
 	private final Set<Consumer<E>> listeners = new LinkedHashSet<>();
@@ -103,10 +92,8 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	/**
 	 * Creates a new state machine.
 	 * 
-	 * @param stateLabelClass
-	 *                          type for state identifiers
-	 * @param matchStrategy
-	 *                          strategy for matching events
+	 * @param stateLabelClass type for state identifiers
+	 * @param matchStrategy   strategy for matching events
 	 */
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public StateMachine(Class<S> stateLabelClass, EventMatchStrategy matchStrategy) {
@@ -123,8 +110,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	/**
 	 * Creates a new state machine with a default match strategy of "by class".
 	 * 
-	 * @param stateLabelClass
-	 *                          type for state identifiers
+	 * @param stateLabelClass type for state identifiers
 	 */
 	public StateMachine(Class<S> stateLabelClass) {
 		this(stateLabelClass, EventMatchStrategy.BY_CLASS);
@@ -174,8 +160,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	/**
 	 * Sets the description text supplier for this state machine.
 	 * 
-	 * @param description
-	 *                      description text (used by tracing)
+	 * @param description description text (used by tracing)
 	 */
 	public void setDescription(Supplier<String> fnDescription) {
 		this.fnDescription = Objects.requireNonNull(fnDescription);
@@ -184,8 +169,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	/**
 	 * Sets the description text for this state machine.
 	 * 
-	 * @param description
-	 *                      description text (used by tracing)
+	 * @param description description text (used by tracing)
 	 */
 	public void setDescription(String description) {
 		this.fnDescription = () -> description;
@@ -194,8 +178,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	/**
 	 * Defines how the state machine reacts to missing transitions.
 	 * 
-	 * @param missingTransitionBehavior
-	 *                                    behavior in case no transition is available
+	 * @param missingTransitionBehavior behavior in case no transition is available
 	 */
 	@Override
 	public void setMissingTransitionBehavior(MissingTransitionBehavior missingTransitionBehavior) {
@@ -205,8 +188,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	/**
 	 * Sets the initial state for this state machine.
 	 * 
-	 * @param initialState
-	 *                       initial state
+	 * @param initialState initial state
 	 */
 	public void setInitialState(S initialState) {
 		if (initialState == null) {
@@ -232,24 +214,17 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	/**
 	 * Adds a state transition.
 	 * 
-	 * @param from
-	 *                     transition source state
-	 * @param to
-	 *                     transition target state
-	 * @param guard
-	 *                     condition guarding transition
-	 * @param action
-	 *                     action for transition
-	 * @param event
-	 *                     event for matching transition
-	 * @param eventClass
-	 *                     event class for matching transition
-	 * @param timeout
-	 *                     tells if this should be a timeout transition
+	 * @param from       transition source state
+	 * @param to         transition target state
+	 * @param guard      condition guarding transition
+	 * @param action     action for transition
+	 * @param event      event for matching transition
+	 * @param eventClass event class for matching transition
+	 * @param timeout    tells if this should be a timeout transition
 	 * 
 	 */
-	void addTransition(S from, S to, BooleanSupplier guard, Consumer<E> action, E event,
-			Class<? extends E> eventClass, boolean timeout) {
+	void addTransition(S from, S to, BooleanSupplier guard, Consumer<E> action, E event, Class<? extends E> eventClass,
+			boolean timeout) {
 		Objects.requireNonNull(from);
 		Objects.requireNonNull(to);
 		guard = (guard != null) ? guard : () -> true;
@@ -261,33 +236,24 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	/**
 	 * Adds a timeout transition.
 	 * 
-	 * @param from
-	 *                 transition source state
-	 * @param to
-	 *                 transition target state
-	 * @param guard
-	 *                 condition guarding transition
-	 * @param action
-	 *                 action for transition
+	 * @param from   transition source state
+	 * @param to     transition target state
+	 * @param guard  condition guarding transition
+	 * @param action action for transition
 	 */
 	public void addTransitionOnTimeout(S from, S to, BooleanSupplier guard, Consumer<E> action) {
 		addTransition(from, to, guard, action, null, null, true);
 	}
 
 	/**
-	 * Adds a transition which is fired if the guard condition holds and the current input's class
-	 * equals the given event class.
+	 * Adds a transition which is fired if the guard condition holds and the current
+	 * input's class equals the given event class.
 	 * 
-	 * @param from
-	 *                     transition source state
-	 * @param to
-	 *                     transition target state
-	 * @param guard
-	 *                     condition guarding transition
-	 * @param action
-	 *                     action for transition
-	 * @param eventClass
-	 *                     class used for matching the current event
+	 * @param from       transition source state
+	 * @param to         transition target state
+	 * @param guard      condition guarding transition
+	 * @param action     action for transition
+	 * @param eventClass class used for matching the current event
 	 */
 	public void addTransitionOnEventType(S from, S to, BooleanSupplier guard, Consumer<E> action,
 			Class<? extends E> eventClass) {
@@ -299,19 +265,14 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	}
 
 	/**
-	 * Adds a transition which is fired if the guard condition holds and the current input equals the
-	 * given event.
+	 * Adds a transition which is fired if the guard condition holds and the current
+	 * input equals the given event.
 	 * 
-	 * @param from
-	 *                 transition source state
-	 * @param to
-	 *                 transition target state
-	 * @param guard
-	 *                 condition guarding transition
-	 * @param action
-	 *                 action for transition
-	 * @param event
-	 *                 event object used for matching the current event
+	 * @param from   transition source state
+	 * @param to     transition target state
+	 * @param guard  condition guarding transition
+	 * @param action action for transition
+	 * @param event  event object used for matching the current event
 	 */
 	public void addTransitionOnEventObject(S from, S to, BooleanSupplier guard, Consumer<E> action, E event) {
 		Objects.requireNonNull(event);
@@ -324,14 +285,10 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	/**
 	 * Adds a transition which is fired when the guard condition holds.
 	 * 
-	 * @param from
-	 *                 transition source state
-	 * @param to
-	 *                 transition target state
-	 * @param guard
-	 *                 condition guarding transition
-	 * @param action
-	 *                 action for transition
+	 * @param from   transition source state
+	 * @param to     transition target state
+	 * @param guard  condition guarding transition
+	 * @param action action for transition
 	 */
 	public void addTransition(S from, S to, BooleanSupplier guard, Consumer<E> action) {
 		addTransition(from, to, guard, action, null, null, false);
@@ -358,8 +315,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	/**
 	 * Adds an input (event) to the input queue of this state machine.
 	 * 
-	 * @param event
-	 *                some input/event
+	 * @param event some input/event
 	 */
 	public void enqueue(E event) {
 		eventQ.add(Objects.requireNonNull(event));
@@ -412,7 +368,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	}
 
 	@Override
-	public <StateType extends State<S, E>> StateType state() {
+	public <StateType extends State<S>> StateType state() {
 		if (currentState == null) {
 			throw new IllegalStateException("Cannot access current state object, state machine not initialized.");
 		}
@@ -421,7 +377,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 
 	@Override
 	@SuppressWarnings("unchecked")
-	public <StateType extends State<S, E>> StateType state(S state) {
+	public <StateType extends State<S>> StateType state(S state) {
 		if (!stateMap.containsKey(state)) {
 			return (StateType) realizeState(state, new State<>());
 		}
@@ -431,15 +387,13 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	/**
 	 * Creates or replaces the state object for the given state by the given object.
 	 * 
-	 * @param             <StateType>
-	 *                      subtype of default state class used for representing the given state
-	 * @param state
-	 *                      state identifier
-	 * @param stateObject
-	 *                      state object
+	 * @param <StateType> subtype of default state class used for representing the
+	 *                    given state
+	 * @param state       state identifier
+	 * @param stateObject state object
 	 * @return the new state object
 	 */
-	public <StateType extends State<S, E>> StateType realizeState(S state, StateType stateObject) {
+	public <StateType extends State<S>> StateType realizeState(S state, StateType stateObject) {
 		stateObject.id = state;
 		stateMap.put(state, stateObject);
 		return stateObject;
@@ -478,8 +432,8 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 					tracer.unhandledEvent(event);
 					break;
 				case EXCEPTION:
-					throw new IllegalStateException(String
-							.format("%s: No transition defined for state '%s' and event '%s'", this, currentState, event));
+					throw new IllegalStateException(
+							String.format("%s: No transition defined for state '%s' and event '%s'", this, currentState, event));
 				default:
 					throw new IllegalArgumentException("Illegal value: " + missingTransitionBehavior);
 				}

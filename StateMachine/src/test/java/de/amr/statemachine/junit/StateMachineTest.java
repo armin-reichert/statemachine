@@ -37,7 +37,7 @@ public class StateMachineTest {
 		}
 	}
 
-	private static class StateImpl extends State<States, Events> {
+	private static class StateImpl extends State<States> {
 
 		int entryCount;
 
