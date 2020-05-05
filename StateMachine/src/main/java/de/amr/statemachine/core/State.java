@@ -168,7 +168,7 @@ public class State<S> {
 	/**
 	 * Returns the duration of this state (in ticks).
 	 * 
-	 * @return the state duration (number of updates until this state times out)
+	 * @return the state duration (total number of updates until timeout)
 	 */
 	public int getDuration() {
 		return timer.duration;
@@ -177,7 +177,7 @@ public class State<S> {
 	/**
 	 * Returns the number of updates until this state will time out.
 	 * 
-	 * @return the number of updates until timeout occurs
+	 * @return remaining number of updates until timeout occurs
 	 */
 	public int getTicksRemaining() {
 		return timer.remaining;
@@ -187,7 +187,9 @@ public class State<S> {
 	 * The number of updates since the (optional) timer for this state was started
 	 * or reset.
 	 * 
-	 * @return number of updates since timer started or reset
+	 * @return Number of updates since the timer for this state was started or
+	 *         reset. If there is no timer assigned to this state, <code>0</code> is
+	 *         returned.
 	 */
 	public int getTicksConsumed() {
 		return hasTimer() ? timer.duration - timer.remaining : 0;
