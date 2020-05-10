@@ -8,10 +8,8 @@ import java.util.function.Consumer;
  * 
  * @author Armin Reichert
  *
- * @param <S>
- *          state identifier type
- * @param <E>
- *          event type
+ * @param <S> state identifier type
+ * @param <E> event type
  */
 class Transition<S, E> {
 
@@ -23,8 +21,8 @@ class Transition<S, E> {
 	final E event;
 	final Class<? extends E> eventClass;
 
-	public Transition(S from, S to, BooleanSupplier guard, Consumer<E> action, E event,
-			Class<? extends E> eventClass, boolean timeout) {
+	public Transition(S from, S to, BooleanSupplier guard, Consumer<E> action, E event, Class<? extends E> eventClass,
+			boolean timeout) {
 		this.from = from;
 		this.to = to;
 		this.guard = guard;
@@ -32,5 +30,11 @@ class Transition<S, E> {
 		this.event = event;
 		this.eventClass = eventClass;
 		this.timeout = timeout;
+	}
+
+	@Override
+	public String toString() {
+		String eventText = eventClass != null ? eventClass.getSimpleName() : String.valueOf(event);
+		return String.format("\n(%s)--[%s]-->(%s)", from, eventText, to);
 	}
 }
