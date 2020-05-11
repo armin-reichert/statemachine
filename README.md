@@ -1,6 +1,6 @@
-# Finite State Machine (Java 8 and newer)
+# Finite-State Machine (Java 8 and newer)
 
-A finite state machine implementation with the following features:
+A finite-state machine implementation with the following features:
 - Supports definition of state machines in declarative style using the builder pattern
 - Supports *onEntry* and *onExit* actions for states
 - Supports *onTick* actions for states which are triggered by a clock
