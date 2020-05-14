@@ -3,8 +3,6 @@ package de.amr.statemachine.core;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Deque;
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -77,17 +75,17 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 		return new StateMachineBuilder<>(stateLabelClass, matchStrategy);
 	}
 
-	private Supplier<String> fnDescription;
-	private S initialState;
-	private S currentState;
-	private MissingTransitionBehavior missingTransitionBehavior;
-	private final EventMatchStrategy matchEventsBy;
-	private final Deque<E> eventQ;
-	private final Map<S, State<S>> stateMap;
-	private final Map<S, List<Transition<S, E>>> transitionMap;
-	private final StateMachineTracer<S, E> tracer;
-	private final Set<Consumer<E>> listeners = new LinkedHashSet<>();
-	private final List<Predicate<E>> loggingBlacklist = new ArrayList<>();
+	protected Supplier<String> fnDescription;
+	protected S initialState;
+	protected S currentState;
+	protected MissingTransitionBehavior missingTransitionBehavior;
+	protected final EventMatchStrategy matchEventsBy;
+	protected final Deque<E> eventQ;
+	protected final Map<S, State<S>> stateMap;
+	protected final Map<S, List<Transition<S, E>>> transitionMap;
+	protected final StateMachineTracer<S, E> tracer;
+	protected final Set<Consumer<E>> listeners = new LinkedHashSet<>();
+	protected final List<Predicate<E>> loggingBlacklist = new ArrayList<>();
 
 	/**
 	 * Creates a new state machine.
@@ -319,10 +317,6 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	 */
 	public void enqueue(E event) {
 		eventQ.add(Objects.requireNonNull(event));
-	}
-
-	protected Collection<E> eventQ() {
-		return Collections.unmodifiableCollection(eventQ);
 	}
 
 	@Override
