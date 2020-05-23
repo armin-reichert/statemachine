@@ -7,7 +7,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>de.amr.statemachine</groupId>
 	<artifactId>StateMachine</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>1.0</version>
 	<name>StateMachine</name>
 	<description>Finite state machine</description>
 	<build>
