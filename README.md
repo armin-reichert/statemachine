@@ -110,7 +110,84 @@ beginStateMachine()
 .endStateMachine();
 ```
 
-## Example 3: Pac-Man ghost "AI"
+## Example 3: Flappy-Bird game controller 
+
+A slightly more complex example is the game controller of my [Flappy Bird]((https://github.com/armin-reichert/birdy) game implementation.
+
+```java
+beginStateMachine()
+	.description("[Play Scene]")
+	.initialState(PLAYING)
+
+.states()
+
+	.state(STARTING)
+		.onEntry(() -> BirdyGameApp.setScene(Scene.START_SCENE))
+
+	.state(PLAYING)
+		.onEntry(() -> {
+			points = 0;
+			start();
+		})
+
+	.state(GAME_OVER)
+		.onEntry(() -> stop())
+
+.transitions()
+
+	.stay(PLAYING)
+		.on(TOUCHED_PIPE)
+		.condition(() -> points > 3)
+		.act(e -> {
+			points -= 3;
+			sound("sfx/hit.mp3").play();
+			Bird bird = ent.named("bird");
+			bird.tf.x += app().settings().getAsInt("obstacle-width") + bird.tf.width;
+			bird.dispatch(TOUCHED_PIPE);
+		})
+
+	.stay(PLAYING)
+		.on(PASSED_OBSTACLE)
+		.act(e -> {
+			points++;
+			sound("sfx/point.mp3").play();
+		})
+
+	.when(PLAYING).then(GAME_OVER)
+		.on(TOUCHED_PIPE)
+		.condition(() -> points <= 3)
+		.act(t -> {
+			sound("sfx/hit.mp3").play();
+			Bird bird = ent.named("bird");
+			bird.dispatch(CRASHED);
+		})
+
+	.when(PLAYING).then(GAME_OVER)
+		.on(TOUCHED_GROUND)
+		.act(e -> {
+			sound("music/bgmusic.mp3").stop();
+			Bird bird = ent.named("bird");
+			bird.dispatch(TOUCHED_GROUND);
+		})
+
+	.when(PLAYING).then(GAME_OVER)
+		.on(LEFT_WORLD)
+		.act(e -> {
+			Bird bird = ent.named("bird");
+			bird.dispatch(LEFT_WORLD);
+			sound("music/bgmusic.mp3").stop();
+		})
+
+	.when(GAME_OVER).then(STARTING).condition(() -> Keyboard.keyPressedOnce(KeyEvent.VK_SPACE))
+
+	.stay(GAME_OVER)
+		.on(TOUCHED_GROUND)
+		.act(() -> sound("music/bgmusic.mp3").stop())
+
+.endStateMachine();
+```
+
+## Example 4: Pac-Man ghost "AI"
 
 I used this state machine library extensively in my [Pac-Man](https://github.com/armin-reichert/pacman) game, in fact this Pac-man implementation was the main motivation for creating this library at all. 
 
