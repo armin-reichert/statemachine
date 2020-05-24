@@ -112,7 +112,7 @@ beginStateMachine()
 
 ## Example 3: Flappy-Bird game controller 
 
-A slightly more complex example is the game controller of my [Flappy Bird]((https://github.com/armin-reichert/birdy) game implementation.
+A slightly more complex example is the game controller of my [Flappy Bird](https://github.com/armin-reichert/birdy) game implementation.
 
 ```java
 beginStateMachine()
