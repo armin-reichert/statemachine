@@ -19,6 +19,8 @@ The states are identified by some arbitrary type, normally an enumeration type, 
 
 ## Example 1: Traffic light
 
+A somewhat trivial example is a traffic light controlled using timers:
+
 ```java
 public class TrafficLight extends StateMachine<Light, Void> {
 
