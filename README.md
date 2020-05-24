@@ -112,6 +112,8 @@ beginStateMachine()
 
 ## Example 3: Pac-Man ghost "AI"
 
+I use these state machines extensively in my [Pac-Man](https://github.com/armin-reichert/pacman) game implementation, in fact this Pac-man implementation was the main motivation for creating this library. 
+
 ```java
 brain = StateMachine.beginStateMachine(GhostState.class, PacManGameEvent.class)
 
@@ -125,22 +127,22 @@ brain = StateMachine.beginStateMachine(GhostState.class, PacManGameEvent.class)
 				followState = getState();
 				visible = true;
 				setWishDir(maze().ghostHomeDir[seat]);
-				setMoveDir(wishDir());
+				setMoveDir(wishDir);
 				tf.setPosition(maze().seatPosition(seat));
 				enteredNewTile();
 				sprites.forEach(Sprite::resetAnimation);
-				show("color-" + moveDir());
+				show("color-" + moveDir);
 			})
 			.onTick(() -> {
 				move();
-				show(game.pacMan.powerTicks > 0 ? "frightened" : "color-" + moveDir());
+				show(game.pacMan.powerTicks > 0 ? "frightened" : "color-" + moveDir);
 			})
 
 		.state(LEAVING_HOUSE)
 			.onEntry(() -> steering().init())
 			.onTick(() -> {
 				move();
-				show("color-" + moveDir());
+				show("color-" + moveDir);
 			})
 			.onExit(() -> forceMoving(LEFT))
 
@@ -152,20 +154,20 @@ brain = StateMachine.beginStateMachine(GhostState.class, PacManGameEvent.class)
 			})
 			.onTick(() -> {
 				move();
-				show("eyes-" + moveDir());
+				show("eyes-" + moveDir);
 			})
 
 		.state(SCATTERING)
 			.onTick(() -> {
 				move();
-				show("color-" + moveDir());
+				show("color-" + moveDir);
 				checkCollision(game.pacMan);
 			})
 
 		.state(CHASING)
 			.onTick(() -> {
 				move();
-				show("color-" + moveDir());
+				show("color-" + moveDir);
 				checkCollision(game.pacMan);
 			})
 
@@ -186,7 +188,7 @@ brain = StateMachine.beginStateMachine(GhostState.class, PacManGameEvent.class)
 			.onTick(() -> {
 				if (state().isTerminated()) { // "dead"
 					move();
-					show("eyes-" + moveDir());
+					show("eyes-" + moveDir);
 				}
 			})
 
@@ -249,5 +251,3 @@ brain = StateMachine.beginStateMachine(GhostState.class, PacManGameEvent.class)
 brain.setMissingTransitionBehavior(MissingTransitionBehavior.LOG);
 brain.getTracer().setLogger(PacManStateMachineLogging.LOG);
 ```
-
-More examples can be found in my [Pac-Man](https://github.com/armin-reichert/pacman) game implementation.
