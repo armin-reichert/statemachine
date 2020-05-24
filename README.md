@@ -110,66 +110,83 @@ beginStateMachine()
 .endStateMachine();
 ```
 
-## Example 3: Pac-Man ghost behavior
+## Example 3: Pac-Man ghost "AI"
 
 ```java
-beginStateMachine(GhostState.class, PacManGameEvent.class)
+brain = StateMachine.beginStateMachine(GhostState.class, PacManGameEvent.class)
 
-	.description(Ghost.this::toString)
+	.description(this::toString)
 	.initialState(LOCKED)
 
 	.states()
 
 		.state(LOCKED)
 			.onEntry(() -> {
-				cast().placeOnSeat(this);
-				setVisible(true);
 				followState = getState();
-				sprites.select("color-" + moveDir());
+				visible = true;
+				setWishDir(maze().ghostHomeDir[seat]);
+				setMoveDir(wishDir());
+				tf.setPosition(maze().seatPosition(seat));
+				enteredNewTile();
 				sprites.forEach(Sprite::resetAnimation);
+				show("color-" + moveDir());
 			})
-			.onTick((state, t, remaining) -> {
-					step(cast().pacMan.hasPower() ? "frightened" : "color-" + moveDir());
+			.onTick(() -> {
+				move();
+				show(game.pacMan.powerTicks > 0 ? "frightened" : "color-" + moveDir());
 			})
 
 		.state(LEAVING_HOUSE)
 			.onEntry(() -> steering().init())
 			.onTick(() -> {
-				step("color-" + moveDir());
+				move();
+				show("color-" + moveDir());
 			})
+			.onExit(() -> forceMoving(LEFT))
 
 		.state(ENTERING_HOUSE)
-			.onEntry(() -> steering().init())
-			.onTick(() -> step("eyes-" + moveDir()))
+			.onEntry(() -> {
+				tf.setPosition(maze().seatPosition(0));
+				setWishDir(DOWN);
+				steering().init();
+			})
+			.onTick(() -> {
+				move();
+				show("eyes-" + moveDir());
+			})
 
 		.state(SCATTERING)
 			.onTick(() -> {
-				step("color-" + moveDir());
-				checkPacManCollision();
+				move();
+				show("color-" + moveDir());
+				checkCollision(game.pacMan);
 			})
 
 		.state(CHASING)
 			.onTick(() -> {
-				step("color-" + moveDir());
-				checkPacManCollision();
+				move();
+				show("color-" + moveDir());
+				checkCollision(game.pacMan);
 			})
 
 		.state(FRIGHTENED)
-			.timeoutAfter(() -> sec(game().level().pacManPowerSeconds))
+			.timeoutAfter(() -> sec(game.level.pacManPowerSeconds))
 			.onTick((state, t, remaining) -> {
-				step(remaining < sec(2) ? "flashing" : "frightened");
-				checkPacManCollision();
+				move();
+				show(remaining < sec(2) ? "flashing" : "frightened");
+				checkCollision(game.pacMan);
 			})
 
 		.state(DEAD)
 			.timeoutAfter(sec(1)) // "dying" time
 			.onEntry(() -> {
-				int points = POINTS_GHOST[game().level().ghostsKilledByEnergizer - 1];
+				int points = Game.POINTS_GHOST[game.level.ghostsKilledByEnergizer - 1];
 				sprites.select("points-" + points);
 			})
 			.onTick(() -> {
 				if (state().isTerminated()) { // "dead"
-					step("eyes-" + moveDir());
+					move();
+					show("eyes-" + moveDir());
 				}
 			})
 
@@ -178,47 +195,36 @@ beginStateMachine(GhostState.class, PacManGameEvent.class)
 		.when(LOCKED).then(LEAVING_HOUSE)
 			.on(GhostUnlockedEvent.class)
 
-		.stay(LOCKED)
-			.on(PacManGainsPowerEvent.class)
-
 		.when(LEAVING_HOUSE).then(SCATTERING)
 			.condition(() -> steering().isComplete() && followState == SCATTERING)
-			.act(() -> forceMove(Direction.LEFT))
 
 		.when(LEAVING_HOUSE).then(CHASING)
 			.condition(() -> steering().isComplete() && followState == CHASING)
-			.act(() -> forceMove(Direction.LEFT))
-
-		.stay(LEAVING_HOUSE)
-			.on(PacManGainsPowerEvent.class)
 
 		.when(ENTERING_HOUSE).then(LEAVING_HOUSE)
 			.condition(() -> steering().isComplete())
 
-		.stay(ENTERING_HOUSE)
-			.on(PacManGainsPowerEvent.class)
-
 		.when(CHASING).then(FRIGHTENED)
 			.on(PacManGainsPowerEvent.class)
-			.act(() -> turnBack())
+			.act(() -> forceTurningBack())
 
 		.when(CHASING).then(DEAD)
 			.on(GhostKilledEvent.class)
 
 		.when(CHASING).then(SCATTERING)
 			.condition(() -> followState == SCATTERING)
-			.act(() -> turnBack())
+			.act(() -> forceTurningBack())
 
 		.when(SCATTERING).then(FRIGHTENED)
 			.on(PacManGainsPowerEvent.class)
-			.act(() -> turnBack())
+			.act(() -> forceTurningBack())
 
 		.when(SCATTERING).then(DEAD)
 			.on(GhostKilledEvent.class)
 
 		.when(SCATTERING).then(CHASING)
 			.condition(() -> followState == CHASING)
-			.act(() -> turnBack())
+			.act(() -> forceTurningBack())
 
 		.stay(FRIGHTENED)
 			.on(PacManGainsPowerEvent.class)
@@ -236,13 +242,12 @@ beginStateMachine(GhostState.class, PacManGameEvent.class)
 			.condition(() -> followState == CHASING)
 
 		.when(DEAD).then(ENTERING_HOUSE)
-			.condition(() -> maze().inFrontOfGhostHouseDoor(tile()))
-			.act(() -> {
-				tf.setPosition(cast().seatPosition(0));
-				setWishDir(Direction.DOWN);
-			})
+			.condition(() -> maze().atGhostHouseDoor(tile()))
 
 .endStateMachine();
+/*@formatter:on*/
+brain.setMissingTransitionBehavior(MissingTransitionBehavior.LOG);
+brain.getTracer().setLogger(PacManStateMachineLogging.LOG);
 ```
 
 More examples can be found in my [Pac-Man](https://github.com/armin-reichert/pacman) game implementation.
