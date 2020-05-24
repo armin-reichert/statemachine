@@ -1,4 +1,4 @@
-# Finite-State Machine (Java 8 and newer)
+# Finite-State Machine
 
 A finite-state machine implementation with the following features:
 - Supports definition of state machines in declarative style using the builder pattern
