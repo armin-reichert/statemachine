@@ -121,9 +121,6 @@ beginStateMachine()
 
 .states()
 
-	.state(STARTING)
-		.onEntry(() -> BirdyGameApp.setScene(Scene.START_SCENE))
-
 	.state(PLAYING)
 		.onEntry(() -> {
 			points = 0;
@@ -178,7 +175,9 @@ beginStateMachine()
 			sound("music/bgmusic.mp3").stop();
 		})
 
-	.when(GAME_OVER).then(STARTING).condition(() -> Keyboard.keyPressedOnce(KeyEvent.VK_SPACE))
+	.stay(GAME_OVER)
+		.condition(() -> Keyboard.keyPressedOnce(KeyEvent.VK_SPACE))
+		.act(() -> BirdyGameApp.setScene(START_SCENE))
 
 	.stay(GAME_OVER)
 		.on(TOUCHED_GROUND)
