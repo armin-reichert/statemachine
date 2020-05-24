@@ -112,7 +112,7 @@ beginStateMachine()
 
 ## Example 3: Pac-Man ghost "AI"
 
-I use these state machines extensively in my [Pac-Man](https://github.com/armin-reichert/pacman) game implementation, in fact this Pac-man implementation was the main motivation for creating this library. 
+I used this state machine library extensively in my [Pac-Man](https://github.com/armin-reichert/pacman) game, in fact this Pac-man implementation was the main motivation for creating this library at all. 
 
 ```java
 brain = StateMachine.beginStateMachine(GhostState.class, PacManGameEvent.class)
@@ -126,9 +126,9 @@ brain = StateMachine.beginStateMachine(GhostState.class, PacManGameEvent.class)
 			.onEntry(() -> {
 				followState = getState();
 				visible = true;
-				setWishDir(maze().ghostHomeDir[seat]);
+				setWishDir(maze.ghostHomeDir[seat]);
 				setMoveDir(wishDir);
-				tf.setPosition(maze().seatPosition(seat));
+				tf.setPosition(maze.seatPosition(seat));
 				enteredNewTile();
 				sprites.forEach(Sprite::resetAnimation);
 				show("color-" + moveDir);
@@ -148,7 +148,7 @@ brain = StateMachine.beginStateMachine(GhostState.class, PacManGameEvent.class)
 
 		.state(ENTERING_HOUSE)
 			.onEntry(() -> {
-				tf.setPosition(maze().seatPosition(0));
+				tf.setPosition(maze.seatPosition(0));
 				setWishDir(DOWN);
 				steering().init();
 			})
@@ -244,7 +244,7 @@ brain = StateMachine.beginStateMachine(GhostState.class, PacManGameEvent.class)
 			.condition(() -> followState == CHASING)
 
 		.when(DEAD).then(ENTERING_HOUSE)
-			.condition(() -> maze().atGhostHouseDoor(tile()))
+			.condition(() -> maze.atGhostHouseDoor(tile()))
 
 .endStateMachine();
 /*@formatter:on*/
