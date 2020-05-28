@@ -32,7 +32,7 @@ import de.amr.statemachine.api.Fsm;
  * {@link MissingTransitionBehavior}.
  * 
  * Events/inputs by default are matched (against a transition definition) by the class of the event.
- * That means, in the state machine definition, transitions should be defined based in the event class. 
+ * That means, in the state machine definition, transitions should be defined based on the event class. 
  * 
  * In the example below however, events are unique (no different instances of events of the same type) and
  * transitions are defined based on event instances. In this case, the state machine must be defined with
