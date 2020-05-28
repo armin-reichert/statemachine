@@ -75,16 +75,16 @@ public interface Fsm<S, E> {
 	void setMissingTransitionBehavior(MissingTransitionBehavior missingTransitionBehavior);
 
 	/**
-	 * Sets state machine directly to the given state. The state's entry action is
-	 * executed and a state timer, if defined, gets reset.
+	 * Sets state machine directly to the given state. The state's entry action is executed and a state
+	 * timer, if defined, gets reset.
 	 * 
 	 * @param state new state
 	 */
 	void setState(S state);
 
 	/**
-	 * Sets the new state of this entity. Normally not used directly. The difference
-	 * to {@link #setState(Object)} is that a timer of the state is not reset.
+	 * Sets the new state of this entity. Normally not used directly. The difference to
+	 * {@link #setState(Object)} is that a timer of the state is not reset.
 	 * 
 	 * @param state the new state
 	 */
@@ -104,14 +104,12 @@ public interface Fsm<S, E> {
 	boolean is(S... states);
 
 	/**
-	 * @return internal state object corresponding to current state. Gives access to
-	 *         timer.
+	 * @return internal state object corresponding to current state. Gives access to timer.
 	 */
 	<StateType extends State<S>> StateType state();
 
 	/**
-	 * @return internal state object corresponding to specified state. Gives access
-	 *         to timer.
+	 * @return internal state object corresponding to specified state. Gives access to timer.
 	 */
 	<StateType extends State<S>> StateType state(S state);
 
@@ -123,7 +121,7 @@ public interface Fsm<S, E> {
 	void restartTimer(S state);
 
 	/**
-	 * Lets the controlling state machine immedialtely process the given event.
+	 * Lets the state machine immediately process the given event.
 	 * 
 	 * @param event event to process
 	 */

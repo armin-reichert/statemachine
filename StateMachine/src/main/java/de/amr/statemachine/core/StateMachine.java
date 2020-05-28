@@ -97,7 +97,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	public enum MissingTransitionBehavior {
 		/** Ignore silently. */
 		IGNORE,
-		/** Log a message */
+		/** Log a message. */
 		LOG,
 		/** Throw an exception. */
 		EXCEPTION;
@@ -120,16 +120,19 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	}
 
 	/**
+	 * Creates a new state machine instance and starts its definition building.
+	 * 
 	 * @param stateIdentifierClass class of state identifiers e.g. an enumeration class
 	 * @param eventClass           class of events/inputs
+	 * @param matchStrategy        strategy for matching events against transition definitions
 	 * 
 	 * @param <STATE>              state identifier type
 	 * @param <EVENT>              event/input type
 	 * @return state machine builder
 	 */
-	public static <STATE, EVENT> StateMachineBuilder<STATE, EVENT> beginStateMachine(Class<STATE> stateLabelClass,
+	public static <STATE, EVENT> StateMachineBuilder<STATE, EVENT> beginStateMachine(Class<STATE> stateIdentifierClass,
 			Class<EVENT> eventClass, EventMatchStrategy matchStrategy) {
-		return new StateMachineBuilder<>(stateLabelClass, matchStrategy);
+		return new StateMachineBuilder<>(stateIdentifierClass, matchStrategy);
 	}
 
 	protected Supplier<String> fnDescription;
@@ -392,7 +395,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	@Override
 	@SuppressWarnings("unchecked")
 	public boolean is(S... states) {
-		return Arrays.stream(states).anyMatch(s -> s.equals(getState()));
+		return states.length > 0 ? Arrays.stream(states).anyMatch(s -> s.equals(getState())) : true;
 	}
 
 	@Override
