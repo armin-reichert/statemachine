@@ -1,5 +1,7 @@
 package de.amr.statemachine.core;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -16,6 +18,7 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 import de.amr.statemachine.api.EventMatchStrategy;
@@ -74,6 +77,18 @@ import de.amr.statemachine.api.Fsm;
  * @author Armin Reichert
  */
 public class StateMachine<S, E> implements Fsm<S, E> {
+
+	static {
+		InputStream stream = StateMachine.class.getClassLoader().getResourceAsStream("logging.properties");
+		if (stream == null) {
+			throw new RuntimeException("Could not load logging property file");
+		}
+		try {
+			LogManager.getLogManager().readConfiguration(stream);
+		} catch (IOException | SecurityException e) {
+			throw new RuntimeException("Could not read logging configuration");
+		}
+	}
 
 	/**
 	 * Defines what happens when no transition is found. Either ignore silently, log a message or throw

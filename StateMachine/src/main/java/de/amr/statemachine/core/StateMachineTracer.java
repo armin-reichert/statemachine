@@ -66,7 +66,7 @@ public class StateMachineTracer<S, E> {
 	}
 
 	public void enteringInitialState(S id) {
-		logger.info(() -> format("%s entering initial state (%s)", fsm.getDescription(), id));
+		logger.info(() -> format("%s enters initial state (%s)", fsm.getDescription(), id));
 		enteringState(id);
 	}
 
@@ -75,24 +75,24 @@ public class StateMachineTracer<S, E> {
 		if (stateEntered.hasTimer()) {
 			int duration = stateEntered.getDuration();
 			float seconds = fnTicksToSeconds.apply(duration);
-			logger.info(() -> format("%s entering state '%s' for %.2f seconds (%d frames)", fsm.getDescription(), id, seconds,
+			logger.info(() -> format("%s enters state '%s' for %.2f seconds (%d frames)", fsm.getDescription(), id, seconds,
 					duration));
 		} else {
-			logger.info(() -> format("%s entering state '%s'", fsm.getDescription(), id));
+			logger.info(() -> format("%s enters state '%s'", fsm.getDescription(), id));
 		}
 	}
 
 	public void exitingState(S id) {
-		logger.info(() -> format("%s exiting state  '%s'", fsm.getDescription(), id));
+		logger.info(() -> format("%s exits state  '%s'", fsm.getDescription(), id));
 	}
 
 	public void firingTransition(Transition<S, E> t, Optional<E> event) {
 		if (!event.isPresent()) {
 			if (t.from != t.to) {
 				if (t.timeout) {
-					logger.info(() -> format("%s changing from  '%s' to '%s (timeout)'", fsm.getDescription(), t.from, t.to));
+					logger.info(() -> format("%s changes from  '%s' to '%s (timeout)'", fsm.getDescription(), t.from, t.to));
 				} else {
-					logger.info(() -> format("%s changing from  '%s' to '%s'", fsm.getDescription(), t.from, t.to));
+					logger.info(() -> format("%s changes from  '%s' to '%s'", fsm.getDescription(), t.from, t.to));
 				}
 			} else {
 				logger.info(() -> format("%s stays '%s'", fsm.getDescription(), t.from));
@@ -100,7 +100,7 @@ public class StateMachineTracer<S, E> {
 		} else {
 			if (t.from != t.to) {
 				eventInfo(event.get(),
-						() -> format("%s changing from '%s' to '%s' on '%s'", fsm.getDescription(), t.from, t.to, event.get()));
+						() -> format("%s changes from '%s' to '%s' on '%s'", fsm.getDescription(), t.from, t.to, event.get()));
 			} else {
 				eventInfo(event.get(), () -> format("%s stays '%s' on '%s'", fsm.getDescription(), t.from, event.get()));
 			}
