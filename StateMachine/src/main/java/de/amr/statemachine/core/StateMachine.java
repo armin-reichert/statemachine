@@ -22,7 +22,51 @@ import de.amr.statemachine.api.EventMatchStrategy;
 import de.amr.statemachine.api.Fsm;
 
 /**
- * A finite state machine.
+ * A finite-state machine.
+ * 
+ * <p>
+ * State machines normally should be created using a builder, as shown in the example below.
+ * 
+ * By default, missing transitions lead to an exception. This can be changed by calling
+ * {@link #setMissingTransitionBehavior(MissingTransitionBehavior)} with one of the values defined in 
+ * {@link MissingTransitionBehavior}.
+ * 
+ * Events/inputs by default are matched (against a transition definition) by the class of the event.
+ * That means, in the state machin definition, transitions should be defined based in the event class. 
+ * 
+ * In the example below however, events are unique (no different instances of events of the same type) and
+ * transitions are defined based on event instances. In this case, the state machine must be defined with
+ * an {@link EventMatchStrategy#BY_EQUALITY}. 
+ * 
+ * <p>
+ * <pre>
+ * public class DoorController extends StateMachine&lt;DoorState, DoorEvent&gt; {
+ * 
+ * 	public enum DoorState {
+ * 		OPEN, CLOSED, LOCKED
+ * 	}
+ * 
+ * 	public enum DoorEvent {
+ * 		OPEN_DOOR, CLOSE_DOOR, LOCK_DOOR, UNLOCK_DOOR
+ * 	}
+ * 
+ * 	public DoorController() {
+ * 		super(DoorState.class, EventMatchStrategy.BY_EQUALITY);
+ * 		//@formatter:off
+ * 		beginStateMachine()
+ * 			.initialState(LOCKED)
+ * 			.description("Door")
+ * 		.states()
+ * 		.transitions()
+ * 			.when(LOCKED).then(CLOSED).on(UNLOCK_DOOR)
+ * 			.when(CLOSED).then(LOCKED).on(LOCK_DOOR)
+ * 			.when(CLOSED).then(OPEN).on(OPEN_DOOR)
+ * 			.when(OPEN).then(CLOSED).on(CLOSE_DOOR)
+ * 		.endStateMachine();
+ * 		//@formatter:on
+ * 	}
+ * }
+ * </pre>
  *
  * @param <S> type for identifying states, for example an enumeration type.
  * @param <E> type of events/inputs.
@@ -32,8 +76,8 @@ import de.amr.statemachine.api.Fsm;
 public class StateMachine<S, E> implements Fsm<S, E> {
 
 	/**
-	 * Defines what happens when no transition is found. Either ignore silently, log
-	 * a message or throw an exception.
+	 * Defines what happens when no transition is found. Either ignore silently, log a message or throw
+	 * an exception.
 	 */
 	public enum MissingTransitionBehavior {
 		/** Ignore silently. */
@@ -45,29 +89,27 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	}
 
 	/**
-	 * Creates a new state machine instance and starts its definition building.
+	 * Creates a new state machine instance and starts its definition building. The event match strategy
+	 * is "by class".
 	 * 
-	 * @param stateLabelClass state label class
-	 * @param eventClass      event class
+	 * @param stateIdentifierClass class of state identifiers e.g. an enumeration class
+	 * @param eventClass           class of events/inputs
 	 * 
-	 * @param <STATE>         state type
-	 * @param <EVENT>         event type
+	 * @param <STATE>              state identifier type
+	 * @param <EVENT>              event/input type
 	 * @return state machine builder
 	 */
-	public static <STATE, EVENT> StateMachineBuilder<STATE, EVENT> beginStateMachine(Class<STATE> stateLabelClass,
+	public static <STATE, EVENT> StateMachineBuilder<STATE, EVENT> beginStateMachine(Class<STATE> stateIdentifierClass,
 			Class<EVENT> eventClass) {
-		return new StateMachineBuilder<>(stateLabelClass);
+		return new StateMachineBuilder<>(stateIdentifierClass);
 	}
 
 	/**
-	 * Creates a new state machine instance and starts its definition building.
+	 * @param stateIdentifierClass class of state identifiers e.g. an enumeration class
+	 * @param eventClass           class of events/inputs
 	 * 
-	 * @param stateLabelClass state label class
-	 * @param eventClass      event class
-	 * @param matchStrategy   event match strategy
-	 * 
-	 * @param <STATE>         state type
-	 * @param <EVENT>         event type
+	 * @param <STATE>              state identifier type
+	 * @param <EVENT>              event/input type
 	 * @return state machine builder
 	 */
 	public static <STATE, EVENT> StateMachineBuilder<STATE, EVENT> beginStateMachine(Class<STATE> stateLabelClass,
@@ -90,32 +132,34 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	/**
 	 * Creates a new state machine.
 	 * 
-	 * @param stateLabelClass type for state identifiers
-	 * @param matchStrategy   strategy for matching events
+	 * @param stateIdentifierClass class of state identifiers e.g. an enumeration class
+	 * @param matchStrategy        strategy for matching events
 	 */
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	public StateMachine(Class<S> stateLabelClass, EventMatchStrategy matchStrategy) {
-		fnDescription = () -> "[unnamed FSM]";
-		this.matchEventsBy = matchStrategy;
+	public StateMachine(Class<S> stateIdentifierClass, EventMatchStrategy matchStrategy) {
+		fnDescription = () -> String.format("[%s]", getClass().getSimpleName());
+		matchEventsBy = matchStrategy;
+		missingTransitionBehavior = MissingTransitionBehavior.EXCEPTION;
 		eventQ = new ArrayDeque<>();
-		stateMap = stateLabelClass.isEnum() ? new EnumMap(stateLabelClass)
-				: stateLabelClass == Boolean.class ? new BooleanMap() : new HashMap<>(7);
+		stateMap = stateIdentifierClass.isEnum() ? new EnumMap(stateIdentifierClass)
+				: stateIdentifierClass == Boolean.class ? new BooleanMap() : new HashMap<>(7);
 		transitionMap = new HashMap<>(7);
 		tracer = new StateMachineTracer<>(this, Logger.getGlobal());
-		missingTransitionBehavior = MissingTransitionBehavior.EXCEPTION;
 	}
 
 	/**
 	 * Creates a new state machine with a default match strategy of "by class".
 	 * 
-	 * @param stateLabelClass type for state identifiers
+	 * @param stateIdentifierClass class of state identifiers e.g. an enumeration class
 	 */
-	public StateMachine(Class<S> stateLabelClass) {
-		this(stateLabelClass, EventMatchStrategy.BY_CLASS);
+	public StateMachine(Class<S> stateIdentifierClass) {
+		this(stateIdentifierClass, EventMatchStrategy.BY_CLASS);
 	}
 
 	/**
-	 * Starts building of state machine.
+	 * Starts building of the state machine.
+	 * 
+	 * @return new state machine builder
 	 */
 	public StateMachineBuilder<S, E> beginStateMachine() {
 		return new StateMachineBuilder<>(this);
@@ -244,8 +288,8 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	}
 
 	/**
-	 * Adds a transition which is fired if the guard condition holds and the current
-	 * input's class equals the given event class.
+	 * Adds a transition which is fired if the guard condition holds and the current input's class
+	 * equals the given event class.
 	 * 
 	 * @param from       transition source state
 	 * @param to         transition target state
@@ -263,8 +307,8 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	}
 
 	/**
-	 * Adds a transition which is fired if the guard condition holds and the current
-	 * input equals the given event.
+	 * Adds a transition which is fired if the guard condition holds and the current input equals the
+	 * given event.
 	 * 
 	 * @param from   transition source state
 	 * @param to     transition target state
@@ -381,8 +425,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	/**
 	 * Creates or replaces the state object for the given state by the given object.
 	 * 
-	 * @param <StateType> subtype of default state class used for representing the
-	 *                    given state
+	 * @param <StateType> subtype of default state class used for representing the given state
 	 * @param state       state identifier
 	 * @param stateObject state object
 	 * @return the new state object
