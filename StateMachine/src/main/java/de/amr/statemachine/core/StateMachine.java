@@ -279,15 +279,13 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	 * @param to           target state
 	 * @param guard        condition guarding transition
 	 * @param action       action performed on transition
-	 * @param eventValue   event value if transition matches by value
-	 * @param eventClass   event class if transition mathces by class
+	 * @param eventSlot    event value/class if transition is matched by value/class
 	 * @param timeoutEvent if this transition is triggered by a timeout
 	 */
-	void addTransition(S from, S to, BooleanSupplier guard, Consumer<E> action, E eventValue,
-			Class<? extends E> eventClass, boolean timeout) {
+	void addTransition(S from, S to, BooleanSupplier guard, Consumer<E> action, Object eventSlot, boolean timeout) {
 		Objects.requireNonNull(from);
 		Objects.requireNonNull(to);
-		transitions(from).add(new Transition<>(from, to, guard, action, eventValue, eventClass, timeout));
+		transitions(from).add(new Transition<>(this, from, to, guard, action, eventSlot, timeout));
 	}
 
 	/**
@@ -299,7 +297,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	 * @param action action for transition
 	 */
 	public void addTransitionOnTimeout(S from, S to, BooleanSupplier guard, Consumer<E> action) {
-		addTransition(from, to, guard, action, null, null, true);
+		addTransition(from, to, guard, action, null, true);
 	}
 
 	/**
@@ -318,7 +316,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 		if (matchEventsBy != EventMatchStrategy.BY_CLASS) {
 			throw new IllegalStateException("Cannot add transition, wrong match strategy: " + matchEventsBy);
 		}
-		addTransition(from, to, guard, action, null, eventClass, false);
+		addTransition(from, to, guard, action, eventClass, false);
 	}
 
 	/**
@@ -336,7 +334,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 		if (matchEventsBy != EventMatchStrategy.BY_EQUALITY) {
 			throw new IllegalStateException("Cannot add transition, wrong match strategy");
 		}
-		addTransition(from, to, guard, action, event, null, false);
+		addTransition(from, to, guard, action, event, false);
 	}
 
 	/**
@@ -348,7 +346,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	 * @param action action for transition
 	 */
 	public void addTransition(S from, S to, BooleanSupplier guard, Consumer<E> action) {
-		addTransition(from, to, guard, action, null, null, false);
+		addTransition(from, to, guard, action, null, false);
 	}
 
 	@Override
@@ -520,13 +518,13 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 
 	private boolean isTransitionMatchingEventOrEventClass(Transition<S, E> t, Optional<E> event) {
 		if (!event.isPresent()) {
-			return t.eventValue == null && t.eventClass == null;
+			return t.eventValue() == null && t.eventClass() == null;
 		}
 		if (matchEventsBy == EventMatchStrategy.BY_CLASS) {
-			return event.get().getClass().equals(t.eventClass);
+			return event.get().getClass().equals(t.eventClass());
 		}
 		if (matchEventsBy == EventMatchStrategy.BY_EQUALITY) {
-			return event.get().equals(t.eventValue);
+			return event.get().equals(t.eventValue());
 		}
 		throw new IllegalStateException();
 	}

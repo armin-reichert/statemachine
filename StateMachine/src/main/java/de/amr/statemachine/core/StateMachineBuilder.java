@@ -15,10 +15,8 @@ import de.amr.statemachine.api.TickAction;
  * 
  * @author Armin Reichert
  *
- * @param <S>
- *          Type for identifying states
- * @param <E>
- *          Type of events
+ * @param <S> Type for identifying states
+ * @param <E> Type of events
  */
 public class StateMachineBuilder<S, E> {
 
@@ -28,10 +26,8 @@ public class StateMachineBuilder<S, E> {
 	/**
 	 * Creates a builder for a state machine of the given state type and event match strategy.
 	 * 
-	 * @param stateType
-	 *                        type used for state identification
-	 * @param matchStrategy
-	 *                        how events are matched
+	 * @param stateType     type used for state identification
+	 * @param matchStrategy how events are matched
 	 */
 	public StateMachineBuilder(Class<S> stateType, EventMatchStrategy matchStrategy) {
 		sm = new StateMachine<>(stateType, matchStrategy);
@@ -41,8 +37,7 @@ public class StateMachineBuilder<S, E> {
 	 * Creates a builder for a state machine of the given state type and a class-based event match
 	 * strategy.
 	 * 
-	 * @param stateType
-	 *                    type used for state identification
+	 * @param stateType type used for state identification
 	 */
 	public StateMachineBuilder(Class<S> stateType) {
 		sm = new StateMachine<>(stateType);
@@ -51,8 +46,7 @@ public class StateMachineBuilder<S, E> {
 	/**
 	 * Internal constructor for builder.
 	 * 
-	 * @param sm
-	 *             state machine using this builder
+	 * @param sm state machine using this builder
 	 */
 	StateMachineBuilder(StateMachine<S, E> sm) {
 		this.sm = sm;
@@ -61,8 +55,7 @@ public class StateMachineBuilder<S, E> {
 	/**
 	 * Assigns the given description supplier to the constructed state machine.
 	 * 
-	 * @param fnDescription
-	 *                        description supplier
+	 * @param fnDescription description supplier
 	 * @return the builder
 	 */
 	public StateMachineBuilder<S, E> description(Supplier<String> fnDescription) {
@@ -73,8 +66,7 @@ public class StateMachineBuilder<S, E> {
 	/**
 	 * Assigns the given description to the constructed state machine.
 	 * 
-	 * @param text
-	 *               some description text
+	 * @param text some description text
 	 * @return the builder
 	 */
 	public StateMachineBuilder<S, E> description(String text) {
@@ -84,8 +76,7 @@ public class StateMachineBuilder<S, E> {
 	/**
 	 * Defines the initial state of the constructed state machine.
 	 * 
-	 * @param state
-	 *                the initial state
+	 * @param state the initial state
 	 * @return the builder
 	 */
 	public StateMachineBuilder<S, E> initialState(S state) {
@@ -124,8 +115,7 @@ public class StateMachineBuilder<S, E> {
 		/**
 		 * Starts the construction of a state.
 		 * 
-		 * @param stateId
-		 *                  state identifier
+		 * @param stateId state identifier
 		 * @return the builder
 		 */
 		public StateBuilder state(S stateId) {
@@ -142,10 +132,8 @@ public class StateMachineBuilder<S, E> {
 		/**
 		 * Replaces the standard state instance by the given custom state instance.
 		 * 
-		 * @param                     <C>
-		 *                              type of state instance
-		 * @param customStateInstance
-		 *                              custom state instance
+		 * @param <C>                 type of state instance
+		 * @param customStateInstance custom state instance
 		 * @return the builder
 		 */
 		public <C extends State<S>> StateBuilder customState(C customStateInstance) {
@@ -159,8 +147,7 @@ public class StateMachineBuilder<S, E> {
 		/**
 		 * Defines the timer function for this state.
 		 * 
-		 * @param fnTimer
-		 *                  timer function (returning duration in ticks)
+		 * @param fnTimer timer function (returning duration in ticks)
 		 * @return the builder
 		 */
 		public StateBuilder timeoutAfter(IntSupplier fnTimer) {
@@ -174,8 +161,7 @@ public class StateMachineBuilder<S, E> {
 		/**
 		 * Defines a constant timer for this state.
 		 * 
-		 * @param fixedTime
-		 *                    number of state updates until timeout
+		 * @param fixedTime number of state updates until timeout
 		 * @return the builder
 		 */
 		public StateBuilder timeoutAfter(int fixedTime) {
@@ -190,14 +176,13 @@ public class StateMachineBuilder<S, E> {
 		 * Defines the action to be executed when this state is entered. Calling this method twice leads to
 		 * an error.
 		 * 
-		 * @param action
-		 *                 some action
+		 * @param action some action
 		 * @return the builder
 		 */
 		public StateBuilder onEntry(Runnable action) {
 			if (entryActionSet) {
-				log.info(() -> String.format("ERROR: entry action already set: state %s in FSM %s", stateId,
-						sm.getDescription()));
+				log.info(
+						() -> String.format("ERROR: entry action already set: state %s in FSM %s", stateId, sm.getDescription()));
 				throw new IllegalStateException();
 			}
 			entryAction = action;
@@ -209,14 +194,13 @@ public class StateMachineBuilder<S, E> {
 		 * Defines the action to be executed when this state is left. Calling this method twice leads to an
 		 * error.
 		 * 
-		 * @param action
-		 *                 some action
+		 * @param action some action
 		 * @return the builder
 		 */
 		public StateBuilder onExit(Runnable action) {
 			if (exitActionSet) {
-				log.info(() -> String.format("ERROR: exit action already set: state %s in FSM %s", stateId,
-						sm.getDescription()));
+				log.info(
+						() -> String.format("ERROR: exit action already set: state %s in FSM %s", stateId, sm.getDescription()));
 				throw new IllegalStateException();
 			}
 			exitAction = action;
@@ -228,14 +212,13 @@ public class StateMachineBuilder<S, E> {
 		 * Defines the action to be executed when this state is ticked. Calling this method twice leads to
 		 * an error.
 		 * 
-		 * @param action
-		 *                 some action
+		 * @param action some action
 		 * @return the builder
 		 */
 		public StateBuilder onTick(TickAction<S> action) {
 			if (tickActionSet) {
-				log.info(() -> String.format("ERROR: tick action already set: state %s in FSM %s", stateId,
-						sm.getDescription()));
+				log.info(
+						() -> String.format("ERROR: tick action already set: state %s in FSM %s", stateId, sm.getDescription()));
 				throw new IllegalStateException();
 			}
 			tickAction = action;
@@ -247,8 +230,7 @@ public class StateMachineBuilder<S, E> {
 		 * Defines the action to be executed when this state is ticked. Calling this method twice leads to
 		 * an error.
 		 * 
-		 * @param action
-		 *                 some action
+		 * @param action some action
 		 * @return the builder
 		 */
 		public StateBuilder onTick(Runnable action) {
@@ -262,8 +244,7 @@ public class StateMachineBuilder<S, E> {
 			state.tickAction = tickAction;
 			if (fnTimer != null) {
 				state.timer = new StateTimer(fnTimer);
-			}
-			else {
+			} else {
 				state.timer = StateTimer.NEVER_ENDING_TIMER;
 			}
 			return this;
@@ -293,8 +274,8 @@ public class StateMachineBuilder<S, E> {
 		private S targetStateId;
 		private BooleanSupplier guard;
 		private boolean timeoutCondition;
-		private E event;
-		private Class<? extends E> eventType;
+		private E eventValue;
+		private Class<? extends E> eventClass;
 		private Consumer<E> action;
 
 		private void clear() {
@@ -303,16 +284,15 @@ public class StateMachineBuilder<S, E> {
 			targetStateId = null;
 			guard = null;
 			timeoutCondition = false;
-			event = null;
-			eventType = null;
+			eventValue = null;
+			eventClass = null;
 			action = null;
 		}
 
 		/**
 		 * Builds a loop transition for the given state.
 		 * 
-		 * @param stateId
-		 *                  state identfier
+		 * @param stateId state identfier
 		 * @return the builder
 		 */
 		public TransitionBuilder stay(S stateId) {
@@ -322,8 +302,7 @@ public class StateMachineBuilder<S, E> {
 		/**
 		 * Starts a transition from the given state.
 		 * 
-		 * @param sourceStateId
-		 *                        source state identifier
+		 * @param sourceStateId source state identifier
 		 * @return the builder
 		 */
 		public TransitionBuilder when(S sourceStateId) {
@@ -342,8 +321,7 @@ public class StateMachineBuilder<S, E> {
 		/**
 		 * Finishes a transition to the given target state.
 		 * 
-		 * @param targetStateId
-		 *                        target state identifier
+		 * @param targetStateId target state identifier
 		 * @return the builder
 		 */
 		public TransitionBuilder then(S targetStateId) {
@@ -360,8 +338,7 @@ public class StateMachineBuilder<S, E> {
 		/**
 		 * Sets a condition (guard) for the currently constructed transition.
 		 * 
-		 * @param guard
-		 *                condition that must be fulfilled for firing this transition
+		 * @param guard condition that must be fulfilled for firing this transition
 		 * @return the builder
 		 */
 		public TransitionBuilder condition(BooleanSupplier guard) {
@@ -394,8 +371,7 @@ public class StateMachineBuilder<S, E> {
 		/**
 		 * Specifies that this transition should fire when an event of the given type has been processed.
 		 * 
-		 * @param eventType
-		 *                    event type
+		 * @param eventType event type
 		 * @return the builder
 		 */
 		public TransitionBuilder on(Class<? extends E> eventType) {
@@ -405,15 +381,14 @@ public class StateMachineBuilder<S, E> {
 			if (!transitionBuildingStarted) {
 				throw new IllegalArgumentException("Transition building must be started with when(...) or stay(...)");
 			}
-			this.eventType = eventType;
+			this.eventClass = eventType;
 			return this;
 		}
 
 		/**
 		 * Specifies that this transition should fire when the given input has been processed.
 		 * 
-		 * @param input
-		 *                input to the machine
+		 * @param input input to the machine
 		 * @return the builder
 		 */
 		public TransitionBuilder on(E input) {
@@ -423,15 +398,14 @@ public class StateMachineBuilder<S, E> {
 			if (!transitionBuildingStarted) {
 				throw new IllegalArgumentException("Transition building must be started with when(...) or stay(...)");
 			}
-			this.event = input;
+			this.eventValue = input;
 			return this;
 		}
 
 		/**
 		 * Specifies the action that is executed when this transition fires.
 		 * 
-		 * @param action
-		 *                 some action consuming the event leading to this transition
+		 * @param action some action consuming the event leading to this transition
 		 * @return the builder
 		 */
 		public TransitionBuilder act(Consumer<E> action) {
@@ -448,8 +422,7 @@ public class StateMachineBuilder<S, E> {
 		/**
 		 * Specifies the action that is executed when this transition fires.
 		 * 
-		 * @param action
-		 *                 some action
+		 * @param action some action
 		 * @return the builder
 		 */
 		public TransitionBuilder act(Runnable action) {
@@ -464,18 +437,17 @@ public class StateMachineBuilder<S, E> {
 		}
 
 		private TransitionBuilder commit() {
-			if (timeoutCondition && event != null) {
-				throw new IllegalStateException(
-						"Cannot specify both timeout and event object for the same transition");
+			if (timeoutCondition && eventValue != null) {
+				throw new IllegalStateException("Cannot specify both timeout and event value for the same transition");
 			}
-			if (timeoutCondition && eventType != null) {
-				throw new IllegalStateException("Cannot specify both timeout and event type for the same transition");
+			if (timeoutCondition && eventClass != null) {
+				throw new IllegalStateException("Cannot specify both timeout and event class for the same transition");
 			}
 			if (timeoutCondition) {
 				sm.addTransitionOnTimeout(sourceStateId, targetStateId, guard, action);
-			}
-			else {
-				sm.addTransition(sourceStateId, targetStateId, guard, action, event, eventType, false);
+			} else {
+				sm.addTransition(sourceStateId, targetStateId, guard, action,
+						sm.getMatchStrategy() == EventMatchStrategy.BY_CLASS ? eventClass : eventValue, false);
 			}
 			clear();
 			return this;

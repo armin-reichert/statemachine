@@ -1,16 +1,13 @@
 package de.amr.statemachine.core;
 
+import static de.amr.statemachine.api.EventMatchStrategy.BY_CLASS;
+
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
 /**
  * Representation of a state transition.
  * 
- * <p>
- * The event value and event class fields are exclusive. If transitions are matched by event value,
- * the {@code eventValue} field is used, if they are matched by the event class, the
- * {@code eventClass} field is used.
- *
  * @param <S> state identifier type
  * @param <E> event type
  * 
@@ -18,29 +15,39 @@ import java.util.function.Consumer;
  */
 class Transition<S, E> {
 
+	final StateMachine<?, ?> fsm;
 	final S from;
 	final S to;
 	final BooleanSupplier guard;
 	final Consumer<E> action;
 	final boolean timeoutEvent;
-	final E eventValue;
-	final Class<? extends E> eventClass;
+	final Object eventSlot;
 
-	public Transition(S from, S to, BooleanSupplier guard, Consumer<E> action, E eventValue,
-			Class<? extends E> eventClass, boolean timeoutEvent) {
+	public Transition(StateMachine<?, ?> fsm, S from, S to, BooleanSupplier guard, Consumer<E> action, Object eventSlot,
+			boolean timeoutEvent) {
+		this.fsm = fsm;
 		this.from = from;
 		this.to = to;
 		this.guard = guard != null ? guard : () -> true;
 		this.action = action != null ? action : e -> {
 		};
-		this.eventValue = eventValue;
-		this.eventClass = eventClass;
+		this.eventSlot = eventSlot;
 		this.timeoutEvent = timeoutEvent;
+	}
+
+	@SuppressWarnings("unchecked")
+	public E eventValue() {
+		return (E) eventSlot;
+	}
+
+	@SuppressWarnings("unchecked")
+	public Class<? extends E> eventClass() {
+		return (Class<? extends E>) eventSlot;
 	}
 
 	@Override
 	public String toString() {
-		String eventText = eventClass != null ? eventClass.getSimpleName() : String.valueOf(eventValue);
+		String eventText = fsm.getMatchStrategy() == BY_CLASS ? eventClass().getSimpleName() : String.valueOf(eventValue());
 		return String.format("\n(%s)--[%s]-->(%s)", from, eventText, to);
 	}
 }
