@@ -436,7 +436,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	}
 
 	/**
-	 * Creates or replaces the state instancect for a state. Using a subclass if the generic state class
+	 * Creates or replaces the state instance for a state. Using a subclass if the generic state class
 	 * is useful if the implementation of a state needs additional fields and methods.
 	 * 
 	 * @param state              state identifier
