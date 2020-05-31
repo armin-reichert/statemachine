@@ -534,7 +534,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 
 	private void fireTransition(Transition<S, E> transition, Optional<E> event) {
 		tracer.firingTransition(transition, event);
-		if (currentState == transition.to) {
+		if (currentState.equals(transition.to)) {
 			// loop: don't execute exit/entry actions, don't restart timer
 			transition.action.accept(event.orElse(null));
 		} else {
