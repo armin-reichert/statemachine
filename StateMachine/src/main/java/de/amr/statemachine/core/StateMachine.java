@@ -310,7 +310,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	 * @param action     action for transition
 	 * @param eventClass class used for matching the current event
 	 */
-	public void addTransitionOnEventType(S from, S to, BooleanSupplier guard, Consumer<E> action,
+	public void addTransitionOnEventClass(S from, S to, BooleanSupplier guard, Consumer<E> action,
 			Class<? extends E> eventClass) {
 		Objects.requireNonNull(eventClass);
 		if (matchEventsBy != EventMatchStrategy.BY_CLASS) {
@@ -327,14 +327,14 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	 * @param to     transition target state
 	 * @param guard  condition guarding transition
 	 * @param action action for transition
-	 * @param event  event object used for matching the current event
+	 * @param eventValue  event value used for matching the current event
 	 */
-	public void addTransitionOnEventObject(S from, S to, BooleanSupplier guard, Consumer<E> action, E event) {
-		Objects.requireNonNull(event);
+	public void addTransitionOnEventValue(S from, S to, BooleanSupplier guard, Consumer<E> action, E eventValue) {
+		Objects.requireNonNull(eventValue);
 		if (matchEventsBy != EventMatchStrategy.BY_EQUALITY) {
 			throw new IllegalStateException("Cannot add transition, wrong match strategy");
 		}
-		addTransition(from, to, guard, action, event, false);
+		addTransition(from, to, guard, action, eventValue, false);
 	}
 
 	/**
