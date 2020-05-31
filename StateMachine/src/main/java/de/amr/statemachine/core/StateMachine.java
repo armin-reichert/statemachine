@@ -436,19 +436,20 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	}
 
 	/**
-	 * Creates or replaces the generic state object for a state by an instance of a subclass. This is
-	 * useful if the implementation of a state needs additional fields and methods.
+	 * Creates or replaces the state instancect for a state. Using a subclass if the generic state class
+	 * is useful if the implementation of a state needs additional fields and methods.
 	 * 
-	 * @param state            state identifier
-	 * @param subclassInstance instance of state subclass
-	 * @return the subclass state instance
-	 * @param <StateSubclass> subclass of {@link State} class
+	 * @param state              state identifier
+	 * @param stateClassInstance instance of state class
+	 * @return the state instance
+	 * 
+	 * @param <StateClass> subclass of {@link State} class
 	 */
-	public <StateSubclass extends State<S>> StateSubclass realizeState(S state, StateSubclass subclassInstance) {
-		Objects.requireNonNull(subclassInstance);
-		subclassInstance.id = state;
-		stateMap.put(state, subclassInstance);
-		return subclassInstance;
+	public <StateClass extends State<S>> StateClass realizeState(S state, StateClass stateClassInstance) {
+		Objects.requireNonNull(stateClassInstance);
+		stateClassInstance.id = state;
+		stateMap.put(state, stateClassInstance);
+		return stateClassInstance;
 	}
 
 	@Override
