@@ -323,11 +323,11 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	 * Adds a transition which is fired if the guard condition holds and the current input equals the
 	 * given event.
 	 * 
-	 * @param from   transition source state
-	 * @param to     transition target state
-	 * @param guard  condition guarding transition
-	 * @param action action for transition
-	 * @param eventValue  event value used for matching the current event
+	 * @param from       transition source state
+	 * @param to         transition target state
+	 * @param guard      condition guarding transition
+	 * @param action     action for transition
+	 * @param eventValue event value used for matching the current event
 	 */
 	public void addTransitionOnEventValue(S from, S to, BooleanSupplier guard, Consumer<E> action, E eventValue) {
 		Objects.requireNonNull(eventValue);
@@ -472,8 +472,14 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 
 		Optional<E> nextEvent = Optional.ofNullable(eventQ.poll());
 
-		// Find a state transition matching the next event
-		Optional<Transition<S, E>> transition = findMatchingNoTimeoutTransition(currentState, nextEvent);
+		// Find a state transition matching the next event (ignore timeout-matching transitions)
+		//@formatter:off
+		Optional<Transition<S, E>> transition = transitions(currentState).stream()
+				.filter(t -> t.guard.getAsBoolean())
+				.filter(t -> !t.timeoutEvent)
+				.filter(t -> isTransitionMatchingOptionalEvent(t, nextEvent))
+				.findFirst();
+		//@formatter:on
 		if (transition.isPresent()) {
 			fireTransition(transition.get(), nextEvent);
 			return;
@@ -498,28 +504,24 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 		// No state change, execute tick action if any
 		state(currentState).onTick();
 
-		// Check if expired timer triggers state transition
+		// Check if timeout-transition is triggered
 		boolean timeout = state(currentState).timer.tick();
 		if (timeout) {
-			transition = findMatchingTimeoutTransition(currentState);
+			//@formatter:off
+			transition = transitions(currentState).stream()
+					.filter(t -> t.guard.getAsBoolean())
+					.filter(t -> t.timeoutEvent)
+					.findFirst();
+			//@formatter:on
 			if (transition.isPresent()) {
 				fireTransition(transition.get(), Optional.empty());
 			}
 		}
 	}
 
-	private Optional<Transition<S, E>> findMatchingTimeoutTransition(S state) {
-		return transitions(state).stream().filter(t -> t.timeoutEvent && t.guard.getAsBoolean()).findFirst();
-	}
-
-	private Optional<Transition<S, E>> findMatchingNoTimeoutTransition(S state, Optional<E> event) {
-		return transitions(state).stream().filter(t -> !t.timeoutEvent && t.guard.getAsBoolean())
-				.filter(t -> isTransitionMatchingEventOrEventClass(t, event)).findFirst();
-	}
-
-	private boolean isTransitionMatchingEventOrEventClass(Transition<S, E> t, Optional<E> event) {
+	private boolean isTransitionMatchingOptionalEvent(Transition<S, E> t, Optional<E> event) {
 		if (!event.isPresent()) {
-			return t.eventValue() == null && t.eventClass() == null;
+			return t.eventSlot == null;
 		}
 		if (matchEventsBy == EventMatchStrategy.BY_CLASS) {
 			return event.get().getClass().equals(t.eventClass());
@@ -527,7 +529,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 		if (matchEventsBy == EventMatchStrategy.BY_EQUALITY) {
 			return event.get().equals(t.eventValue());
 		}
-		throw new IllegalStateException();
+		throw new IllegalStateException(); // should not happen
 	}
 
 	private void fireTransition(Transition<S, E> transition, Optional<E> event) {
