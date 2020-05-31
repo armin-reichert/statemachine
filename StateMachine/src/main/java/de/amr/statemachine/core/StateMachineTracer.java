@@ -89,7 +89,7 @@ public class StateMachineTracer<S, E> {
 	public void firingTransition(Transition<S, E> t, Optional<E> event) {
 		if (!event.isPresent()) {
 			if (t.from != t.to) {
-				if (t.timeout) {
+				if (t.timeoutEvent) {
 					logger.info(() -> format("%s changes from  '%s' to '%s (timeout)'", fsm.getDescription(), t.from, t.to));
 				} else {
 					logger.info(() -> format("%s changes from  '%s' to '%s'", fsm.getDescription(), t.from, t.to));

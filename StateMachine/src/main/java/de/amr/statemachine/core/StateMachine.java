@@ -135,17 +135,17 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 		return new StateMachineBuilder<>(stateIdentifierClass, matchStrategy);
 	}
 
-	protected Supplier<String> fnDescription;
-	protected S initialState;
-	protected S currentState;
-	protected MissingTransitionBehavior missingTransitionBehavior;
-	protected final EventMatchStrategy matchEventsBy;
+	private Supplier<String> fnDescription;
+	private S initialState;
+	private S currentState;
+	private MissingTransitionBehavior missingTransitionBehavior;
+	private final EventMatchStrategy matchEventsBy;
 	protected final Deque<E> eventQ;
-	protected final Map<S, State<S>> stateMap;
-	protected final Map<S, List<Transition<S, E>>> transitionMap;
-	protected final StateMachineTracer<S, E> tracer;
-	protected final Set<Consumer<E>> listeners = new LinkedHashSet<>();
-	protected final List<Predicate<E>> loggingBlacklist = new ArrayList<>();
+	private final Map<S, State<S>> stateMap;
+	private final Map<S, List<Transition<S, E>>> transitionMap;
+	private final StateMachineTracer<S, E> tracer;
+	private final Set<Consumer<E>> listeners = new LinkedHashSet<>();
+	private final List<Predicate<E>> loggingBlacklist = new ArrayList<>();
 
 	/**
 	 * Creates a new state machine.
@@ -155,8 +155,9 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	 */
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public StateMachine(Class<S> stateIdentifierClass, EventMatchStrategy matchStrategy) {
+		Objects.requireNonNull(stateIdentifierClass);
 		fnDescription = () -> String.format("[%s]", getClass().getSimpleName());
-		matchEventsBy = matchStrategy;
+		matchEventsBy = Objects.requireNonNull(matchStrategy);
 		missingTransitionBehavior = MissingTransitionBehavior.EXCEPTION;
 		eventQ = new ArrayDeque<>();
 		stateMap = stateIdentifierClass.isEnum() ? new EnumMap(stateIdentifierClass)
@@ -242,7 +243,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	 */
 	@Override
 	public void setMissingTransitionBehavior(MissingTransitionBehavior missingTransitionBehavior) {
-		this.missingTransitionBehavior = missingTransitionBehavior;
+		this.missingTransitionBehavior = Objects.requireNonNull(missingTransitionBehavior);
 	}
 
 	/**
@@ -274,23 +275,19 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	/**
 	 * Adds a state transition.
 	 * 
-	 * @param from       transition source state
-	 * @param to         transition target state
-	 * @param guard      condition guarding transition
-	 * @param action     action for transition
-	 * @param event      event for matching transition
-	 * @param eventClass event class for matching transition
-	 * @param timeout    tells if this should be a timeout transition
-	 * 
+	 * @param from         source state
+	 * @param to           target state
+	 * @param guard        condition guarding transition
+	 * @param action       action performed on transition
+	 * @param eventValue   event value if transition matches by value
+	 * @param eventClass   event class if transition mathces by class
+	 * @param timeoutEvent if this transition is triggered by a timeout
 	 */
-	void addTransition(S from, S to, BooleanSupplier guard, Consumer<E> action, E event, Class<? extends E> eventClass,
-			boolean timeout) {
+	void addTransition(S from, S to, BooleanSupplier guard, Consumer<E> action, E eventValue,
+			Class<? extends E> eventClass, boolean timeout) {
 		Objects.requireNonNull(from);
 		Objects.requireNonNull(to);
-		guard = (guard != null) ? guard : () -> true;
-		action = (action != null) ? action : e -> {
-		};
-		transitions(from).add(new Transition<>(from, to, guard, action, event, eventClass, timeout));
+		transitions(from).add(new Transition<>(from, to, guard, action, eventValue, eventClass, timeout));
 	}
 
 	/**
@@ -441,17 +438,19 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	}
 
 	/**
-	 * Creates or replaces the state object for the given state by the given object.
+	 * Creates or replaces the generic state object for a state by an instance of a subclass. This is
+	 * useful if the implementation of a state needs additional fields and methods.
 	 * 
-	 * @param <StateType> subtype of default state class used for representing the given state
-	 * @param state       state identifier
-	 * @param stateObject state object
-	 * @return the new state object
+	 * @param state            state identifier
+	 * @param subclassInstance instance of state subclass
+	 * @return the subclass state instance
+	 * @param <StateSubclass> subclass of {@link State} class
 	 */
-	public <StateType extends State<S>> StateType realizeState(S state, StateType stateObject) {
-		stateObject.id = state;
-		stateMap.put(state, stateObject);
-		return stateObject;
+	public <StateSubclass extends State<S>> StateSubclass realizeState(S state, StateSubclass subclassInstance) {
+		Objects.requireNonNull(subclassInstance);
+		subclassInstance.id = state;
+		stateMap.put(state, subclassInstance);
+		return subclassInstance;
 	}
 
 	@Override
@@ -472,70 +471,64 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 					String.format("Cannot update state, state machine '%s' not initialized.", getDescription()));
 		}
 
-		// Check if event and/or condition triggers state transition
-		Optional<E> optEvent = Optional.ofNullable(eventQ.poll());
-		Optional<Transition<S, E>> match = findMatchingTransition(currentState, optEvent);
-		if (match.isPresent()) {
-			fireTransition(match.get(), optEvent);
+		Optional<E> nextEvent = Optional.ofNullable(eventQ.poll());
+
+		// Find a state transition matching the next event
+		Optional<Transition<S, E>> transition = findMatchingNoTimeoutTransition(currentState, nextEvent);
+		if (transition.isPresent()) {
+			fireTransition(transition.get(), nextEvent);
 			return;
-		} else {
-			optEvent.ifPresent(event -> {
-				switch (missingTransitionBehavior) {
-				case IGNORE:
-					break;
-				case LOG:
-					tracer.unhandledEvent(event);
-					break;
-				case EXCEPTION:
-					throw new IllegalStateException(
-							String.format("%s: No transition defined for state '%s' and event '%s'", this, currentState, event));
-				default:
-					throw new IllegalArgumentException("Illegal value: " + missingTransitionBehavior);
-				}
-			});
 		}
 
+		// No matching state transition was found, what to do if there is some event?
+		nextEvent.ifPresent(event -> {
+			switch (missingTransitionBehavior) {
+			case LOG:
+				tracer.unhandledEvent(event);
+				break;
+			case EXCEPTION:
+				throw new IllegalStateException(
+						String.format("%s: No transition defined for state '%s' and event '%s'", this, currentState, event));
+			case IGNORE:
+				break;
+			default:
+				throw new IllegalArgumentException("Illegal value: " + missingTransitionBehavior);
+			}
+		});
+
+		// No state change, execute tick action if any
 		state(currentState).onTick();
 
 		// Check if expired timer triggers state transition
 		boolean timeout = state(currentState).timer.tick();
 		if (timeout) {
-			match = findMatchingTimeoutTransition(currentState);
-			if (match.isPresent()) {
-				fireTransition(match.get(), Optional.empty());
+			transition = findMatchingTimeoutTransition(currentState);
+			if (transition.isPresent()) {
+				fireTransition(transition.get(), Optional.empty());
 			}
 		}
 	}
 
 	private Optional<Transition<S, E>> findMatchingTimeoutTransition(S state) {
-		return transitions(state).stream().filter(t -> t.timeout && t.guard.getAsBoolean()).findFirst();
+		return transitions(state).stream().filter(t -> t.timeoutEvent && t.guard.getAsBoolean()).findFirst();
 	}
 
-	private Optional<Transition<S, E>> findMatchingTransition(S state, Optional<E> event) {
-		return transitions(state).stream().filter(t -> isTransitionMatching(t, event)).findFirst();
+	private Optional<Transition<S, E>> findMatchingNoTimeoutTransition(S state, Optional<E> event) {
+		return transitions(state).stream().filter(t -> !t.timeoutEvent && t.guard.getAsBoolean())
+				.filter(t -> isTransitionMatchingEventOrEventClass(t, event)).findFirst();
 	}
 
-	private boolean isTransitionMatching(Transition<S, E> t, Optional<E> event) {
-		if (t.timeout) {
-			// transition matches only timeout event
-			return false;
-		}
-		if (!t.guard.getAsBoolean()) {
-			// guard condition not fulfilled
-			return false;
-		}
+	private boolean isTransitionMatchingEventOrEventClass(Transition<S, E> t, Optional<E> event) {
 		if (!event.isPresent()) {
-			// no event but guard fulfilled
-			return t.event == null && t.eventClass == null;
+			return t.eventValue == null && t.eventClass == null;
 		}
 		if (matchEventsBy == EventMatchStrategy.BY_CLASS) {
-			// event class matches, guard condition fulfilled
-			return event.isPresent() && event.get().getClass().equals(t.eventClass);
-		} else if (matchEventsBy == EventMatchStrategy.BY_EQUALITY) {
-			// event matches, guard condition fulfilled
-			return event.isPresent() && event.get().equals(t.event);
+			return event.get().getClass().equals(t.eventClass);
 		}
-		return false;
+		if (matchEventsBy == EventMatchStrategy.BY_EQUALITY) {
+			return event.get().equals(t.eventValue);
+		}
+		throw new IllegalStateException();
 	}
 
 	private void fireTransition(Transition<S, E> transition, Optional<E> event) {
