@@ -47,7 +47,10 @@ class Transition<S, E> {
 
 	@Override
 	public String toString() {
-		String eventText = fsm.getMatchStrategy() == BY_CLASS ? eventClass().getSimpleName() : String.valueOf(eventValue());
+		String eventText = timeoutEvent ? "timeout" : "condition";
+		if (eventSlot != null) {
+			eventText = fsm.getMatchStrategy() == BY_CLASS ? eventClass().getSimpleName() : String.valueOf(eventValue());
+		}
 		return String.format("\n(%s)--[%s]-->(%s)", from, eventText, to);
 	}
 }
