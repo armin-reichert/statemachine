@@ -407,7 +407,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	public void restartTimer(S state) {
 		StateTimer timer = state(state).timer;
 		if (timer != StateTimer.NEVER_ENDING_TIMER) {
-			timer.restart();
+			timer.reset();
 			tracer.stateTimerRestarted(state);
 		}
 	}

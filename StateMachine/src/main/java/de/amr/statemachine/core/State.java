@@ -138,7 +138,7 @@ public class State<S> {
 	 */
 	public void setTimer(IntSupplier fnDuration) {
 		timer = new StateTimer(fnDuration);
-		timer.restart();
+		timer.reset();
 	}
 
 	/**
