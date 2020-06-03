@@ -49,8 +49,92 @@ public class TrafficLight extends StateMachine<Light, Void> {
 	}
 }
 ```
+## Example 2: Application lifecycle
 
-## Example 2: Menu and controller for [Pong game](https://github.com/armin-reichert/pong)
+In my simple [game library](https://github.com/armin-reichert/easy-game) each application has a lifecycle which is implemented by the following finite-state machine:
+
+```java
+beginStateMachine(ApplicationState.class, ApplicationEvent.class, EventMatchStrategy.BY_EQUALITY)
+	.description(String.format("[%s]", getClass().getSimpleName()))
+	.initialState(STARTING)
+	.states()
+
+		.state(STARTING)
+			.onEntry(() -> {
+				init();
+				clock.start();
+				loginfo("Clock started, %d frames/second", clock.getTargetFramerate());
+			})
+
+		.state(CREATING_UI)
+			.onEntry(() -> {
+				try {
+					UIManager.setLookAndFeel(NimbusLookAndFeel.class.getName());
+				} catch (ClassNotFoundException | InstantiationException | IllegalAccessException
+						| UnsupportedLookAndFeelException x) {
+					loginfo("Could not set Nimbus look and feel");
+				}
+				if (controller != null) {
+					shell = new AppShell(this, settings.width, settings.height);
+				} else {
+					shell = new AppShell(this, 800, 600);
+					setController(new AppInfoView(800,600));
+				}
+				SwingUtilities.invokeLater(() -> shell.display(settings.fullScreenOnStart));
+			})
+
+
+		.state(RUNNING)
+			.onTick(() -> {
+				Keyboard.handler.poll();
+				Mouse.handler.poll();
+				collisionHandler().ifPresent(CollisionHandler::update);
+				controller.update();
+				currentView().ifPresent(shell::render);
+			})
+
+		.state(PAUSED)
+			.onEntry(() -> fireChange("paused", false, true))
+			.onTick(() -> currentView().ifPresent(shell::render))
+			.onExit(() -> fireChange("paused", true, false))
+
+		.state(CLOSED)
+			.onEntry(() -> {
+				if (exitHandler != null) {
+					LOGGER.info(() -> "Running exit handler");
+					exitHandler.accept(this);
+				}
+				clock.stop();
+				LOGGER.info(() -> "Application terminated.");
+				System.exit(0);
+			})
+
+	.transitions()
+
+		.when(STARTING).then(CREATING_UI).condition(() -> clock.isTicking())
+
+		.when(CREATING_UI).then(RUNNING).condition(() -> shell.isVisible())
+
+		.when(RUNNING).then(PAUSED).on(TOGGLE_PAUSE)
+
+		.when(RUNNING).then(CLOSED).on(CLOSE)
+
+		.stay(RUNNING).on(TOGGLE_FULLSCREEN).act(() -> shell.toggleDisplayMode())
+
+		.stay(RUNNING).on(SHOW_SETTINGS_DIALOG).act(() -> shell.showSettingsDialog())
+
+		.when(PAUSED).then(RUNNING).on(TOGGLE_PAUSE)
+
+		.when(PAUSED).then(CLOSED).on(CLOSE)
+
+		.stay(PAUSED).on(TOGGLE_FULLSCREEN).act(() -> shell.toggleDisplayMode())
+
+		.stay(PAUSED).on(SHOW_SETTINGS_DIALOG).act(() -> shell.showSettingsDialog())
+
+.endStateMachine();
+```
+
+## Example 3: Menu and controller for [Pong game](https://github.com/armin-reichert/pong)
 
 ### Menu controller
 
@@ -112,7 +196,7 @@ beginStateMachine()
 .endStateMachine();
 ```
 
-## Example 3: Flappy-Bird game controller 
+## Example 4: Flappy-Bird game controller 
 
 A slightly more complex example is the game controller of my [Flappy Bird](https://github.com/armin-reichert/birdy) game implementation.
 
@@ -188,7 +272,7 @@ beginStateMachine()
 .endStateMachine();
 ```
 
-## Example 4: Pac-Man ghost "AI"
+## Example 5: Pac-Man ghost "AI"
 
 I used this state machine library extensively in my [Pac-Man](https://github.com/armin-reichert/pacman) game, in fact this Pac-man implementation was the main motivation for creating this library at all. 
 
