@@ -66,7 +66,7 @@ public class StateMachineTracer<S, E> {
 	}
 
 	public void enteringInitialState(S id) {
-		logger.info(() -> format("%s enters initial state (%s)", fsm.getDescription(), id));
+		logger.info(() -> format("%s enters initial state", fsm.getDescription()));
 		enteringState(id);
 	}
 
