@@ -61,13 +61,16 @@ beginStateMachine(ApplicationState.class, ApplicationEvent.class, EventMatchStra
 
 		.state(STARTING)
 			.onEntry(() -> {
+				fireStateEntry();
 				init();
 				clock.start();
 				loginfo("Clock started, %d frames/second", clock.getTargetFramerate());
 			})
+			.onExit(() -> fireStateExit())
 
 		.state(CREATING_UI)
 			.onEntry(() -> {
+				fireStateEntry();
 				try {
 					UIManager.setLookAndFeel(NimbusLookAndFeel.class.getName());
 				} catch (ClassNotFoundException | InstantiationException | IllegalAccessException
@@ -82,9 +85,11 @@ beginStateMachine(ApplicationState.class, ApplicationEvent.class, EventMatchStra
 				}
 				SwingUtilities.invokeLater(() -> shell.display(settings.fullScreenOnStart));
 			})
+			.onExit(() -> fireStateExit())
 
 
 		.state(RUNNING)
+			.onEntry(() -> fireStateEntry())
 			.onTick(() -> {
 				Keyboard.handler.poll();
 				Mouse.handler.poll();
@@ -92,18 +97,16 @@ beginStateMachine(ApplicationState.class, ApplicationEvent.class, EventMatchStra
 				controller.update();
 				currentView().ifPresent(shell::render);
 			})
+			.onExit(() -> fireStateExit())
 
 		.state(PAUSED)
-			.onEntry(() -> fireChange("paused", false, true))
+			.onEntry(() -> fireStateEntry())
 			.onTick(() -> currentView().ifPresent(shell::render))
-			.onExit(() -> fireChange("paused", true, false))
+			.onExit(() -> fireStateExit())
 
 		.state(CLOSED)
 			.onEntry(() -> {
-				if (exitHandler != null) {
-					LOGGER.info(() -> "Running exit handler");
-					exitHandler.accept(this);
-				}
+				fireStateEntry();
 				clock.stop();
 				LOGGER.info(() -> "Application terminated.");
 				System.exit(0);
