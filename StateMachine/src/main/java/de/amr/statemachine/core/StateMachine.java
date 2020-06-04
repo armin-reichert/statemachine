@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.Deque;
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -144,8 +145,10 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	private final Map<S, State<S>> stateMap;
 	private final Map<S, List<Transition<S, E>>> transitionMap;
 	private final StateMachineTracer<S, E> tracer;
-	private final Set<Consumer<E>> listeners = new LinkedHashSet<>();
 	private final List<Predicate<E>> loggingBlacklist = new ArrayList<>();
+	private final Set<Consumer<E>> eventListeners = new LinkedHashSet<>();
+	private Map<S, Set<Consumer<S>>> stateEntryListeners = new LinkedHashMap<>();
+	private Map<S, Set<Consumer<S>>> stateExitListeners = new LinkedHashMap<>();
 
 	/**
 	 * Creates a new state machine.
@@ -351,12 +354,12 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 
 	@Override
 	public void addEventListener(Consumer<E> listener) {
-		listeners.add(listener);
+		eventListeners.add(listener);
 	}
 
 	@Override
 	public void removeEventListener(Consumer<E> listener) {
-		listeners.remove(listener);
+		eventListeners.remove(listener);
 	}
 
 	@Override
@@ -364,7 +367,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 		if (loggingBlacklist.stream().noneMatch(condition -> condition.test(event))) {
 			tracer.getLogger().info(() -> String.format("%s published event '%s'", this, event));
 		}
-		listeners.forEach(listener -> listener.accept(event));
+		eventListeners.forEach(listener -> listener.accept(event));
 	}
 
 	/**
@@ -397,9 +400,11 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	public void setState(S state) {
 		if (currentState != null) {
 			state(currentState).onExit();
+			fireStateExitListeners(currentState);
 		}
 		currentState = state;
 		state(currentState).onEntry();
+		fireStateEntryListeners(currentState);
 		restartTimer(state);
 	}
 
@@ -415,7 +420,8 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	@Override
 	public void resumeState(S state) {
 		currentState = state;
-		state().onEntry();
+		state(currentState).onEntry();
+		fireStateEntryListeners(currentState);
 	}
 
 	@Override
@@ -461,6 +467,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 		currentState = initialState;
 		restartTimer(currentState);
 		state(currentState).onEntry();
+		fireStateEntryListeners(currentState);
 	}
 
 	@Override
@@ -541,6 +548,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 			// exit state
 			tracer.exitingState(currentState);
 			state(currentState).onExit();
+			fireStateExitListeners(currentState);
 			// call action
 			transition.action.accept(event.orElse(null));
 			// enter new state
@@ -548,6 +556,47 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 			tracer.enteringState(currentState);
 			restartTimer(currentState);
 			state(currentState).onEntry();
+			fireStateEntryListeners(currentState);
+		}
+	}
+
+	/**
+	 * Adds an additional listener that is executed when the given state is entered. This happenes after
+	 * the declared {@code onExit} hook.
+	 * 
+	 * @param state    a state
+	 * @param listener entry listener
+	 */
+	public void addStateEntryListener(S state, Consumer<S> listener) {
+		if (stateEntryListeners.get(state) == null) {
+			stateEntryListeners.put(state, new LinkedHashSet<>());
+		}
+		stateEntryListeners.get(state).add(listener);
+	}
+
+	private void fireStateEntryListeners(S state) {
+		if (stateEntryListeners.containsKey(state)) {
+			stateEntryListeners.get(state).forEach(listener -> listener.accept(state));
+		}
+	}
+
+	/**
+	 * Adds an additional listener that is executed when the given state is left. This happenes after
+	 * the declared {@code onExit} hook.
+	 * 
+	 * @param state    a state
+	 * @param listener exit listener
+	 */
+	public void addStateExitListener(S state, Consumer<S> listener) {
+		if (stateExitListeners.get(state) == null) {
+			stateExitListeners.put(state, new LinkedHashSet<>());
+		}
+		stateExitListeners.get(state).add(listener);
+	}
+
+	private void fireStateExitListeners(S state) {
+		if (stateExitListeners.containsKey(state)) {
+			stateExitListeners.get(state).forEach(listener -> listener.accept(state));
 		}
 	}
 }
