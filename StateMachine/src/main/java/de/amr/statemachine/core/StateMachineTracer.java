@@ -75,7 +75,7 @@ public class StateMachineTracer<S, E> {
 		if (stateEntered.hasTimer()) {
 			int duration = stateEntered.getDuration();
 			float seconds = fnTicksToSeconds.apply(duration);
-			logger.info(() -> format("%s enters state '%s' for %.2f seconds (%d frames)", fsm.getDescription(), id, seconds,
+			logger.info(() -> format("%s enters state '%s' for %.2f seconds (%d ticks)", fsm.getDescription(), id, seconds,
 					duration));
 		} else {
 			logger.info(() -> format("%s enters state '%s'", fsm.getDescription(), id));

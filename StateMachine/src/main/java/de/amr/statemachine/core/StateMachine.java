@@ -463,9 +463,9 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 		if (initialState == null) {
 			throw new IllegalStateException("Cannot initialize state machine, no initial state defined.");
 		}
-		tracer.enteringInitialState(initialState);
 		currentState = initialState;
 		restartTimer(currentState);
+		tracer.enteringInitialState(initialState);
 		state(currentState).onEntry();
 		fireStateEntryListeners(currentState);
 	}
