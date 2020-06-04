@@ -12,6 +12,7 @@ A finite-state machine implementation with the following features:
   - state timeout
 - Supports transition actions with information about the event that triggered the transition
 - Actions can be implemented by lambda expression or function references
+- Applications can add additional state entry/exit listeners
 - Tracer for state machine processing included
 - Drawbacks: No hierarchical states supported
 
@@ -61,16 +62,13 @@ beginStateMachine(ApplicationState.class, ApplicationEvent.class, EventMatchStra
 
 		.state(STARTING)
 			.onEntry(() -> {
-				fireStateEntry();
 				init();
 				clock.start();
 				loginfo("Clock started, %d frames/second", clock.getTargetFramerate());
 			})
-			.onExit(() -> fireStateExit())
 
 		.state(CREATING_UI)
 			.onEntry(() -> {
-				fireStateEntry();
 				try {
 					UIManager.setLookAndFeel(NimbusLookAndFeel.class.getName());
 				} catch (ClassNotFoundException | InstantiationException | IllegalAccessException
@@ -85,11 +83,8 @@ beginStateMachine(ApplicationState.class, ApplicationEvent.class, EventMatchStra
 				}
 				SwingUtilities.invokeLater(() -> shell.display(settings.fullScreenOnStart));
 			})
-			.onExit(() -> fireStateExit())
-
 
 		.state(RUNNING)
-			.onEntry(() -> fireStateEntry())
 			.onTick(() -> {
 				Keyboard.handler.poll();
 				Mouse.handler.poll();
@@ -97,17 +92,12 @@ beginStateMachine(ApplicationState.class, ApplicationEvent.class, EventMatchStra
 				controller.update();
 				currentView().ifPresent(shell::render);
 			})
-			.onExit(() -> fireStateExit())
 
 		.state(PAUSED)
-			.onEntry(() -> fireStateEntry())
 			.onTick(() -> currentView().ifPresent(shell::render))
-			.onExit(() -> fireStateExit())
 
 		.state(CLOSED)
-			.onEntry(() -> {
-				fireStateEntry();
-				clock.stop();
+			.onTick(() -> {
 				LOGGER.info(() -> "Application terminated.");
 				System.exit(0);
 			})
