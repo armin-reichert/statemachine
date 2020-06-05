@@ -145,8 +145,8 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	private final StateMachineTracer<S, E> tracer;
 	private final List<Predicate<E>> loggingBlacklist = new ArrayList<>();
 	private final Set<Consumer<E>> eventListeners = new LinkedHashSet<>();
-	private Map<S, Set<Consumer<S>>> stateEntryListeners = new LinkedHashMap<>();
-	private Map<S, Set<Consumer<S>>> stateExitListeners = new LinkedHashMap<>();
+	private Map<S, Set<Consumer<S>>> entryListeners;
+	private Map<S, Set<Consumer<S>>> exitListeners;
 
 	/**
 	 * Creates a new state machine.
@@ -398,11 +398,11 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	public void setState(S state) {
 		if (currentState != null) {
 			state(currentState).onExit();
-			fireStateExitListeners(currentState);
+			fireExitListeners(currentState);
 		}
 		currentState = state;
 		state(currentState).onEntry();
-		fireStateEntryListeners(currentState);
+		fireEntryListeners(currentState);
 		restartTimer(state);
 	}
 
@@ -419,7 +419,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	public void resumeState(S state) {
 		currentState = state;
 		state(currentState).onEntry();
-		fireStateEntryListeners(currentState);
+		fireEntryListeners(currentState);
 	}
 
 	@Override
@@ -465,7 +465,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 		restartTimer(currentState);
 		tracer.enteringInitialState(initialState);
 		state(currentState).onEntry();
-		fireStateEntryListeners(currentState);
+		fireEntryListeners(currentState);
 	}
 
 	@Override
@@ -546,7 +546,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 			// exit state
 			tracer.exitingState(currentState);
 			state(currentState).onExit();
-			fireStateExitListeners(currentState);
+			fireExitListeners(currentState);
 			// call action
 			transition.action.accept(event.orElse(null));
 			// enter new state
@@ -554,47 +554,61 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 			restartTimer(currentState);
 			tracer.enteringState(currentState);
 			state(currentState).onEntry();
-			fireStateEntryListeners(currentState);
+			fireEntryListeners(currentState);
 		}
 	}
 
 	/**
-	 * Adds an additional listener that is executed when the given state is entered. This happenes after
-	 * the declared {@code onExit} hook.
+	 * Adds a listener that is executed when the given state is entered. This happenes after the
+	 * {@code onEntry} hook method was called.
 	 * 
 	 * @param state    a state
 	 * @param listener entry listener
 	 */
 	public void addStateEntryListener(S state, Consumer<S> listener) {
-		if (stateEntryListeners.get(state) == null) {
-			stateEntryListeners.put(state, new LinkedHashSet<>());
-		}
-		stateEntryListeners.get(state).add(listener);
+		entryListeners(state).add(listener);
 	}
 
-	private void fireStateEntryListeners(S state) {
-		if (stateEntryListeners.containsKey(state)) {
-			stateEntryListeners.get(state).forEach(listener -> listener.accept(state));
+	private Set<Consumer<S>> entryListeners(S state) {
+		if (entryListeners == null) {
+			entryListeners = new LinkedHashMap<>();
+		}
+		if (!entryListeners.containsKey(state)) {
+			entryListeners.put(state, new LinkedHashSet<>());
+		}
+		return entryListeners.get(state);
+	}
+
+	private void fireEntryListeners(S state) {
+		if (entryListeners != null && entryListeners.containsKey(state)) {
+			entryListeners.get(state).forEach(listener -> listener.accept(state));
 		}
 	}
 
 	/**
-	 * Adds an additional listener that is executed when the given state is left. This happenes after
-	 * the declared {@code onExit} hook.
+	 * Adds a listener that is executed when the given state is left. This happenes after the
+	 * {@code onExit} hook method was called.
 	 * 
 	 * @param state    a state
 	 * @param listener exit listener
 	 */
 	public void addStateExitListener(S state, Consumer<S> listener) {
-		if (stateExitListeners.get(state) == null) {
-			stateExitListeners.put(state, new LinkedHashSet<>());
-		}
-		stateExitListeners.get(state).add(listener);
+		exitListeners(state).add(listener);
 	}
 
-	private void fireStateExitListeners(S state) {
-		if (stateExitListeners.containsKey(state)) {
-			stateExitListeners.get(state).forEach(listener -> listener.accept(state));
+	private Set<Consumer<S>> exitListeners(S state) {
+		if (exitListeners == null) {
+			exitListeners = new LinkedHashMap<>();
+		}
+		if (!exitListeners.containsKey(state)) {
+			exitListeners.put(state, new LinkedHashSet<>());
+		}
+		return exitListeners.get(state);
+	}
+
+	private void fireExitListeners(S state) {
+		if (exitListeners != null && exitListeners.containsKey(state)) {
+			exitListeners.get(state).forEach(listener -> listener.accept(state));
 		}
 	}
 }
