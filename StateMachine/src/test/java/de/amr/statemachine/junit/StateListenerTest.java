@@ -4,6 +4,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import de.amr.statemachine.core.State;
 import de.amr.statemachine.core.StateMachine;
 
 public class StateListenerTest {
@@ -28,12 +29,12 @@ public class StateListenerTest {
 		//@formatter:on
 	}
 
-	private void callEntryListener(Integer state) {
+	private void callEntryListener(State<Integer> state) {
 		System.out.println("Entry listener");
 		++stateEntryCount;
 	}
 
-	private void callExitListener(Integer state) {
+	private void callExitListener(State<Integer> state) {
 		System.out.println("Exit listener");
 		++stateExitCount;
 	}
@@ -55,7 +56,7 @@ public class StateListenerTest {
 		}
 		Assert.assertEquals(2, stateExitCount);
 	}
-	
+
 	@Test
 	public void testStateEntryListener() {
 		fsm.addStateEntryListener(0, this::callEntryListener);
@@ -66,7 +67,7 @@ public class StateListenerTest {
 		}
 		Assert.assertEquals(5, stateEntryCount);
 	}
-	
+
 	@Test
 	public void testStateExitListener() {
 		fsm.addStateExitListener(0, this::callExitListener);

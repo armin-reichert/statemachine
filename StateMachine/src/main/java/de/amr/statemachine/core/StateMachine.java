@@ -145,8 +145,8 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	private final StateMachineTracer<S, E> tracer;
 	private final List<Predicate<E>> loggingBlacklist = new ArrayList<>();
 	private final Set<Consumer<E>> eventListeners = new LinkedHashSet<>();
-	private Map<S, Set<Consumer<S>>> entryListeners;
-	private Map<S, Set<Consumer<S>>> exitListeners;
+	private Map<S, Set<Consumer<State<S>>>> entryListeners;
+	private Map<S, Set<Consumer<State<S>>>> exitListeners;
 
 	/**
 	 * Creates a new state machine.
@@ -565,11 +565,11 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	 * @param state    a state
 	 * @param listener entry listener
 	 */
-	public void addStateEntryListener(S state, Consumer<S> listener) {
+	public void addStateEntryListener(S state, Consumer<State<S>> listener) {
 		entryListeners(state).add(listener);
 	}
 
-	private Set<Consumer<S>> entryListeners(S state) {
+	private Set<Consumer<State<S>>> entryListeners(S state) {
 		if (entryListeners == null) {
 			entryListeners = new LinkedHashMap<>();
 		}
@@ -581,7 +581,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 
 	private void fireEntryListeners(S state) {
 		if (entryListeners != null && entryListeners.containsKey(state)) {
-			entryListeners.get(state).forEach(listener -> listener.accept(state));
+			entryListeners.get(state).forEach(listener -> listener.accept(state(state)));
 		}
 	}
 
@@ -592,11 +592,11 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	 * @param state    a state
 	 * @param listener exit listener
 	 */
-	public void addStateExitListener(S state, Consumer<S> listener) {
+	public void addStateExitListener(S state, Consumer<State<S>> listener) {
 		exitListeners(state).add(listener);
 	}
 
-	private Set<Consumer<S>> exitListeners(S state) {
+	private Set<Consumer<State<S>>> exitListeners(S state) {
 		if (exitListeners == null) {
 			exitListeners = new LinkedHashMap<>();
 		}
@@ -608,7 +608,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 
 	private void fireExitListeners(S state) {
 		if (exitListeners != null && exitListeners.containsKey(state)) {
-			exitListeners.get(state).forEach(listener -> listener.accept(state));
+			exitListeners.get(state).forEach(listener -> listener.accept(state(state)));
 		}
 	}
 }
