@@ -9,12 +9,12 @@ A finite-state machine implementation with the following features:
 - States can have a timer and trigger a transition on timeout
 - State transitions can be triggered by combinations of 
   - conditions (guards)
-  - event conditions (match by equality or by event class)
+  - event conditions (match transitions by event value/equality or by event class)
   - state timeout
 - Supports transition actions with information about the event that triggered the transition
 - Actions can be implemented by lambda expression or function references
-- Applications can add additional state entry/exit listeners
-- Tracer for state machine processing included
+- Tracing of state machine processing to some logger
+
 - Drawbacks: No hierarchical states supported
 
 The states are identified by some arbitrary type, normally an enumeration type, string or integer.
