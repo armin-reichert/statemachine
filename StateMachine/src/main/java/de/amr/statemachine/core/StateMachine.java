@@ -553,8 +553,8 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 			transition.action.accept(event.orElse(null));
 			// enter new state
 			currentState = transition.to;
-			tracer.enteringState(currentState);
 			restartTimer(currentState);
+			tracer.enteringState(currentState);
 			state(currentState).onEntry();
 			fireStateEntryListeners(currentState);
 		}
