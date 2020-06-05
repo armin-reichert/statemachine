@@ -52,7 +52,7 @@ public class TrafficLight extends StateMachine<Light, Void> {
 ```
 ## Example 2: Application lifecycle
 
-In my simple [game library](https://github.com/armin-reichert/easy-game) each application has a lifecycle which is implemented by the following finite-state machine:
+In my simple [game library](https://github.com/armin-reichert/easy-game) each [application](https://github.com/armin-reichert/easy-game/src/main/java/de/amr/easy/game/Application.java) has a lifecycle which is implemented by the following finite-state machine:
 
 ```java
 public enum ApplicationState {
@@ -67,57 +67,70 @@ enum ApplicationEvent {
  * The lifecycle of an application is defined by the following finite-state machine:
  */
 private static StateMachine<ApplicationState, ApplicationEvent> createLife(Application app) {
-	return
-	/*@formatter:off*/
+	return StateMachine.
+	/*@formatter:off*/		
 	beginStateMachine(ApplicationState.class, ApplicationEvent.class, EventMatchStrategy.BY_EQUALITY)
 		.description(String.format("[%s]", app.getClass().getName()))
 		.initialState(STARTING)
-
 		.states()
 
-			.state(STARTING).onEntry(() -> {
-				app.init();
-				SwingUtilities.invokeLater(app::createUIAndStartClock);
-			})
+			.state(STARTING)
+				.onEntry(() -> {
+					// let application initialize and select main controller:
+					app.init();
+					if (app.controller == null) {
+						// use fallback controller
+						int width = 640, height = 480;
+						app.setController(new AppInfoView(app, width, height));
+						app.shell = new AppShell(app, width, height);
+					} else {
+						app.shell = new AppShell(app, app.settings.width, app.settings.height);
+					}
+					loginfo("Starting application '%s'", app.getClass().getName());
+					SwingUtilities.invokeLater(app::showUIAndStartClock);
+				})
 
-			.state(RUNNING).onTick(() -> {
-				Keyboard.handler.poll();
-				Mouse.handler.poll();
-				app.collisionHandler().ifPresent(CollisionHandler::update);
-				app.controller.update();
-				app.currentView().ifPresent(app.shell::render);
-			})
+			.state(RUNNING)
+				.onTick(() -> {
+					Keyboard.handler.poll();
+					Mouse.handler.poll();
+					app.collisionHandler().ifPresent(CollisionHandler::update);
+					app.controller.update();
+					app.currentView().ifPresent(app.shell::render);
+				})
 
-			.state(PAUSED).onTick(() -> app.currentView().ifPresent(app.shell::render))
+			.state(PAUSED)
+				.onTick(() -> app.currentView().ifPresent(app.shell::render))
 
-			.state(CLOSED).onTick(() -> {
-				app.shell.dispose();
-				loginfo("Exit application '%s'", theApplication.getClass().getName());
-				System.exit(0);
-			})
+			.state(CLOSED)
+				.onTick(() -> {
+					app.shell.dispose();
+					loginfo("Exit application '%s'", app.getClass().getName());
+					System.exit(0);
+				})
 
 		.transitions()
 
-			.when(STARTING).then(RUNNING).condition(app.clock::isTicking)
+			.when(STARTING).then(RUNNING).condition(() -> app.clock.isTicking())
 
 			.when(RUNNING).then(PAUSED).on(TOGGLE_PAUSE)
 
 			.when(RUNNING).then(CLOSED).on(CLOSE)
 
-			.stay(RUNNING).on(TOGGLE_FULLSCREEN).act(app.shell::toggleDisplayMode)
+			.stay(RUNNING).on(TOGGLE_FULLSCREEN).act(() -> app.shell.toggleDisplayMode())
 
-			.stay(RUNNING).on(SHOW_SETTINGS_DIALOG).act(app.shell::showSettingsDialog)
+			.stay(RUNNING).on(SHOW_SETTINGS_DIALOG).act(() -> app.shell.showSettingsDialog())
 
 			.when(PAUSED).then(RUNNING).on(TOGGLE_PAUSE)
 
 			.when(PAUSED).then(CLOSED).on(CLOSE)
 
-			.stay(PAUSED).on(TOGGLE_FULLSCREEN).act(app.shell::toggleDisplayMode)
+			.stay(PAUSED).on(TOGGLE_FULLSCREEN).act(() -> app.shell.toggleDisplayMode())
 
-			.stay(PAUSED).on(SHOW_SETTINGS_DIALOG).act(app.shell::showSettingsDialog)
+			.stay(PAUSED).on(SHOW_SETTINGS_DIALOG).act(() -> app.shell.showSettingsDialog())
 
-		.endStateMachine();
-		/*@formatter:on*/
+	.endStateMachine();
+	/*@formatter:on*/
 }
 ```
 
