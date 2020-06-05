@@ -55,57 +55,70 @@ public class TrafficLight extends StateMachine<Light, Void> {
 In my simple [game library](https://github.com/armin-reichert/easy-game) each application has a lifecycle which is implemented by the following finite-state machine:
 
 ```java
-beginStateMachine(ApplicationState.class, ApplicationEvent.class, EventMatchStrategy.BY_EQUALITY)
-	.description(String.format("[%s]", getClass().getName()))
-	.initialState(STARTING)
-	.states()
+public enum ApplicationState {
+	STARTING, RUNNING, PAUSED, CLOSED;
+}
 
-		.state(STARTING)
-			.onEntry(() -> {
-				init();
-				SwingUtilities.invokeLater(this::createUIAndStartClock);
+enum ApplicationEvent {
+	TOGGLE_PAUSE, TOGGLE_FULLSCREEN, SHOW_SETTINGS_DIALOG, CLOSE
+}
+
+/*
+ * The lifecycle of an application is defined by the following finite-state machine:
+ */
+private static StateMachine<ApplicationState, ApplicationEvent> createLife(Application app) {
+	return
+	/*@formatter:off*/
+	beginStateMachine(ApplicationState.class, ApplicationEvent.class, EventMatchStrategy.BY_EQUALITY)
+		.description(String.format("[%s]", app.getClass().getName()))
+		.initialState(STARTING)
+
+		.states()
+
+			.state(STARTING).onEntry(() -> {
+				app.init();
+				SwingUtilities.invokeLater(app::createUIAndStartClock);
 			})
 
-		.state(RUNNING)
-			.onTick(() -> {
+			.state(RUNNING).onTick(() -> {
 				Keyboard.handler.poll();
 				Mouse.handler.poll();
-				collisionHandler().ifPresent(CollisionHandler::update);
-				controller.update();
-				currentView().ifPresent(shell::render);
+				app.collisionHandler().ifPresent(CollisionHandler::update);
+				app.controller.update();
+				app.currentView().ifPresent(app.shell::render);
 			})
 
-		.state(PAUSED)
-			.onTick(() -> currentView().ifPresent(shell::render))
+			.state(PAUSED).onTick(() -> app.currentView().ifPresent(app.shell::render))
 
-		.state(CLOSED)
-			.onTick(() -> {
-				shell.dispose();
+			.state(CLOSED).onTick(() -> {
+				app.shell.dispose();
 				loginfo("Exit application '%s'", theApplication.getClass().getName());
 				System.exit(0);
 			})
 
-	.transitions()
+		.transitions()
 
-		.when(STARTING).then(RUNNING).condition(() -> clock.isTicking())
+			.when(STARTING).then(RUNNING).condition(app.clock::isTicking)
 
-		.when(RUNNING).then(PAUSED).on(TOGGLE_PAUSE)
+			.when(RUNNING).then(PAUSED).on(TOGGLE_PAUSE)
 
-		.when(RUNNING).then(CLOSED).on(CLOSE)
+			.when(RUNNING).then(CLOSED).on(CLOSE)
 
-		.stay(RUNNING).on(TOGGLE_FULLSCREEN).act(() -> shell.toggleDisplayMode())
+			.stay(RUNNING).on(TOGGLE_FULLSCREEN).act(app.shell::toggleDisplayMode)
 
-		.stay(RUNNING).on(SHOW_SETTINGS_DIALOG).act(() -> shell.showSettingsDialog())
+			.stay(RUNNING).on(SHOW_SETTINGS_DIALOG).act(app.shell::showSettingsDialog)
 
-		.when(PAUSED).then(RUNNING).on(TOGGLE_PAUSE)
+			.when(PAUSED).then(RUNNING).on(TOGGLE_PAUSE)
 
-		.when(PAUSED).then(CLOSED).on(CLOSE)
+			.when(PAUSED).then(CLOSED).on(CLOSE)
 
-		.stay(PAUSED).on(TOGGLE_FULLSCREEN).act(() -> shell.toggleDisplayMode())
+			.stay(PAUSED).on(TOGGLE_FULLSCREEN).act(app.shell::toggleDisplayMode)
 
-		.stay(PAUSED).on(SHOW_SETTINGS_DIALOG).act(() -> shell.showSettingsDialog())
+			.stay(PAUSED).on(SHOW_SETTINGS_DIALOG).act(app.shell::showSettingsDialog)
 
-.endStateMachine();
+		.endStateMachine();
+		/*@formatter:on*/
+}
 ```
 
 ## Example 3: Menu and controller for [Pong game](https://github.com/armin-reichert/pong)
