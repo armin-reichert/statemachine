@@ -80,13 +80,11 @@ import de.amr.statemachine.api.Fsm;
 public class StateMachine<S, E> implements Fsm<S, E> {
 
 	static {
-		InputStream stream = StateMachine.class.getClassLoader().getResourceAsStream("logging.properties");
-		if (stream == null) {
-			throw new RuntimeException("Could not load logging property file");
-		}
 		try {
-			LogManager.getLogManager().readConfiguration(stream);
-		} catch (IOException | SecurityException e) {
+			InputStream in = StateMachine.class.getClassLoader()
+					.getResourceAsStream("de/amr/statemachine/logging.properties");
+			LogManager.getLogManager().readConfiguration(in);
+		} catch (NullPointerException | IOException | SecurityException e) {
 			throw new RuntimeException("Could not read logging configuration");
 		}
 	}
