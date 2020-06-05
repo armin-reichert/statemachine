@@ -3,6 +3,7 @@
 A finite-state machine implementation with the following features:
 - Supports definition of state machines in declarative style using the builder pattern
 - Supports *onEntry* and *onExit* actions for states
+- Supports registration of state entry and state exit listeners
 - Supports *onTick* actions for states which are triggered by a clock
 - States can be implemented as subclasses of the generic *State* class
 - States can have a timer and trigger a transition on timeout
