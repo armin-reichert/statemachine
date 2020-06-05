@@ -56,32 +56,14 @@ In my simple [game library](https://github.com/armin-reichert/easy-game) each ap
 
 ```java
 beginStateMachine(ApplicationState.class, ApplicationEvent.class, EventMatchStrategy.BY_EQUALITY)
-	.description(String.format("[%s]", getClass().getSimpleName()))
+	.description(String.format("[%s]", getClass().getName()))
 	.initialState(STARTING)
 	.states()
 
 		.state(STARTING)
 			.onEntry(() -> {
 				init();
-				clock.start();
-				loginfo("Clock started, %d frames/second", clock.getTargetFramerate());
-			})
-
-		.state(CREATING_UI)
-			.onEntry(() -> {
-				try {
-					UIManager.setLookAndFeel(NimbusLookAndFeel.class.getName());
-				} catch (ClassNotFoundException | InstantiationException | IllegalAccessException
-						| UnsupportedLookAndFeelException x) {
-					loginfo("Could not set Nimbus look and feel");
-				}
-				if (controller != null) {
-					shell = new AppShell(this, settings.width, settings.height);
-				} else {
-					shell = new AppShell(this, 800, 600);
-					setController(new AppInfoView(800,600));
-				}
-				SwingUtilities.invokeLater(() -> shell.display(settings.fullScreenOnStart));
+				SwingUtilities.invokeLater(this::createUIAndStartClock);
 			})
 
 		.state(RUNNING)
@@ -98,15 +80,14 @@ beginStateMachine(ApplicationState.class, ApplicationEvent.class, EventMatchStra
 
 		.state(CLOSED)
 			.onTick(() -> {
-				LOGGER.info(() -> "Application terminated.");
+				shell.dispose();
+				loginfo("Exit application '%s'", theApplication.getClass().getName());
 				System.exit(0);
 			})
 
 	.transitions()
 
-		.when(STARTING).then(CREATING_UI).condition(() -> clock.isTicking())
-
-		.when(CREATING_UI).then(RUNNING).condition(() -> shell.isVisible())
+		.when(STARTING).then(RUNNING).condition(() -> clock.isTicking())
 
 		.when(RUNNING).then(PAUSED).on(TOGGLE_PAUSE)
 
