@@ -51,81 +51,10 @@ public class TrafficLight extends StateMachine<Light, Void> {
 	}
 }
 ```
+
 ## Example 2: Application lifecycle
 
-In my simple [game library](https://github.com/armin-reichert/easy-game) each [application](https://github.com/armin-reichert/easy-game/blob/master/EasyGame/src/main/java/de/amr/easy/game/Application.java) has a lifecycle which is implemented by the following finite-state machine:
-
-```java
-public enum ApplicationState {
-	STARTING, RUNNING, PAUSED, CLOSED;
-}
-
-enum ApplicationEvent {
-	TOGGLE_PAUSE, TOGGLE_FULLSCREEN, SHOW_SETTINGS_DIALOG, CLOSE
-}
-
-beginStateMachine(ApplicationState.class, ApplicationEvent.class, EventMatchStrategy.BY_EQUALITY)
-	.description(String.format("[%s]", getClass().getName()))
-	.initialState(STARTING)
-	.states()
-
-		.state(STARTING)
-			.onEntry(() -> {
-				// let application initialize and select main controller:
-				init();
-				if (controller == null) {
-					// use fallback controller
-					int width = 640, height = 480;
-					setController(new AppInfoView(this, width, height));
-					shell = new AppShell(this, width, height);
-				} else {
-					shell = new AppShell(this, settings.width, settings.height);
-				}
-				loginfo("Starting application '%s'", getClass().getName());
-				SwingUtilities.invokeLater(this::showUIAndStartClock);
-			})
-
-		.state(RUNNING)
-			.onTick(() -> {
-				Keyboard.handler.poll();
-				Mouse.handler.poll();
-				collisionHandler().ifPresent(CollisionHandler::update);
-				controller.update();
-				currentView().ifPresent(shell::render);
-			})
-
-		.state(PAUSED)
-			.onTick(() -> currentView().ifPresent(shell::render))
-
-		.state(CLOSED)
-			.onTick(() -> {
-				shell.dispose();
-				loginfo("Exit application '%s'", getClass().getName());
-				System.exit(0);
-			})
-
-	.transitions()
-
-		.when(STARTING).then(RUNNING).condition(() -> clock.isTicking())
-
-		.when(RUNNING).then(PAUSED).on(TOGGLE_PAUSE)
-
-		.when(RUNNING).then(CLOSED).on(CLOSE)
-
-		.stay(RUNNING).on(TOGGLE_FULLSCREEN).act(() -> shell.toggleDisplayMode())
-
-		.stay(RUNNING).on(SHOW_SETTINGS_DIALOG).act(() -> shell.showSettingsDialog())
-
-		.when(PAUSED).then(RUNNING).on(TOGGLE_PAUSE)
-
-		.when(PAUSED).then(CLOSED).on(CLOSE)
-
-		.stay(PAUSED).on(TOGGLE_FULLSCREEN).act(() -> shell.toggleDisplayMode())
-
-		.stay(PAUSED).on(SHOW_SETTINGS_DIALOG).act(() -> shell.showSettingsDialog())
-
-.endStateMachine();
-```
+In my simple [game library](https://github.com/armin-reichert/easy-game), each [application](https://github.com/armin-reichert/easy-game/blob/master/EasyGame/src/main/java/de/amr/easy/game/Application.java) has a lifecycle which is implemented by a finite-state machine.
 
 ## Example 3: Menu and controller for [Pong game](https://github.com/armin-reichert/pong)
 
