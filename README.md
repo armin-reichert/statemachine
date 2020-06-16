@@ -208,50 +208,61 @@ brain = StateMachine.beginStateMachine(GhostState.class, PacManGameEvent.class)
 
 		.state(LOCKED)
 			.onEntry(() -> {
-				followState = getState();
+				followState = LOCKED;
 				visible = true;
-				setWishDir(maze.ghostHomeDir[seat]);
-				setMoveDir(wishDir);
-				tf.setPosition(maze.seatPosition(seat));
+				if (insanity != Insanity.IMMUNE) {
+					insanity = Insanity.HEALTHY;
+				}
+				moveDir = wishDir = seat.startDir;
+				tf.setPosition(seat.position);
 				enteredNewTile();
 				sprites.forEach(Sprite::resetAnimation);
-				show("color-" + moveDir);
+				showColored();
 			})
 			.onTick(() -> {
 				move();
-				show(game.pacMan.powerTicks > 0 ? "frightened" : "color-" + moveDir);
+				// not sure if ghost locked inside house should look frightened
+				if (game.pacMan.power > 0) {
+					showFrightened();
+				} else {
+					showColored();
+				}
 			})
 
 		.state(LEAVING_HOUSE)
-			.onEntry(() -> steering().init())
-			.onTick(() -> {
-				move();
-				show("color-" + moveDir);
-			})
-			.onExit(() -> forceMoving(LEFT))
-
-		.state(ENTERING_HOUSE)
 			.onEntry(() -> {
-				tf.setPosition(maze.seatPosition(0));
-				setWishDir(DOWN);
 				steering().init();
 			})
 			.onTick(() -> {
 				move();
-				show("eyes-" + moveDir);
+				showColored();
+			})
+			.onExit(() -> forceMoving(Direction.LEFT))
+
+		.state(ENTERING_HOUSE)
+			.onEntry(() -> {
+				tf.setPosition(maze.ghostSeats[0].position);
+				moveDir = wishDir = Direction.DOWN;
+				steering().init();
+			})
+			.onTick(() -> {
+				move();
+				showEyes();
 			})
 
 		.state(SCATTERING)
 			.onTick(() -> {
+				updateInsanity(game);
 				move();
-				show("color-" + moveDir);
+				showColored();
 				checkCollision(game.pacMan);
 			})
 
 		.state(CHASING)
 			.onTick(() -> {
+				updateInsanity(game);
 				move();
-				show("color-" + moveDir);
+				showColored();
 				checkCollision(game.pacMan);
 			})
 
@@ -259,20 +270,25 @@ brain = StateMachine.beginStateMachine(GhostState.class, PacManGameEvent.class)
 			.timeoutAfter(() -> sec(game.level.pacManPowerSeconds))
 			.onTick((state, t, remaining) -> {
 				move();
-				show(remaining < sec(2) ? "flashing" : "frightened");
+				// one flashing animation takes 0.5 sec
+				int flashTicks = sec(game.level.numFlashes * 0.5f);
+				if (remaining < flashTicks) {
+					showFlashing();
+				} else  {
+					showFrightened();
+				}
 				checkCollision(game.pacMan);
 			})
 
 		.state(DEAD)
-			.timeoutAfter(sec(1)) // "dying" time
+			.timeoutAfter(sec(1)) // time while ghost is drawn as number of scored points
 			.onEntry(() -> {
-				int points = Game.POINTS_GHOST[game.level.ghostsKilledByEnergizer - 1];
-				sprites.select("points-" + points);
+				showPoints(Game.POINTS_GHOST[game.level.ghostsKilledByEnergizer - 1]);
 			})
-			.onTick(() -> {
-				if (state().isTerminated()) { // "dead"
+			.onTick((state, t, remaining) -> {
+				if (remaining == 0) { // show as eyes returning to ghost home
 					move();
-					show("eyes-" + moveDir);
+					showEyes();
 				}
 			})
 
@@ -331,7 +347,4 @@ brain = StateMachine.beginStateMachine(GhostState.class, PacManGameEvent.class)
 			.condition(() -> maze.atGhostHouseDoor(tile()))
 
 .endStateMachine();
-/*@formatter:on*/
-brain.setMissingTransitionBehavior(MissingTransitionBehavior.LOG);
-brain.getTracer().setLogger(PacManStateMachineLogging.LOG);
 ```
