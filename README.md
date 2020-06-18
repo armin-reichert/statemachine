@@ -51,81 +51,10 @@ public class TrafficLight extends StateMachine<Light, Void> {
 	}
 }
 ```
+
 ## Example 2: Application lifecycle
 
-In my simple [game library](https://github.com/armin-reichert/easy-game) each [application](https://github.com/armin-reichert/easy-game/blob/master/EasyGame/src/main/java/de/amr/easy/game/Application.java) has a lifecycle which is implemented by the following finite-state machine:
-
-```java
-public enum ApplicationState {
-	STARTING, RUNNING, PAUSED, CLOSED;
-}
-
-enum ApplicationEvent {
-	TOGGLE_PAUSE, TOGGLE_FULLSCREEN, SHOW_SETTINGS_DIALOG, CLOSE
-}
-
-beginStateMachine(ApplicationState.class, ApplicationEvent.class, EventMatchStrategy.BY_EQUALITY)
-	.description(String.format("[%s]", getClass().getName()))
-	.initialState(STARTING)
-	.states()
-
-		.state(STARTING)
-			.onEntry(() -> {
-				// let application initialize and select main controller:
-				init();
-				if (controller == null) {
-					// use fallback controller
-					int width = 640, height = 480;
-					setController(new AppInfoView(this, width, height));
-					shell = new AppShell(this, width, height);
-				} else {
-					shell = new AppShell(this, settings.width, settings.height);
-				}
-				loginfo("Starting application '%s'", getClass().getName());
-				SwingUtilities.invokeLater(this::showUIAndStartClock);
-			})
-
-		.state(RUNNING)
-			.onTick(() -> {
-				Keyboard.handler.poll();
-				Mouse.handler.poll();
-				collisionHandler().ifPresent(CollisionHandler::update);
-				controller.update();
-				currentView().ifPresent(shell::render);
-			})
-
-		.state(PAUSED)
-			.onTick(() -> currentView().ifPresent(shell::render))
-
-		.state(CLOSED)
-			.onTick(() -> {
-				shell.dispose();
-				loginfo("Exit application '%s'", getClass().getName());
-				System.exit(0);
-			})
-
-	.transitions()
-
-		.when(STARTING).then(RUNNING).condition(() -> clock.isTicking())
-
-		.when(RUNNING).then(PAUSED).on(TOGGLE_PAUSE)
-
-		.when(RUNNING).then(CLOSED).on(CLOSE)
-
-		.stay(RUNNING).on(TOGGLE_FULLSCREEN).act(() -> shell.toggleDisplayMode())
-
-		.stay(RUNNING).on(SHOW_SETTINGS_DIALOG).act(() -> shell.showSettingsDialog())
-
-		.when(PAUSED).then(RUNNING).on(TOGGLE_PAUSE)
-
-		.when(PAUSED).then(CLOSED).on(CLOSE)
-
-		.stay(PAUSED).on(TOGGLE_FULLSCREEN).act(() -> shell.toggleDisplayMode())
-
-		.stay(PAUSED).on(SHOW_SETTINGS_DIALOG).act(() -> shell.showSettingsDialog())
-
-.endStateMachine();
-```
+In my simple [game library](https://github.com/armin-reichert/easy-game), each [application](https://github.com/armin-reichert/easy-game/blob/master/EasyGame/src/main/java/de/amr/easy/game/Application.java) has a lifecycle which is implemented by a finite-state machine.
 
 ## Example 3: Menu and controller for [Pong game](https://github.com/armin-reichert/pong)
 
@@ -279,50 +208,61 @@ brain = StateMachine.beginStateMachine(GhostState.class, PacManGameEvent.class)
 
 		.state(LOCKED)
 			.onEntry(() -> {
-				followState = getState();
+				followState = LOCKED;
 				visible = true;
-				setWishDir(maze.ghostHomeDir[seat]);
-				setMoveDir(wishDir);
-				tf.setPosition(maze.seatPosition(seat));
+				if (insanity != Insanity.IMMUNE) {
+					insanity = Insanity.HEALTHY;
+				}
+				moveDir = wishDir = seat.startDir;
+				tf.setPosition(seat.position);
 				enteredNewTile();
 				sprites.forEach(Sprite::resetAnimation);
-				show("color-" + moveDir);
+				showColored();
 			})
 			.onTick(() -> {
 				move();
-				show(game.pacMan.powerTicks > 0 ? "frightened" : "color-" + moveDir);
+				// not sure if ghost locked inside house should look frightened
+				if (game.pacMan.power > 0) {
+					showFrightened();
+				} else {
+					showColored();
+				}
 			})
 
 		.state(LEAVING_HOUSE)
-			.onEntry(() -> steering().init())
-			.onTick(() -> {
-				move();
-				show("color-" + moveDir);
-			})
-			.onExit(() -> forceMoving(LEFT))
-
-		.state(ENTERING_HOUSE)
 			.onEntry(() -> {
-				tf.setPosition(maze.seatPosition(0));
-				setWishDir(DOWN);
 				steering().init();
 			})
 			.onTick(() -> {
 				move();
-				show("eyes-" + moveDir);
+				showColored();
+			})
+			.onExit(() -> forceMoving(Direction.LEFT))
+
+		.state(ENTERING_HOUSE)
+			.onEntry(() -> {
+				tf.setPosition(maze.ghostSeats[0].position);
+				moveDir = wishDir = Direction.DOWN;
+				steering().init();
+			})
+			.onTick(() -> {
+				move();
+				showEyes();
 			})
 
 		.state(SCATTERING)
 			.onTick(() -> {
+				updateInsanity(game);
 				move();
-				show("color-" + moveDir);
+				showColored();
 				checkCollision(game.pacMan);
 			})
 
 		.state(CHASING)
 			.onTick(() -> {
+				updateInsanity(game);
 				move();
-				show("color-" + moveDir);
+				showColored();
 				checkCollision(game.pacMan);
 			})
 
@@ -330,20 +270,25 @@ brain = StateMachine.beginStateMachine(GhostState.class, PacManGameEvent.class)
 			.timeoutAfter(() -> sec(game.level.pacManPowerSeconds))
 			.onTick((state, t, remaining) -> {
 				move();
-				show(remaining < sec(2) ? "flashing" : "frightened");
+				// one flashing animation takes 0.5 sec
+				int flashTicks = sec(game.level.numFlashes * 0.5f);
+				if (remaining < flashTicks) {
+					showFlashing();
+				} else  {
+					showFrightened();
+				}
 				checkCollision(game.pacMan);
 			})
 
 		.state(DEAD)
-			.timeoutAfter(sec(1)) // "dying" time
+			.timeoutAfter(sec(1)) // time while ghost is drawn as number of scored points
 			.onEntry(() -> {
-				int points = Game.POINTS_GHOST[game.level.ghostsKilledByEnergizer - 1];
-				sprites.select("points-" + points);
+				showPoints(Game.POINTS_GHOST[game.level.ghostsKilledByEnergizer - 1]);
 			})
-			.onTick(() -> {
-				if (state().isTerminated()) { // "dead"
+			.onTick((state, t, remaining) -> {
+				if (remaining == 0) { // show as eyes returning to ghost home
 					move();
-					show("eyes-" + moveDir);
+					showEyes();
 				}
 			})
 
@@ -402,7 +347,4 @@ brain = StateMachine.beginStateMachine(GhostState.class, PacManGameEvent.class)
 			.condition(() -> maze.atGhostHouseDoor(tile()))
 
 .endStateMachine();
-/*@formatter:on*/
-brain.setMissingTransitionBehavior(MissingTransitionBehavior.LOG);
-brain.getTracer().setLogger(PacManStateMachineLogging.LOG);
 ```
