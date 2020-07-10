@@ -401,9 +401,9 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 			fireExitListeners(currentState);
 		}
 		currentState = state;
+		restartTimer(state);
 		state(currentState).onEntry();
 		fireEntryListeners(currentState);
-		restartTimer(state);
 	}
 
 	@Override
