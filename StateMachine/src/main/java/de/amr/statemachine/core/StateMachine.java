@@ -397,12 +397,12 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	@Override
 	public void setState(S state) {
 		if (currentState != null) {
-			state(currentState).onExit();
+			state(currentState).exitAction.run();
 			fireExitListeners(currentState);
 		}
 		currentState = state;
 		restartTimer(state);
-		state(currentState).onEntry();
+		state(currentState).entryAction.run();
 		fireEntryListeners(currentState);
 	}
 
@@ -418,7 +418,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	@Override
 	public void resumeState(S state) {
 		currentState = state;
-		state(currentState).onEntry();
+		state(currentState).entryAction.run();
 		fireEntryListeners(currentState);
 	}
 
@@ -464,7 +464,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 		currentState = initialState;
 		restartTimer(currentState);
 		tracer.enteringInitialState(initialState);
-		state(currentState).onEntry();
+		state(currentState).entryAction.run();
 		fireEntryListeners(currentState);
 	}
 
@@ -507,7 +507,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 		});
 
 		// No state change, execute tick action if any
-		state(currentState).onTick();
+		state(currentState).tickAction.run(state(), state().getTicksConsumed(), state().getTicksRemaining());
 
 		// Check if timeout-transition is triggered
 		boolean timeout = state(currentState).timer.tick();
@@ -545,7 +545,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 		} else {
 			// exit state
 			tracer.exitingState(currentState);
-			state(currentState).onExit();
+			state(currentState).exitAction.run();
 			fireExitListeners(currentState);
 			// call action
 			transition.action.accept(event.orElse(null));
@@ -553,7 +553,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 			currentState = transition.to;
 			restartTimer(currentState);
 			tracer.enteringState(currentState);
-			state(currentState).onEntry();
+			state(currentState).entryAction.run();
 			fireEntryListeners(currentState);
 		}
 	}

@@ -1,6 +1,5 @@
 package de.amr.statemachine.core;
 
-import java.util.Objects;
 import java.util.function.IntSupplier;
 
 import de.amr.statemachine.api.TickAction;
@@ -8,8 +7,7 @@ import de.amr.statemachine.api.TickAction;
 /**
  * A state in a finite-state machine.
  * 
- * @param <S> state identifier type, for example an enumeration type or
- *            primitive type
+ * @param <S> state identifier type, for example an enumeration type or primitive type
  * 
  * @author Armin Reichert
  */
@@ -19,13 +17,13 @@ public class State<S> {
 	S id;
 
 	/** The client code executed when entering this state. */
-	Runnable entryAction;
+	public Runnable entryAction = this::onEntry;
 
 	/** The client code executed when a tick occurs for this state. */
-	TickAction<S> tickAction;
+	public TickAction<S> tickAction = this::onTick;
 
 	/** The client code executed when leaving this state. */
-	Runnable exitAction;
+	public Runnable exitAction = this::onExit;
 
 	/** Timer for this state. */
 	StateTimer timer;
@@ -60,73 +58,28 @@ public class State<S> {
 	}
 
 	/**
-	 * Sets the action to be executed whenever this state is entered, either via a
-	 * transition of by setting the state directly.
-	 * 
-	 * @param action the entry action
-	 */
-	public void setOnEntry(Runnable action) {
-		entryAction = Objects.requireNonNull(action);
-	}
-
-	/**
-	 * Hook method called by the state machine when this state is entered. May be
-	 * overridden by state subclasses.
+	 * Hook method called by the state machine when this state is entered. May be overridden by state
+	 * subclasses.
 	 */
 	public void onEntry() {
-		if (entryAction != null) {
-			entryAction.run();
-		}
 	}
 
 	/**
-	 * Sets the action to be executed whenever this state is left, either via a
-	 * transition of by setting a new state directly.
-	 * 
-	 * @param action the exit action
-	 */
-	public void setOnExit(Runnable action) {
-		exitAction = Objects.requireNonNull(action);
-	}
-
-	/**
-	 * Hook method called by the state machine when this state is left. May be
-	 * overridden by state subclasses.
+	 * Hook method called by the state machine when this state is left. May be overridden by state
+	 * subclasses.
 	 */
 	public void onExit() {
-		if (exitAction != null) {
-			exitAction.run();
-		}
 	}
 
 	/**
-	 * Sets the action to be executed whenever this state is "ticked".
+	 * Hook method called by the state machine when this state is ticked. May be overridden by state
+	 * subclasses.
 	 * 
-	 * @param action the tick action
+	 * @param state          the current state
+	 * @param ticksConsumed  number of timer ticks already consumed
+	 * @param ticksRemaining number of ticks remaining until timer times out
 	 */
-	public void setOnTick(Runnable action) {
-		Objects.requireNonNull(action);
-		tickAction = (state, ticksConsumed, ticksRemaining) -> action.run();
-	}
-
-	/**
-	 * Sets the action to be executed whenever this state is "ticked".
-	 * 
-	 * @param action the tick action. When called, the closure contains the state,
-	 *               the ticks consumed and the ticks remaining.
-	 */
-	public void setOnTick(TickAction<S> action) {
-		tickAction = Objects.requireNonNull(action);
-	}
-
-	/**
-	 * Hook method called by the state machine when this state is "ticked". May be
-	 * overridden by state subclasses.
-	 */
-	public void onTick() {
-		if (tickAction != null) {
-			tickAction.run(this, getTicksConsumed(), getTicksRemaining());
-		}
+	public void onTick(State<?> state, int ticksConsumed, int ticksRemaining) {
 	}
 
 	// Timer stuff
@@ -184,12 +137,10 @@ public class State<S> {
 	}
 
 	/**
-	 * The number of updates since the (optional) timer for this state was started
-	 * or reset.
+	 * The number of updates since the (optional) timer for this state was started or reset.
 	 * 
-	 * @return Number of updates since the timer for this state was started or
-	 *         reset. If there is no timer assigned to this state, <code>0</code> is
-	 *         returned.
+	 * @return Number of updates since the timer for this state was started or reset. If there is no
+	 *         timer assigned to this state, <code>0</code> is returned.
 	 */
 	public int getTicksConsumed() {
 		return hasTimer() ? timer.duration - timer.remaining : 0;

@@ -239,9 +239,9 @@ public class StateMachineBuilder<S, E> {
 
 		private StateBuilder commit() {
 			State<S> state = sm.state(stateId);
-			state.entryAction = entryAction;
-			state.exitAction = exitAction;
-			state.tickAction = tickAction;
+			state.entryAction = entryAction != null ? entryAction : state::onEntry;
+			state.exitAction = exitAction != null ? exitAction : state::onExit;
+			state.tickAction = tickAction != null ? tickAction : state::onTick;
 			if (fnTimer != null) {
 				state.timer = new StateTimer(fnTimer);
 			} else {
