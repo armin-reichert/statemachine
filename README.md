@@ -21,7 +21,7 @@ The states are identified by some arbitrary type, normally an enumeration type, 
 
 ## Example 1: Traffic light
 
-A somewhat trivial example is a [traffic light](https:/github.com/armin-reichert/statemachine-samples/TrafficLight/de/amr/statemachine/samples/trafficlight/TrafficLight.java) controlled using timers.
+A somewhat trivial example is a [traffic light](https://github.com/armin-reichert/statemachine-samples/blob/master/TrafficLight/src/main/java/de/amr/statemachine/samples/trafficlight/TrafficLight.java) controlled using timers.
 
 ```java
 public class TrafficLight extends StateMachine<Light, Void> {
