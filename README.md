@@ -21,7 +21,7 @@ The states are identified by some arbitrary type, normally an enumeration type, 
 
 ## Example 1: Traffic light
 
-A somewhat trivial example is a traffic light controlled using timers:
+A somewhat trivial example is a [traffic light](statemachine-samples/TrafficLight/de/amr/statemachine/samples/trafficlight/TrafficLight.java) controlled using timers.
 
 ```java
 public class TrafficLight extends StateMachine<Light, Void> {
@@ -38,16 +38,16 @@ public class TrafficLight extends StateMachine<Light, Void> {
 			.initialState(OFF)
 			.states()
 				.state(OFF)
-				.state(RED).timeoutAfter(app().clock.sec(3))
-				.state(YELLOW).timeoutAfter(app().clock.sec(2))
-				.state(GREEN).timeoutAfter(app().clock.sec(5))
+				.state(RED).timeoutAfter(() -> app().clock().sec(3))
+				.state(YELLOW).timeoutAfter(() -> app().clock().sec(2))
+				.state(GREEN).timeoutAfter(() -> app().clock().sec(5))
 			.transitions()
 				.when(OFF).then(RED).condition(() -> Keyboard.keyPressedOnce(KeyEvent.VK_SPACE))
 				.when(RED).then(GREEN).onTimeout()
 				.when(GREEN).then(YELLOW).onTimeout()
 				.when(YELLOW).then(RED).onTimeout()
 		.endStateMachine();
-		//@formatter:on
+		//@formatter:off
 	}
 }
 ```
