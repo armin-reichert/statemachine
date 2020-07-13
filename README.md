@@ -178,9 +178,9 @@ beginStateMachine()
 	.when(PLAYING).then(GAME_OVER)
 		.on(LEFT_WORLD)
 		.act(e -> {
+			sound("music/bgmusic.mp3").stop();
 			Bird bird = ent.named("bird");
 			bird.dispatch(LEFT_WORLD);
-			sound("music/bgmusic.mp3").stop();
 		})
 
 	.stay(GAME_OVER)
@@ -196,10 +196,12 @@ beginStateMachine()
 
 ## Example 5: Pac-Man ghost "AI"
 
-I used this state machine library extensively in my [Pac-Man](https://github.com/armin-reichert/pacman) game, in fact this Pac-man implementation was the main motivation for creating this library at all. 
+I used this state machine library extensively in my [Pac-Man game implementation](https://github.com/armin-reichert/pacman), which in fact was the main motivation for creating this library at all. In that implementation, state machines are used all over the place: for the central game control, for Pac-Man and the ghosts, for their movement, for controlling the animations in the intro view and more.
+
+This is the state machine controlling the behavior of the ghosts:
 
 ```java
-brain = StateMachine.beginStateMachine(GhostState.class, PacManGameEvent.class)
+beginStateMachine()
 
 	.description(this::toString)
 	.initialState(LOCKED)
@@ -208,89 +210,50 @@ brain = StateMachine.beginStateMachine(GhostState.class, PacManGameEvent.class)
 
 		.state(LOCKED)
 			.onEntry(() -> {
-				followState = LOCKED;
-				visible = true;
-				if (insanity != Insanity.IMMUNE) {
-					insanity = Insanity.HEALTHY;
-				}
-				moveDir = wishDir = seat.startDir;
-				tf.setPosition(seat.position);
+				fnSubsequentState = () -> LOCKED;
+				entity.visible = true;
+				flashing = false;
+				bounty = 0;
+				world.putIntoBed(this);
 				enteredNewTile();
-				sprites.forEach(Sprite::resetAnimation);
-				showColored();
-			})
-			.onTick(() -> {
-				move();
-				// not sure if ghost locked inside house should look frightened
-				if (game.pacMan.power > 0) {
-					showFrightened();
-				} else {
-					showColored();
+				if (sanityControl != null) {
+					sanityControl.init();
 				}
 			})
+			.onTick(this::move)
 
 		.state(LEAVING_HOUSE)
-			.onEntry(() -> {
-				steering().init();
-			})
-			.onTick(() -> {
-				move();
-				showColored();
-			})
+			.onTick(this::move)
 			.onExit(() -> forceMoving(Direction.LEFT))
 
 		.state(ENTERING_HOUSE)
-			.onEntry(() -> {
-				tf.setPosition(maze.ghostSeats[0].position);
-				moveDir = wishDir = Direction.DOWN;
-				steering().init();
-			})
-			.onTick(() -> {
-				move();
-				showEyes();
-			})
+			.onEntry(() -> steering().init()) //TODO should not be necessary
+			.onTick(this::move)
 
 		.state(SCATTERING)
 			.onTick(() -> {
-				updateInsanity(game);
+				updateSanity();
+				checkPacManCollision();
 				move();
-				showColored();
-				checkCollision(game.pacMan);
 			})
 
 		.state(CHASING)
 			.onTick(() -> {
-				updateInsanity(game);
+				updateSanity();
+				checkPacManCollision();
 				move();
-				showColored();
-				checkCollision(game.pacMan);
 			})
 
 		.state(FRIGHTENED)
-			.timeoutAfter(() -> sec(game.level.pacManPowerSeconds))
 			.onTick((state, t, remaining) -> {
+				checkPacManCollision();
 				move();
 				// one flashing animation takes 0.5 sec
-				int flashTicks = sec(game.level.numFlashes * 0.5f);
-				if (remaining < flashTicks) {
-					showFlashing();
-				} else  {
-					showFrightened();
-				}
-				checkCollision(game.pacMan);
+				flashing = remaining < fnNumFlashes.getAsInt() *0.5f;
 			})
 
 		.state(DEAD)
-			.timeoutAfter(sec(1)) // time while ghost is drawn as number of scored points
-			.onEntry(() -> {
-				showPoints(Game.POINTS_GHOST[game.level.ghostsKilledByEnergizer - 1]);
-			})
-			.onTick((state, t, remaining) -> {
-				if (remaining == 0) { // show as eyes returning to ghost home
-					move();
-					showEyes();
-				}
-			})
+			.onTick(this::move)
 
 	.transitions()
 
@@ -298,35 +261,35 @@ brain = StateMachine.beginStateMachine(GhostState.class, PacManGameEvent.class)
 			.on(GhostUnlockedEvent.class)
 
 		.when(LEAVING_HOUSE).then(SCATTERING)
-			.condition(() -> steering().isComplete() && followState == SCATTERING)
+			.condition(() -> hasLeftGhostHouse() && fnSubsequentState.get() == SCATTERING)
 
 		.when(LEAVING_HOUSE).then(CHASING)
-			.condition(() -> steering().isComplete() && followState == CHASING)
+			.condition(() -> hasLeftGhostHouse() && fnSubsequentState.get() == CHASING)
 
 		.when(ENTERING_HOUSE).then(LEAVING_HOUSE)
 			.condition(() -> steering().isComplete())
 
 		.when(CHASING).then(FRIGHTENED)
 			.on(PacManGainsPowerEvent.class)
-			.act(() -> forceTurningBack())
+			.act(() -> reverseDirection())
 
 		.when(CHASING).then(DEAD)
 			.on(GhostKilledEvent.class)
 
 		.when(CHASING).then(SCATTERING)
-			.condition(() -> followState == SCATTERING)
-			.act(() -> forceTurningBack())
+			.condition(() -> fnSubsequentState.get() == SCATTERING)
+			.act(() -> reverseDirection())
 
 		.when(SCATTERING).then(FRIGHTENED)
 			.on(PacManGainsPowerEvent.class)
-			.act(() -> forceTurningBack())
+			.act(() -> reverseDirection())
 
 		.when(SCATTERING).then(DEAD)
 			.on(GhostKilledEvent.class)
 
 		.when(SCATTERING).then(CHASING)
-			.condition(() -> followState == CHASING)
-			.act(() -> forceTurningBack())
+			.condition(() -> fnSubsequentState.get() == CHASING)
+			.act(() -> reverseDirection())
 
 		.stay(FRIGHTENED)
 			.on(PacManGainsPowerEvent.class)
@@ -337,14 +300,14 @@ brain = StateMachine.beginStateMachine(GhostState.class, PacManGameEvent.class)
 
 		.when(FRIGHTENED).then(SCATTERING)
 			.onTimeout()
-			.condition(() -> followState == SCATTERING)
+			.condition(() -> fnSubsequentState.get() == SCATTERING)
 
 		.when(FRIGHTENED).then(CHASING)
 			.onTimeout()
-			.condition(() -> followState == CHASING)
+			.condition(() -> fnSubsequentState.get() == CHASING)
 
 		.when(DEAD).then(ENTERING_HOUSE)
-			.condition(() -> maze.atGhostHouseDoor(tile()))
+			.condition(() -> world.isJustBeforeDoor(location()))
 
 .endStateMachine();
 ```
