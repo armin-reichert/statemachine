@@ -54,7 +54,77 @@ public class TrafficLight extends StateMachine<Light, Void> {
 
 ## Example 2: Application lifecycle
 
-In my simple [game library](https://github.com/armin-reichert/easy-game), each [application](https://github.com/armin-reichert/easy-game/blob/master/EasyGame/src/main/java/de/amr/easy/game/Application.java) has a lifecycle which is implemented by a finite-state machine.
+In my [game library](https://github.com/armin-reichert/easy-game), each [application](https://github.com/armin-reichert/easy-game/blob/master/EasyGame/src/main/java/de/amr/easy/game/ApplicationImpl.java) has a lifecycle which is implemented by a finite-state machine.
+
+```java
+beginStateMachine()
+	.description(String.format("[%s]", app.getName()))
+	.initialState(STARTING)
+	.states()
+
+		.state(STARTING)
+			.onEntry(() -> {
+				Application.loginfo("Configuring application '%s'", app.getName());
+				app.configure(settings);
+				processCommandLine(cmdLine);
+				app.printSettings();
+				app.init();
+				if (settings.muted) {
+					soundManager.muteAll();
+				}
+				SwingUtilities.invokeLater(() -> {
+					createUserInterface(settings.width, settings.height, settings.fullScreen);
+					clock.start();
+					Application.loginfo("Application is running, %d frames/second", clock.getTargetFramerate());
+				});
+			})
+
+		.state(RUNNING)
+			.onTick(() -> {
+				readInput();
+				controller.update();
+				render();
+			})
+
+		.state(PAUSED)
+			.onTick(this::render)
+
+		.state(CLOSING)
+			.onEntry(() -> {
+				Application.loginfo("Closing application '%s'", app.getName());
+			})
+			.onTick(() -> {
+				shell.dispose();
+				// cannot exit in onEntry because CLOSING listeners would not get executed!
+				System.exit(0);
+			})
+
+	.transitions()
+
+		.when(STARTING).then(RUNNING).condition(() -> clock.isTicking())
+
+		.when(RUNNING).then(PAUSED).on(PAUSE).act(() -> soundManager.muteAll())
+
+		.when(RUNNING).then(CLOSING).on(CLOSE)
+
+		.stay(RUNNING).on(ENTER_FULLSCREEN_MODE).act(() -> shell.showFullScreenWindow())
+
+		.stay(RUNNING).on(ENTER_WINDOW_MODE).act(() -> shell.showWindow())
+
+		.stay(RUNNING).on(SHOW_SETTINGS_DIALOG).act(() -> shell.showF2Dialog())
+
+		.when(PAUSED).then(RUNNING).on(RESUME).act(() -> soundManager.unmuteAll())
+
+		.when(PAUSED).then(CLOSING).on(CLOSE)
+
+		.stay(PAUSED).on(ENTER_FULLSCREEN_MODE).act(() -> shell.showFullScreenWindow())
+
+		.stay(PAUSED).on(ENTER_WINDOW_MODE).act(() -> shell.showWindow())
+
+		.stay(PAUSED).on(SHOW_SETTINGS_DIALOG).act(() -> shell.showF2Dialog())
+
+.endStateMachine();
+```
 
 ## Example 3: Menu and controller for [Pong game](https://github.com/armin-reichert/pong)
 
