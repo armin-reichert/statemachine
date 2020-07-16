@@ -54,7 +54,7 @@ public class TrafficLight extends StateMachine<Light, Void> {
 
 ## Example 2: Application lifecycle
 
-In my [game library](https://github.com/armin-reichert/easy-game), each [application](https://github.com/armin-reichert/easy-game/blob/master/EasyGame/src/main/java/de/amr/easy/game/ApplicationImpl.java) has a lifecycle which is implemented by a finite-state machine.
+In my [game library](https://github.com/armin-reichert/easy-game), each application has a lifecycle implemented as a finite-state machine.
 
 ```java
 class ApplicationLifecycle extends StateMachine<ApplicationState, ApplicationEvent> {
