@@ -57,73 +57,94 @@ public class TrafficLight extends StateMachine<Light, Void> {
 In my [game library](https://github.com/armin-reichert/easy-game), each [application](https://github.com/armin-reichert/easy-game/blob/master/EasyGame/src/main/java/de/amr/easy/game/ApplicationImpl.java) has a lifecycle which is implemented by a finite-state machine.
 
 ```java
-beginStateMachine()
-	.description(String.format("[%s]", app.getName()))
-	.initialState(STARTING)
-	.states()
+class ApplicationLifecycle extends StateMachine<ApplicationState, ApplicationEvent> {
 
-		.state(STARTING)
-			.onEntry(() -> {
-				Application.loginfo("Configuring application '%s'", app.getName());
-				app.configure(settings);
-				processCommandLine(cmdLine);
-				app.printSettings();
-				app.init();
-				if (settings.muted) {
-					soundManager.muteAll();
-				}
-				SwingUtilities.invokeLater(() -> {
-					createUserInterface(settings.width, settings.height, settings.fullScreen);
-					clock.start();
-					Application.loginfo("Application is running, %d frames/second", clock.getTargetFramerate());
-				});
-			})
+	enum ApplicationState {
+		INITIALIZING, CREATING_UI, RUNNING, PAUSED, CLOSING;
+	}
 
-		.state(RUNNING)
-			.onTick(() -> {
-				readInput();
-				controller.update();
-				render();
-			})
+	enum ApplicationEvent {
+		PAUSE, RESUME, ENTER_FULLSCREEN_MODE, ENTER_WINDOW_MODE, SHOW_SETTINGS_DIALOG, CLOSE
+	}
 
-		.state(PAUSED)
-			.onTick(this::render)
+	ApplicationLifecycle(Application app, String[] cmdLine) {
+		super(ApplicationState.class, TransitionMatchStrategy.BY_VALUE);
+		/*@formatter:off*/		
+		beginStateMachine()
+			.description(String.format("[%s]", app.getName()))
+			.initialState(INITIALIZING)
+			.states()
+				
+				.state(INITIALIZING)
+					.onEntry(() -> {
+						loginfo("Configuring application '%s'", app.getName());
+						app.configure(app.settings);
+						app.processCommandLine(cmdLine);
+						app.printSettings();
+						app.init();
+						if (app.settings.muted) {
+							app.soundManager.muteAll();
+						}
+						setState(CREATING_UI);
+					})
+					
+				.state(CREATING_UI)	
+					.onEntry(() -> {
+						SwingUtilities.invokeLater(() -> {
+							app.createUserInterface();
+							app.clock.start();
+							loginfo("Application is running, %d frames/second", app.clock.getTargetFramerate());
+						});
+					})
+				
+				.state(RUNNING)
+					.onTick(() -> {
+						app.readInput();
+						app.controller.update();
+						app.renderCurrentView();
+					})
+				
+				.state(PAUSED)
+					.onTick(app::renderCurrentView)
+				
+				.state(CLOSING)
+					.onEntry(() -> {
+						loginfo("Closing application '%s'", app.getName());
+					})
+					.onTick(() -> {
+						app.shell.dispose();
+						// cannot exit in onEntry because CLOSING listeners would not get executed!
+						System.exit(0);
+					})
+					
+			.transitions()
 
-		.state(CLOSING)
-			.onEntry(() -> {
-				Application.loginfo("Closing application '%s'", app.getName());
-			})
-			.onTick(() -> {
-				shell.dispose();
-				// cannot exit in onEntry because CLOSING listeners would not get executed!
-				System.exit(0);
-			})
+				.when(CREATING_UI).then(RUNNING).condition(() -> app.clock.isTicking())
+				
+				.when(RUNNING).then(PAUSED).on(PAUSE).act(() -> app.soundManager.muteAll())
+				
+				.when(RUNNING).then(CLOSING).on(CLOSE)
+	
+				.stay(RUNNING).on(ENTER_FULLSCREEN_MODE).act(() -> app.shell.showFullScreenWindow())
 
-	.transitions()
+				.stay(RUNNING).on(ENTER_WINDOW_MODE).act(() -> app.shell.showWindow())
+					
+				.stay(RUNNING).on(SHOW_SETTINGS_DIALOG).act(() -> app.shell.showF2Dialog())
+				
+				.when(PAUSED).then(RUNNING).on(RESUME).act(() -> app.soundManager.unmuteAll())
+			
+				.when(PAUSED).then(CLOSING).on(CLOSE)
+				
+				.stay(PAUSED).on(ENTER_FULLSCREEN_MODE).act(() -> app.shell.showFullScreenWindow())
 
-		.when(STARTING).then(RUNNING).condition(() -> clock.isTicking())
+				.stay(PAUSED).on(ENTER_WINDOW_MODE).act(() -> app.shell.showWindow())
+	
+				.stay(PAUSED).on(SHOW_SETTINGS_DIALOG).act(() -> app.shell.showF2Dialog())
 
-		.when(RUNNING).then(PAUSED).on(PAUSE).act(() -> soundManager.muteAll())
-
-		.when(RUNNING).then(CLOSING).on(CLOSE)
-
-		.stay(RUNNING).on(ENTER_FULLSCREEN_MODE).act(() -> shell.showFullScreenWindow())
-
-		.stay(RUNNING).on(ENTER_WINDOW_MODE).act(() -> shell.showWindow())
-
-		.stay(RUNNING).on(SHOW_SETTINGS_DIALOG).act(() -> shell.showF2Dialog())
-
-		.when(PAUSED).then(RUNNING).on(RESUME).act(() -> soundManager.unmuteAll())
-
-		.when(PAUSED).then(CLOSING).on(CLOSE)
-
-		.stay(PAUSED).on(ENTER_FULLSCREEN_MODE).act(() -> shell.showFullScreenWindow())
-
-		.stay(PAUSED).on(ENTER_WINDOW_MODE).act(() -> shell.showWindow())
-
-		.stay(PAUSED).on(SHOW_SETTINGS_DIALOG).act(() -> shell.showF2Dialog())
-
-.endStateMachine();
+		.endStateMachine();
+		/*@formatter:on*/
+	}
+}
 ```
 
 ## Example 3: Menu and controller for [Pong game](https://github.com/armin-reichert/pong)
@@ -284,7 +305,7 @@ beginStateMachine()
 				entity.visible = true;
 				flashing = false;
 				bounty = 0;
-				world.putIntoBed(this);
+				world.putIntoBed(this, bed);
 				enteredNewTile();
 				if (sanityControl != null) {
 					sanityControl.init();
