@@ -61,7 +61,7 @@ public class StateMachineTracer<S, E> {
 		logger.info(() -> format("%s did reset timer for state '%s'", fsm.getDescription(), id));
 	}
 
-	public void unhandledEvent(E event) {
+	public void unhandledInput(E event) {
 		logger.info(() -> format("%s in state %s could not handle '%s'", fsm.getDescription(), fsm.getState(), event));
 	}
 
@@ -89,7 +89,7 @@ public class StateMachineTracer<S, E> {
 	public void firingTransition(Transition<S, E> t, Optional<E> event) {
 		if (!event.isPresent()) {
 			if (t.from != t.to) {
-				if (t.timeoutEvent) {
+				if (t.timeoutTriggered) {
 					logger.info(() -> format("%s changes from  '%s' to '%s (timeout)'", fsm.getDescription(), t.from, t.to));
 				} else {
 					logger.info(() -> format("%s changes from  '%s' to '%s'", fsm.getDescription(), t.from, t.to));

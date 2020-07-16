@@ -52,9 +52,8 @@ class StateTimer {
 	 */
 	boolean tick() {
 		if (duration != Integer.MAX_VALUE && remaining > 0) {
-			--remaining;
-			if (remaining == 0) {
-				return true;
+			if (--remaining == 0) {
+				return true; // just timed out
 			}
 		}
 		return false;

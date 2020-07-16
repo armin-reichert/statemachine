@@ -7,7 +7,7 @@ import java.util.function.IntSupplier;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
-import de.amr.statemachine.api.EventMatchStrategy;
+import de.amr.statemachine.api.TransitionMatchStrategy;
 import de.amr.statemachine.api.TickAction;
 
 /**
@@ -29,7 +29,7 @@ public class StateMachineBuilder<S, E> {
 	 * @param stateType     type used for state identification
 	 * @param matchStrategy how events are matched
 	 */
-	public StateMachineBuilder(Class<S> stateType, EventMatchStrategy matchStrategy) {
+	public StateMachineBuilder(Class<S> stateType, TransitionMatchStrategy matchStrategy) {
 		sm = new StateMachine<>(stateType, matchStrategy);
 	}
 
@@ -447,7 +447,7 @@ public class StateMachineBuilder<S, E> {
 				sm.addTransitionOnTimeout(sourceStateId, targetStateId, guard, action);
 			} else {
 				sm.addTransition(sourceStateId, targetStateId, guard, action,
-						sm.getMatchStrategy() == EventMatchStrategy.BY_CLASS ? eventClass : eventValue, false);
+						sm.getMatchStrategy() == TransitionMatchStrategy.BY_CLASS ? eventClass : eventValue, false);
 			}
 			clear();
 			return this;
