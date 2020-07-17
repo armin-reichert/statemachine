@@ -302,14 +302,12 @@ beginStateMachine()
 		.state(LOCKED)
 			.onEntry(() -> {
 				fnSubsequentState = () -> LOCKED;
-				entity.visible = true;
+				setVisible(true);
 				flashing = false;
 				bounty = 0;
-				world.putIntoBed(this, bed);
-				enteredNewTile();
-				if (sanityControl != null) {
-					sanityControl.init();
-				}
+				placeAt(Tile.at(bed.col(), bed.row()), Tile.SIZE / 2, 0);
+				setMoveDir(bed.exitDir);
+				setWishDir(bed.exitDir);
 			})
 			.onTick(this::move)
 
@@ -323,28 +321,31 @@ beginStateMachine()
 
 		.state(SCATTERING)
 			.onTick(() -> {
-				updateSanity();
-				checkPacManCollision();
+				maybeMeetPacMan(pacMan);
 				move();
 			})
 
 		.state(CHASING)
 			.onTick(() -> {
-				updateSanity();
-				checkPacManCollision();
+				maybeMeetPacMan(pacMan);
 				move();
 			})
 
 		.state(FRIGHTENED)
-			.onTick((state, t, remaining) -> {
-				checkPacManCollision();
+			.onTick((state, consumed, remaining) -> {
+				maybeMeetPacMan(pacMan);
 				move();
 				// one flashing animation takes 0.5 sec
-				flashing = remaining < fnNumFlashes.getAsInt() *0.5f;
+				flashing = remaining < fnNumFlashes.getAsInt() * 0.5f;
 			})
 
 		.state(DEAD)
-			.onTick(this::move)
+			.onTick((s, consumed, remaining) -> {
+				if (remaining == 0) {
+					bounty = 0;
+					move();
+				}
+			})
 
 	.transitions()
 
@@ -398,7 +399,7 @@ beginStateMachine()
 			.condition(() -> fnSubsequentState.get() == CHASING)
 
 		.when(DEAD).then(ENTERING_HOUSE)
-			.condition(() -> world.isJustBeforeDoor(location()))
+			.condition(() -> world.isHouseEntry(tileLocation()))
 
 .endStateMachine();
 ```
