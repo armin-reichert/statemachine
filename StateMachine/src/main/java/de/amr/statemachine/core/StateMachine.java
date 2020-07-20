@@ -21,9 +21,10 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 
-import de.amr.statemachine.api.TransitionMatchStrategy;
 import de.amr.statemachine.api.Fsm;
+import de.amr.statemachine.api.TransitionMatchStrategy;
 
 /**
  * A finite-state machine.
@@ -273,6 +274,10 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 		return transitionMap.get(state);
 	}
 
+	public Stream<Transition<S, E>> transitions() {
+		return states().flatMap(state -> transitions(state.id).stream());
+	}
+
 	/**
 	 * Adds a state transition.
 	 * 
@@ -420,6 +425,10 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 		currentState = state;
 		state(currentState).entryAction.run();
 		fireEntryListeners(currentState);
+	}
+
+	public Stream<State<S>> states() {
+		return stateMap.values().stream();
 	}
 
 	@Override

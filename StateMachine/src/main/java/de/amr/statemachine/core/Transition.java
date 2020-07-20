@@ -13,15 +13,15 @@ import java.util.function.Consumer;
  * 
  * @author Armin Reichert
  */
-class Transition<S, E> {
+public class Transition<S, E> {
 
-	final StateMachine<?, ?> fsm;
-	final S from;
-	final S to;
-	final BooleanSupplier guard;
-	final Consumer<E> action;
-	final boolean timeoutTriggered;
-	final Object eventValueOrClass;
+	public final StateMachine<?, ?> fsm;
+	public final S from;
+	public final S to;
+	public final BooleanSupplier guard;
+	public final Consumer<E> action;
+	public final boolean timeoutTriggered;
+	public final Object eventValueOrClass;
 
 	public Transition(StateMachine<?, ?> fsm, S from, S to, BooleanSupplier guard, Consumer<E> action,
 			Object eventValueOrClass, boolean timeoutTriggered) {
