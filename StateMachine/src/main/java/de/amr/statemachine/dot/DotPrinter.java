@@ -60,9 +60,10 @@ public class DotPrinter {
 			} else {
 				if (fsm.getMatchStrategy() == TransitionMatchStrategy.BY_CLASS && transition.eventClass() != null) {
 					print(transition.eventClass().getSimpleName());
-				}
-				if (fsm.getMatchStrategy() == TransitionMatchStrategy.BY_VALUE && transition.eventValue() != null) {
+				} else if (fsm.getMatchStrategy() == TransitionMatchStrategy.BY_VALUE && transition.eventValue() != null) {
 					print(transition.eventValueOrClass);
+				} else {
+					print("condition");
 				}
 			}
 			print("\" ];");
