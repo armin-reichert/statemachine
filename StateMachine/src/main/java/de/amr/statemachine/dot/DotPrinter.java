@@ -32,44 +32,37 @@ public class DotPrinter {
 		pw.print(value);
 	}
 
-	private void println() {
+	private void ln() {
 		pw.println();
 	}
 
 	public void print(StateMachine<?, ?> fsm) {
 		print("digraph");
-		print(" \"");
-		print(fsm.getDescription());
-		print("\" {");
-		println();
+		print(" \"" + fsm.getDescription() + "\" {");
+		ln();
 		print("  rankdir=LR;");
-		println();
+		ln();
 		print("  node [shape=ellipse];");
-		fsm.states().forEach(state -> {
-			print(" " + state.id());
-		});
-		println();
+		ln();
+		print("  ");
+		fsm.states().forEach(state -> print(state.id() + " "));
+		print(";");
+		ln();
 		fsm.transitions().forEach(transition -> {
-			print("  ");
-			print(transition.from);
-			print(" -> ");
-			print(transition.to);
-			print(" [ label = \"");
+			print("  " + transition.from + " -> " + transition.to + " [ label = \"");
 			if (transition.timeoutTriggered) {
 				print("timeout");
+			} else if (fsm.getMatchStrategy() == TransitionMatchStrategy.BY_CLASS && transition.eventClass() != null) {
+				print(transition.eventClass().getSimpleName());
+			} else if (fsm.getMatchStrategy() == TransitionMatchStrategy.BY_VALUE && transition.eventValue() != null) {
+				print(transition.eventValueOrClass);
 			} else {
-				if (fsm.getMatchStrategy() == TransitionMatchStrategy.BY_CLASS && transition.eventClass() != null) {
-					print(transition.eventClass().getSimpleName());
-				} else if (fsm.getMatchStrategy() == TransitionMatchStrategy.BY_VALUE && transition.eventValue() != null) {
-					print(transition.eventValueOrClass);
-				} else {
-					print("condition");
-				}
+				print("condition");
 			}
 			print("\" ];");
-			println();
+			ln();
 		});
 		print("}");
-		println();
+		ln();
 	}
 }
