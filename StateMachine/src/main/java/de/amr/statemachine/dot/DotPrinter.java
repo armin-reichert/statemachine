@@ -1,6 +1,8 @@
 package de.amr.statemachine.dot;
 
-import java.io.PrintStream;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.io.Writer;
 
 import de.amr.statemachine.api.TransitionMatchStrategy;
 import de.amr.statemachine.core.StateMachine;
@@ -12,10 +14,14 @@ import de.amr.statemachine.core.StateMachine;
  */
 public class DotPrinter {
 
-	private PrintStream out;
+	private PrintWriter pw;
 
-	public DotPrinter(PrintStream out) {
-		this.out = out;
+	public DotPrinter(OutputStream out) {
+		pw = new PrintWriter(out);
+	}
+
+	public DotPrinter(Writer writer) {
+		pw = new PrintWriter(writer);
 	}
 
 	public DotPrinter() {
@@ -23,11 +29,11 @@ public class DotPrinter {
 	}
 
 	private void print(Object value) {
-		out.print(value);
+		pw.print(value);
 	}
 
 	private void println() {
-		out.println();
+		pw.println();
 	}
 
 	public void print(StateMachine<?, ?> fsm) {
@@ -36,7 +42,7 @@ public class DotPrinter {
 		print(fsm.getDescription());
 		print("\" {");
 		println();
-		print("rankdir=LR;");
+		print("  rankdir=LR;");
 		println();
 		print("  node [shape=ellipse];");
 		fsm.states().forEach(state -> {
