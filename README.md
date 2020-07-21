@@ -289,6 +289,8 @@ beginStateMachine()
 
 I used this state machine library extensively in my [Pac-Man game implementation](https://github.com/armin-reichert/pacman), which in fact was the main motivation for creating this library at all. In that implementation, state machines are used all over the place: for the central game control, for Pac-Man and the ghosts, for their movement, for controlling the animations in the intro view and more.
 
+<img src="StateMachine/doc/Blinky.png">
+
 This is the state machine controlling the behavior of the ghosts:
 
 ```java
