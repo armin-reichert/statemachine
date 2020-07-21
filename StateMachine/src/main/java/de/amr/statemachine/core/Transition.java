@@ -22,9 +22,10 @@ public class Transition<S, E> {
 	public final Consumer<E> action;
 	public final boolean timeoutTriggered;
 	public final Object eventValueOrClass;
+	public final String annotation;
 
 	public Transition(StateMachine<?, ?> fsm, S from, S to, BooleanSupplier guard, Consumer<E> action,
-			Object eventValueOrClass, boolean timeoutTriggered) {
+			Object eventValueOrClass, boolean timeoutTriggered, String annotation) {
 		this.fsm = fsm;
 		this.from = from;
 		this.to = to;
@@ -33,6 +34,7 @@ public class Transition<S, E> {
 		};
 		this.eventValueOrClass = eventValueOrClass;
 		this.timeoutTriggered = timeoutTriggered;
+		this.annotation = annotation;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -47,10 +49,13 @@ public class Transition<S, E> {
 
 	@Override
 	public String toString() {
-		String eventText = timeoutTriggered ? "timeout" : "condition";
+		String text = timeoutTriggered ? "timeout" : "";
 		if (eventValueOrClass != null) {
-			eventText = fsm.getMatchStrategy() == BY_CLASS ? eventClass().getSimpleName() : String.valueOf(eventValue());
+			text = fsm.getMatchStrategy() == BY_CLASS ? eventClass().getSimpleName() : String.valueOf(eventValue());
 		}
-		return String.format("\n(%s)--[%s]-->(%s)", from, eventText, to);
+		if (annotation != null) {
+			text += "[" + annotation + "]";
+		}
+		return String.format("\n(%s)--[%s]-->(%s)", from, text, to);
 	}
 }

@@ -287,23 +287,26 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	 * @param action           action performed on transition
 	 * @param eventSlot        event value/class if transition is matched by value/class
 	 * @param timeoutTriggered if this transition is triggered by a timeout
+	 * @param annotation       annotation text
 	 */
-	void addTransition(S from, S to, BooleanSupplier guard, Consumer<E> action, Object eventSlot, boolean timeout) {
+	void addTransition(S from, S to, BooleanSupplier guard, Consumer<E> action, Object eventSlot, boolean timeout,
+			String annotation) {
 		Objects.requireNonNull(from);
 		Objects.requireNonNull(to);
-		transitions(from).add(new Transition<>(this, from, to, guard, action, eventSlot, timeout));
+		transitions(from).add(new Transition<>(this, from, to, guard, action, eventSlot, timeout, annotation));
 	}
 
 	/**
 	 * Adds a timeout transition.
 	 * 
-	 * @param from   transition source state
-	 * @param to     transition target state
-	 * @param guard  condition guarding transition
-	 * @param action action for transition
+	 * @param from       transition source state
+	 * @param to         transition target state
+	 * @param guard      condition guarding transition
+	 * @param action     action for transition
+	 * @param annotation annotation text
 	 */
-	public void addTransitionOnTimeout(S from, S to, BooleanSupplier guard, Consumer<E> action) {
-		addTransition(from, to, guard, action, null, true);
+	public void addTransitionOnTimeout(S from, S to, BooleanSupplier guard, Consumer<E> action, String annotation) {
+		addTransition(from, to, guard, action, null, true, annotation);
 	}
 
 	/**
@@ -315,14 +318,15 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	 * @param guard      condition guarding transition
 	 * @param action     action for transition
 	 * @param eventClass class used for matching the current event
+	 * @param annotation annotation text
 	 */
 	public void addTransitionOnEventClass(S from, S to, BooleanSupplier guard, Consumer<E> action,
-			Class<? extends E> eventClass) {
+			Class<? extends E> eventClass, String annotation) {
 		Objects.requireNonNull(eventClass);
 		if (matchEventsBy != TransitionMatchStrategy.BY_CLASS) {
 			throw new IllegalStateException("Cannot add transition, wrong match strategy: " + matchEventsBy);
 		}
-		addTransition(from, to, guard, action, eventClass, false);
+		addTransition(from, to, guard, action, eventClass, false, annotation);
 	}
 
 	/**
@@ -334,25 +338,28 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	 * @param guard      condition guarding transition
 	 * @param action     action for transition
 	 * @param eventValue event value used for matching the current event
+	 * @param annotation annotation text
 	 */
-	public void addTransitionOnEventValue(S from, S to, BooleanSupplier guard, Consumer<E> action, E eventValue) {
+	public void addTransitionOnEventValue(S from, S to, BooleanSupplier guard, Consumer<E> action, E eventValue,
+			String annotation) {
 		Objects.requireNonNull(eventValue);
 		if (matchEventsBy != TransitionMatchStrategy.BY_VALUE) {
 			throw new IllegalStateException("Cannot add transition, wrong match strategy");
 		}
-		addTransition(from, to, guard, action, eventValue, false);
+		addTransition(from, to, guard, action, eventValue, false, annotation);
 	}
 
 	/**
 	 * Adds a transition which is fired when the guard condition holds.
 	 * 
-	 * @param from   transition source state
-	 * @param to     transition target state
-	 * @param guard  condition guarding transition
-	 * @param action action for transition
+	 * @param from       transition source state
+	 * @param to         transition target state
+	 * @param guard      condition guarding transition
+	 * @param action     action for transition
+	 * @param annotation annotation text
 	 */
-	public void addTransition(S from, S to, BooleanSupplier guard, Consumer<E> action) {
-		addTransition(from, to, guard, action, null, false);
+	public void addTransition(S from, S to, BooleanSupplier guard, Consumer<E> action, String annotation) {
+		addTransition(from, to, guard, action, null, false, annotation);
 	}
 
 	@Override

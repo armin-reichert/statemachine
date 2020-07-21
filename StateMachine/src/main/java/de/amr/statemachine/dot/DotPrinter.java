@@ -61,12 +61,25 @@ public class DotPrinter {
 			print("  " + transition.from + " -> " + transition.to + " [ label = \"");
 			if (transition.timeoutTriggered) {
 				print("timeout");
+				if (transition.annotation != null) {
+					print("[" + transition.annotation + "]");
+				}
 			} else if (fsm.getMatchStrategy() == TransitionMatchStrategy.BY_CLASS && transition.eventClass() != null) {
 				print(transition.eventClass().getSimpleName());
+				if (transition.annotation != null) {
+					print("[" + transition.annotation + "]");
+				}
 			} else if (fsm.getMatchStrategy() == TransitionMatchStrategy.BY_VALUE && transition.eventValue() != null) {
 				print(transition.eventValueOrClass);
+				if (transition.annotation != null) {
+					print("[" + transition.annotation + "]");
+				}
 			} else {
-				print("condition");
+				if (transition.annotation != null) {
+					print("[" + transition.annotation + "]");
+				} else {
+					print("condition");
+				}
 			}
 			print("\" ];");
 			ln();
