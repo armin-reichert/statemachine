@@ -14,7 +14,8 @@ A finite-state machine implementation with the following features:
 - Supports transition actions with information about the event that triggered the transition
 - Actions can be implemented by lambda expression or function references
 - Tracing of state machine processing to some logger
-
+- Transitions can be annotated (used by export to Graphviz format)
+- State graph can be exported into Graphviz ("dot") format
 - Drawbacks: No hierarchical states supported
 
 The states are identified by some arbitrary type, normally an enumeration type, string or integer.
@@ -288,6 +289,8 @@ beginStateMachine()
 ## Example 5: Pac-Man ghost "AI"
 
 I used this state machine library extensively in my [Pac-Man game implementation](https://github.com/armin-reichert/pacman), which in fact was the main motivation for creating this library at all. In that implementation, state machines are used all over the place: for the central game control, for Pac-Man and the ghosts, for their movement, for controlling the animations in the intro view and more.
+
+<img src="StateMachine/doc/Blinky.png">
 
 This is the state machine controlling the behavior of the ghosts:
 
