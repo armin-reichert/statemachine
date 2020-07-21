@@ -14,7 +14,8 @@ A finite-state machine implementation with the following features:
 - Supports transition actions with information about the event that triggered the transition
 - Actions can be implemented by lambda expression or function references
 - Tracing of state machine processing to some logger
-
+- Transitions can be annotated (used by export to Graphviz format)
+- State graph can be exported into Graphviz ("dot") format
 - Drawbacks: No hierarchical states supported
 
 The states are identified by some arbitrary type, normally an enumeration type, string or integer.
