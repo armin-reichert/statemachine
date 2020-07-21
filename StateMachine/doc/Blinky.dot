@@ -1,0 +1,22 @@
+digraph "Blinky" {
+  rankdir=LR;
+  node [shape=ellipse, fontname="Courier" fontsize="8"];
+  edge [fontname="Courier" fontsize="8"];
+  LOCKED LEAVING_HOUSE ENTERING_HOUSE CHASING SCATTERING FRIGHTENED DEAD ;
+  LOCKED -> LEAVING_HOUSE [ label = "GhostUnlockedEvent" ];
+  LEAVING_HOUSE -> SCATTERING [ label = "condition[has left house]" ];
+  LEAVING_HOUSE -> CHASING [ label = "condition[has left house]" ];
+  LEAVING_HOUSE -> FRIGHTENED [ label = "condition[has left house]" ];
+  ENTERING_HOUSE -> LEAVING_HOUSE [ label = "condition[reached bed]" ];
+  CHASING -> FRIGHTENED [ label = "PacManGainsPowerEvent" ];
+  CHASING -> DEAD [ label = "GhostKilledEvent" ];
+  CHASING -> SCATTERING [ label = "condition[got scattering command]" ];
+  SCATTERING -> FRIGHTENED [ label = "PacManGainsPowerEvent" ];
+  SCATTERING -> DEAD [ label = "GhostKilledEvent" ];
+  SCATTERING -> CHASING [ label = "condition[got chasing command]" ];
+  FRIGHTENED -> FRIGHTENED [ label = "PacManGainsPowerEvent" ];
+  FRIGHTENED -> DEAD [ label = "GhostKilledEvent" ];
+  FRIGHTENED -> SCATTERING [ label = "timeout" ];
+  FRIGHTENED -> CHASING [ label = "timeout" ];
+  DEAD -> ENTERING_HOUSE [ label = "condition[reached house]" ];
+}
