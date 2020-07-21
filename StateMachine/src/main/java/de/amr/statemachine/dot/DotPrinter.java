@@ -2,6 +2,7 @@ package de.amr.statemachine.dot;
 
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.io.Writer;
 
 import de.amr.statemachine.api.TransitionMatchStrategy;
@@ -13,6 +14,12 @@ import de.amr.statemachine.core.StateMachine;
  * @author Armin Reichert
  */
 public class DotPrinter {
+
+	public static String dotText(StateMachine<?, ?> fsm) {
+		StringWriter sw = new StringWriter();
+		new DotPrinter(sw).print(fsm);
+		return sw.toString();
+	}
 
 	private PrintWriter pw;
 
@@ -42,7 +49,9 @@ public class DotPrinter {
 		ln();
 		print("  rankdir=LR;");
 		ln();
-		print("  node [shape=ellipse];");
+		print("  node [shape=ellipse, fontname=\"Courier\" fontsize=\"8\"];");
+		ln();
+		print("  edge [fontname=\"Courier\" fontsize=\"8\"];");
 		ln();
 		print("  ");
 		fsm.states().forEach(state -> print(state.id() + " "));
