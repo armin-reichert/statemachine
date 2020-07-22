@@ -4,6 +4,7 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.time.LocalDateTime;
 
 import de.amr.statemachine.api.TransitionMatchStrategy;
 import de.amr.statemachine.core.StateMachine;
@@ -44,18 +45,25 @@ public class DotPrinter {
 	}
 
 	public void print(StateMachine<?, ?> fsm) {
+		print("// generated at " + LocalDateTime.now());
+		ln();
 		print("digraph");
 		print(" \"" + fsm.getDescription() + "\" {");
 		ln();
 		print("  rankdir=LR;");
 		ln();
-		print("  node [shape=ellipse, fontname=\"Courier\" fontsize=\"8\"];");
+		print("  node [shape=ellipse, fontname=\"Arial\" fontsize=\"8\"];");
 		ln();
-		print("  edge [fontname=\"Courier\" fontsize=\"8\"];");
+		print("  edge [fontname=\"Arial\" fontsize=\"8\"];");
 		ln();
-		print("  ");
-		fsm.states().forEach(state -> print(state.id() + " "));
-		print(";");
+		fsm.states().forEach(state -> {
+			print("  " + state.id());
+			if (state.id().equals(fsm.getState())) {
+				print(" [fontcolor=\"red\"]");
+			}
+			print(";");
+			ln();
+		});
 		ln();
 		fsm.transitions().forEach(transition -> {
 			print("  " + transition.from + " -> " + transition.to + " [ label = \"");
@@ -81,7 +89,13 @@ public class DotPrinter {
 					print("condition");
 				}
 			}
-			print("\" ];");
+			print("\" ]");
+			fsm.lastFiredTransition().ifPresent(last -> {
+				if (last == transition) {
+					print(" [fontcolor=\"red\"]");
+				}
+			});
+			print(";");
 			ln();
 		});
 		print("}");

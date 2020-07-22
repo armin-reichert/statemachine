@@ -148,6 +148,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	private final Set<Consumer<E>> eventListeners = new LinkedHashSet<>();
 	private Map<S, Set<Consumer<State<S>>>> entryListeners;
 	private Map<S, Set<Consumer<State<S>>>> exitListeners;
+	private Transition<S, E> lastFiredTransition;
 
 	/**
 	 * Creates a new state machine.
@@ -184,11 +185,6 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	 */
 	public StateMachineBuilder<S, E> beginStateMachine() {
 		return new StateMachineBuilder<>(this);
-	}
-
-	@Override
-	public String toString() {
-		return fnDescription != null ? fnDescription.get() : super.toString();
 	}
 
 	@Override
@@ -276,6 +272,10 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 
 	public Stream<Transition<S, E>> transitions() {
 		return states().flatMap(state -> transitions(state.id).stream());
+	}
+
+	public Optional<Transition<S, E>> lastFiredTransition() {
+		return Optional.ofNullable(lastFiredTransition);
 	}
 
 	/**
@@ -478,6 +478,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 			throw new IllegalStateException("Cannot initialize state machine, no initial state defined.");
 		}
 		currentState = initialState;
+		lastFiredTransition = null;
 		restartTimer(currentState);
 		tracer.enteringInitialState(initialState);
 		state(currentState).entryAction.run();
@@ -572,6 +573,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 			state(currentState).entryAction.run();
 			fireEntryListeners(currentState);
 		}
+		lastFiredTransition = transition;
 	}
 
 	/**
