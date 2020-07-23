@@ -19,6 +19,7 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
@@ -88,6 +89,12 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 		} catch (NullPointerException | IOException | SecurityException e) {
 			throw new RuntimeException("Could not read logging configuration");
 		}
+	}
+
+	public static final Logger logger = Logger.getLogger(StateMachine.class.getName());
+
+	static {
+		logger.setLevel(Level.OFF);
 	}
 
 	/**
@@ -168,7 +175,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 		missingTransitionBehavior = MissingTransitionBehavior.EXCEPTION;
 		eventQ = new ArrayDeque<>();
 		fnDescription = () -> String.format("[%s]", getClass().getSimpleName());
-		tracer = new StateMachineTracer<>(this, Logger.getGlobal());
+		tracer = new StateMachineTracer<>();
 	}
 
 	/**
@@ -377,7 +384,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	@Override
 	public void publish(E event) {
 		if (publishingBlacklist.stream().noneMatch(condition -> condition.test(event))) {
-			tracer.getLogger().info(() -> String.format("%s published event '%s'", this, event));
+			tracer.loginfo(() -> String.format("%s published event '%s'", this, event));
 		}
 		eventListeners.forEach(listener -> listener.accept(event));
 	}
@@ -424,7 +431,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 		StateTimer timer = state(stateId).timer;
 		if (timer != StateTimer.NEVER_ENDING_TIMER) {
 			timer.reset();
-			tracer.stateTimerRestarted(stateId);
+			tracer.logStateTimerReset(this, stateId);
 		}
 	}
 
@@ -485,7 +492,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 		currentStateId = initialState;
 		lastFiredTransition = null;
 		restartTimer(currentStateId);
-		tracer.enteringInitialState(initialState);
+		tracer.logEnteringInitialState(this, initialState);
 		state(currentStateId).entryAction.run();
 		fireEntryListeners(currentStateId);
 	}
@@ -520,7 +527,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 			case IGNORE:
 				break;
 			case LOG:
-				tracer.unhandledInput(input);
+				tracer.logUnhandledEvent(this, input);
 				break;
 			case EXCEPTION:
 				throw new IllegalStateException(String.format("%s: No transition defined for state '%s' and event/input '%s'",
@@ -561,13 +568,13 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	}
 
 	private void fireTransition(Transition<S, E> transition, Optional<E> optionalInput) {
-		tracer.firingTransition(transition, optionalInput);
+		tracer.logFiringTransition(this, transition, optionalInput);
 		if (currentStateId.equals(transition.to)) {
 			// loop: don't execute exit/entry actions, don't restart timer
 			transition.action.accept(optionalInput.orElse(null));
 		} else {
 			// exit current state
-			tracer.exitingState(currentStateId);
+			tracer.logExitingState(this, currentStateId);
 			state(currentStateId).exitAction.run();
 			fireExitListeners(currentStateId);
 			// maybe call action
@@ -575,7 +582,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 			// enter new state
 			currentStateId = transition.to;
 			restartTimer(currentStateId);
-			tracer.enteringState(currentStateId);
+			tracer.logEnteringState(this, currentStateId);
 			state(currentStateId).entryAction.run();
 			fireEntryListeners(currentStateId);
 		}

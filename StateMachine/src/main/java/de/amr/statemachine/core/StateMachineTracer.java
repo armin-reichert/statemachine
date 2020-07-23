@@ -2,16 +2,22 @@ package de.amr.statemachine.core;
 
 import static java.lang.String.format;
 
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.logging.Logger;
 
 /**
  * A tracer for the state machine operations.
+ * 
+ * <p>
+ * Removed Java logger because this completely sucks (or I am too stupid).
  * 
  * @author Armin Reichert
  *
@@ -25,84 +31,106 @@ public class StateMachineTracer<S, E> {
 	 */
 	public Function<Integer, Float> fnTicksToSeconds = ticks -> ticks / 60f;
 
-	private final StateMachine<S, E> fsm;
-	private Logger logger;
-	private final List<Predicate<E>> loggingBlacklist;
+	/**
+	 * Output destination.
+	 */
+	private PrintStream out = System.err;
 
-	public StateMachineTracer(StateMachine<S, E> fsm, Logger log) {
-		this.fsm = fsm;
-		this.logger = log;
-		this.loggingBlacklist = new ArrayList<>();
+	/**
+	 * Predicates defining which inputs/events are not getting logged.
+	 */
+	public final List<Predicate<E>> eventLoggingBlacklist = new ArrayList<>();
+
+	/**
+	 * Logs the message produced by the given supplier.
+	 * 
+	 * @param fnMessage message supplier
+	 */
+	public void loginfo(Supplier<String> fnMessage) {
+		LocalDateTime now = LocalDateTime.now();
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss:SSS");
+		String timestamp = formatter.format(now);
+		out.println(String.format("[%s] %s", timestamp, fnMessage.get()));
 	}
 
-	public Logger getLogger() {
-		return logger;
+	public StateMachineTracer() {
+		shutUp(true);
 	}
 
-	public void setLogger(Logger logger) {
-		this.logger = logger;
+	/**
+	 * Tells the tracer to shut up its mouth.
+	 * 
+	 * @param shutUp if should shut up
+	 */
+	public void shutUp(boolean shutUp) {
+		out = shutUp ? new PrintStream(OutputStream.nullOutputStream()) : System.err;
 	}
 
-	public void doNotLog(Predicate<E> condition) {
-		loggingBlacklist.add(condition);
+	/**
+	 * Adds an input/event predicate to the blacklist.
+	 * 
+	 * @param predicate defining when not log an event
+	 */
+	public void doNotLog(Predicate<E> predicate) {
+		eventLoggingBlacklist.add(predicate);
 	}
 
-	private void eventInfo(E event, Supplier<String> fnMessage) {
-		if (loggingBlacklist.stream().noneMatch(condition -> condition.test(event))) {
-			logger.info(fnMessage);
+	private void logEventInfo(E event, Supplier<String> fnMessage) {
+		if (eventLoggingBlacklist.stream().noneMatch(condition -> condition.test(event))) {
+			loginfo(fnMessage);
 		}
 	}
 
-	public void stateCreated(S id) {
-		logger.info(() -> format("%s created state '%s'", fsm.getDescription(), id));
+	public void logStateCreated(StateMachine<S, E> fsm, S id) {
+		loginfo(() -> format("%s created state '%s'", fsm.getDescription(), id));
 	}
 
-	public void stateTimerRestarted(S id) {
-		logger.info(() -> format("%s did reset timer for state '%s'", fsm.getDescription(), id));
+	public void logStateTimerReset(StateMachine<S, E> fsm, S id) {
+		loginfo(() -> format("%s did reset timer for state '%s'", fsm.getDescription(), id));
 	}
 
-	public void unhandledInput(E event) {
-		logger.info(() -> format("%s in state %s could not handle '%s'", fsm.getDescription(), fsm.getState(), event));
+	public void logUnhandledEvent(StateMachine<S, E> fsm, E event) {
+		loginfo(() -> format("%s in state %s could not handle '%s'", fsm.getDescription(), fsm.getState(), event));
 	}
 
-	public void enteringInitialState(S id) {
-		logger.info(() -> format("%s enters initial state", fsm.getDescription()));
-		enteringState(id);
+	public void logEnteringInitialState(StateMachine<S, E> fsm, S id) {
+		loginfo(() -> format("%s enters initial state", fsm.getDescription()));
+		logEnteringState(fsm, id);
 	}
 
-	public void enteringState(S id) {
+	public void logEnteringState(StateMachine<S, E> fsm, S id) {
 		State<S> stateEntered = fsm.state(id);
 		if (stateEntered.hasTimer()) {
 			int duration = stateEntered.getDuration();
 			float seconds = fnTicksToSeconds.apply(duration);
-			logger.info(() -> format("%s enters state '%s' for %.2f seconds (%d ticks)", fsm.getDescription(), id, seconds,
+			loginfo(() -> format("%s enters state '%s' for %.2f seconds (%d ticks)", fsm.getDescription(), id, seconds,
 					duration));
 		} else {
-			logger.info(() -> format("%s enters state '%s'", fsm.getDescription(), id));
+			loginfo(() -> format("%s enters state '%s'", fsm.getDescription(), id));
 		}
 	}
 
-	public void exitingState(S id) {
-		logger.info(() -> format("%s exits state  '%s'", fsm.getDescription(), id));
+	public void logExitingState(StateMachine<S, E> fsm, S id) {
+		loginfo(() -> format("%s exits state  '%s'", fsm.getDescription(), id));
 	}
 
-	public void firingTransition(Transition<S, E> t, Optional<E> event) {
+	public void logFiringTransition(StateMachine<S, E> fsm, Transition<S, E> t, Optional<E> event) {
 		if (!event.isPresent()) {
 			if (t.from != t.to) {
 				if (t.timeoutTriggered) {
-					logger.info(() -> format("%s changes from  '%s' to '%s (timeout)'", fsm.getDescription(), t.from, t.to));
+					loginfo(() -> format("%s changes from  '%s' to '%s (timeout)'", fsm.getDescription(), t.from, t.to));
 				} else {
-					logger.info(() -> format("%s changes from  '%s' to '%s'", fsm.getDescription(), t.from, t.to));
+					loginfo(() -> format("%s changes from  '%s' to '%s'", fsm.getDescription(), t.from, t.to));
 				}
 			} else {
-				logger.info(() -> format("%s stays '%s'", fsm.getDescription(), t.from));
+				loginfo(() -> format("%s stays '%s'", fsm.getDescription(), t.from));
 			}
 		} else {
 			if (t.from != t.to) {
-				eventInfo(event.get(),
+				logEventInfo(event.get(),
 						() -> format("%s changes from '%s' to '%s' on '%s'", fsm.getDescription(), t.from, t.to, event.get()));
 			} else {
-				eventInfo(event.get(), () -> format("%s stays '%s' on '%s'", fsm.getDescription(), t.from, event.get()));
+				logEventInfo(event.get(), () -> format("%s stays '%s' on '%s'", fsm.getDescription(), t.from, event.get()));
 			}
 		}
 	}
