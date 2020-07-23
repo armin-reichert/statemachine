@@ -1,14 +1,17 @@
 package de.amr.statemachine.api;
 
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import de.amr.statemachine.core.State;
 import de.amr.statemachine.core.StateMachine.MissingTransitionBehavior;
 import de.amr.statemachine.core.StateMachineTracer;
+import de.amr.statemachine.core.Transition;
 
 /**
- * Interface for access by state machine clients.
+ * Interface for accessing state machines.
  * 
  * @author Armin Reichert
  *
@@ -75,55 +78,79 @@ public interface Fsm<S, E> {
 	void setMissingTransitionBehavior(MissingTransitionBehavior missingTransitionBehavior);
 
 	/**
+	 * @return stream of all states (state representations, not just the state IDs)
+	 */
+	Stream<State<S>> states();
+
+	/**
 	 * Sets state machine directly to the given state. The state's entry action is executed and a state
 	 * timer, if defined, gets reset.
 	 * 
-	 * @param state new state
+	 * @param stateId id of new state
 	 */
-	void setState(S state);
+	void setState(S stateId);
 
 	/**
-	 * Sets the new state of this entity. Normally not used directly. The difference to
-	 * {@link #setState(Object)} is that a timer of the state is not reset.
+	 * Resumes given state. Normally not used directly. The difference to {@link #setState(Object)} is
+	 * that a timer of the state is not reset.
 	 * 
-	 * @param state the new state
+	 * @param stateId id of state to resume
 	 */
-	void resumeState(S state);
+	void resumeState(S stateId);
 
 	/**
-	 * @return the current state of this entity
+	 * @return the current state (id)
 	 */
 	S getState();
 
 	/**
-	 * 
-	 * @param states list of states
-	 * @return tells if this entity currently is in one of the given states
+	 * @param stateIds list of state IDs
+	 * @return tells if this machine currently is in one of the given states
 	 */
 	@SuppressWarnings("unchecked")
-	boolean is(S... states);
+	boolean is(S... stateIds);
 
 	/**
-	 * @return internal state object corresponding to current state. Gives access to timer.
+	 * @return internal state representation of current state.
 	 */
-	<StateType extends State<S>> StateType state();
+	default <StateType extends State<S>> StateType state() {
+		return state(getState());
+	}
 
 	/**
-	 * @return internal state object corresponding to specified state. Gives access to timer.
+	 * @param stateId state ID
+	 * @return internal state representation of the specified state.
 	 */
-	<StateType extends State<S>> StateType state(S state);
+	<StateType extends State<S>> StateType state(S stateId);
 
 	/**
 	 * If the state has a timer, this timer is set to its full duration.
 	 * 
-	 * @param state a state identifier
+	 * @param stateId a state identifier
 	 */
-	void restartTimer(S state);
+	void restartTimer(S stateId);
 
 	/**
-	 * Lets the state machine immediately process the given event.
+	 * Adds an input (event) to the input queue of this state machine.
 	 * 
-	 * @param event event to process
+	 * @param event some input/event, must not be null
+	 */
+	void enqueue(E event);
+
+	/**
+	 * Lets the state machine immediately process the given input/event.
+	 * 
+	 * @param event input/event to process, must not be null
 	 */
 	void process(E event);
+
+	/**
+	 * @return stream of all defined transition
+	 */
+	Stream<Transition<S, E>> transitions();
+
+	/**
+	 * @return the last fired transition
+	 */
+	Optional<Transition<S, E>> lastFiredTransition();
 }

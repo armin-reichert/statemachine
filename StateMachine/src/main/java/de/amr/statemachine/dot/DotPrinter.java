@@ -66,7 +66,7 @@ public class DotPrinter {
 		});
 		ln();
 		fsm.transitions().forEach(transition -> {
-			print("  " + transition.from + " -> " + transition.to + " [ label = \"");
+			print("  " + transition.from + " -> " + transition.to + " [label = \"");
 			if (transition.timeoutTriggered) {
 				print("timeout");
 				if (transition.annotation != null) {
