@@ -414,6 +414,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 		restartTimer(stateId);
 		state(currentStateId).entryAction.run();
 		fireEntryListeners(currentStateId);
+		lastFiredTransition = null;
 	}
 
 	@Override
