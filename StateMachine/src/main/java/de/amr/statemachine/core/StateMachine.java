@@ -496,8 +496,8 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 					String.format("Cannot update state, state machine '%s' not initialized.", getDescription()));
 		}
 		State<S> currentState = state(currentStateId);
-
 		boolean timeout = currentState.timer.tick();
+		currentState.annotation = currentState.fnAnnotation.get();
 
 		// Find a transition matching the current input (ignore timeout-transitions)
 		Optional<E> optionalInput = Optional.ofNullable(eventQ.poll());

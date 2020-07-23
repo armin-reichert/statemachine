@@ -1,6 +1,7 @@
 package de.amr.statemachine.core;
 
 import java.util.function.IntSupplier;
+import java.util.function.Supplier;
 
 import de.amr.statemachine.api.TickAction;
 
@@ -27,6 +28,10 @@ public class State<S> {
 
 	/** Timer for this state. */
 	StateTimer timer;
+
+	Supplier<String> fnAnnotation = () -> null;
+
+	String annotation;
 
 	protected State() {
 		timer = StateTimer.NEVER_ENDING_TIMER;
@@ -144,5 +149,9 @@ public class State<S> {
 	 */
 	public int getTicksConsumed() {
 		return hasTimer() ? timer.duration - timer.remaining : 0;
+	}
+
+	public String getAnnotation() {
+		return annotation;
 	}
 }

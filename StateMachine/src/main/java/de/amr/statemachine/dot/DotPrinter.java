@@ -57,7 +57,12 @@ public class DotPrinter {
 		print("  edge [fontname=\"Arial\" fontsize=\"8\"];");
 		ln();
 		fsm.states().forEach(state -> {
-			print("  " + state.id());
+			print("  ");
+			print(state.id());
+			String annotation = state.getAnnotation();
+			if (annotation != null) {
+				print(" [label=\"" + state.id() + ": " + annotation + "\"]");
+			}
 			if (state.id().equals(fsm.getState())) {
 				print(" [fontcolor=\"red\"]");
 			}

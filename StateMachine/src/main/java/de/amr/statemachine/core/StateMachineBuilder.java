@@ -103,6 +103,7 @@ public class StateMachineBuilder<S, E> {
 		private TickAction<S> tickAction;
 		private boolean entryActionSet, exitActionSet, tickActionSet;
 		private IntSupplier fnTimer;
+		private Supplier<String> fnAnnotation;
 
 		private void clear() {
 			stateId = null;
@@ -110,6 +111,7 @@ public class StateMachineBuilder<S, E> {
 			tickAction = null;
 			entryActionSet = exitActionSet = tickActionSet = false;
 			fnTimer = null;
+			fnAnnotation = () -> null;
 		}
 
 		/**
@@ -237,6 +239,28 @@ public class StateMachineBuilder<S, E> {
 			return onTick((state, ticksConsumed, ticksRemaining) -> action.run());
 		}
 
+		/**
+		 * Annotates the state.
+		 * 
+		 * @param annotation annotation text
+		 * @return the builder
+		 */
+		public StateBuilder annotation(String annotation) {
+			return annotation(() -> annotation);
+		}
+
+		/**
+		 * Annotates the state.
+		 * 
+		 * @param fnAnnotation annotation text supplier
+		 * @return the builder
+		 */
+		public StateBuilder annotation(Supplier<String> fnAnnotation) {
+			Objects.requireNonNull(fnAnnotation);
+			this.fnAnnotation = fnAnnotation;
+			return this;
+		}
+
 		private StateBuilder commit() {
 			State<S> state = sm.state(stateId);
 			state.entryAction = entryAction != null ? entryAction : state::onEntry;
@@ -247,6 +271,7 @@ public class StateMachineBuilder<S, E> {
 			} else {
 				state.timer = StateTimer.NEVER_ENDING_TIMER;
 			}
+			state.fnAnnotation = fnAnnotation;
 			return this;
 		}
 
