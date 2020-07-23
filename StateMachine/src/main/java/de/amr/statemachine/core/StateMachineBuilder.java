@@ -277,7 +277,7 @@ public class StateMachineBuilder<S, E> {
 		private E eventValue;
 		private Class<? extends E> eventClass;
 		private Consumer<E> action;
-		private String annotation;
+		private Supplier<String> fnAnnotation;
 
 		private void clear() {
 			transitionBuildingStarted = false;
@@ -288,7 +288,7 @@ public class StateMachineBuilder<S, E> {
 			eventValue = null;
 			eventClass = null;
 			action = null;
-			annotation = null;
+			fnAnnotation = () -> null;
 		}
 
 		/**
@@ -404,8 +404,13 @@ public class StateMachineBuilder<S, E> {
 			return this;
 		}
 
+		public TransitionBuilder annotation(Supplier<String> fnAnnotation) {
+			this.fnAnnotation = fnAnnotation;
+			return this;
+		}
+
 		public TransitionBuilder annotation(String annotation) {
-			this.annotation = annotation;
+			this.fnAnnotation = () -> annotation;
 			return this;
 		}
 
@@ -451,10 +456,10 @@ public class StateMachineBuilder<S, E> {
 				throw new IllegalStateException("Cannot specify both timeout and event class for the same transition");
 			}
 			if (timeoutCondition) {
-				sm.addTransitionOnTimeout(sourceStateId, targetStateId, guard, action, annotation);
+				sm.addTransitionOnTimeout(sourceStateId, targetStateId, guard, action, fnAnnotation);
 			} else {
 				sm.addTransition(sourceStateId, targetStateId, guard, action,
-						sm.getMatchStrategy() == TransitionMatchStrategy.BY_CLASS ? eventClass : eventValue, false, annotation);
+						sm.getMatchStrategy() == TransitionMatchStrategy.BY_CLASS ? eventClass : eventValue, false, fnAnnotation);
 			}
 			clear();
 			return this;

@@ -4,6 +4,7 @@ import static de.amr.statemachine.api.TransitionMatchStrategy.BY_CLASS;
 
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  * Representation of a state transition.
@@ -22,10 +23,10 @@ public class Transition<S, E> {
 	public final Consumer<E> action;
 	public final boolean timeoutTriggered;
 	public final Object eventValueOrClass;
-	public final String annotation;
+	public final Supplier<String> fnAnnotation;
 
 	public Transition(StateMachine<?, ?> fsm, S from, S to, BooleanSupplier guard, Consumer<E> action,
-			Object eventValueOrClass, boolean timeoutTriggered, String annotation) {
+			Object eventValueOrClass, boolean timeoutTriggered, Supplier<String> fnAnnotation) {
 		this.fsm = fsm;
 		this.from = from;
 		this.to = to;
@@ -34,7 +35,7 @@ public class Transition<S, E> {
 		};
 		this.eventValueOrClass = eventValueOrClass;
 		this.timeoutTriggered = timeoutTriggered;
-		this.annotation = annotation;
+		this.fnAnnotation = fnAnnotation == null ? () -> null : fnAnnotation;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -53,8 +54,8 @@ public class Transition<S, E> {
 		if (eventValueOrClass != null) {
 			text = fsm.getMatchStrategy() == BY_CLASS ? eventClass().getSimpleName() : String.valueOf(eventValue());
 		}
-		if (annotation != null) {
-			text += "[" + annotation + "]";
+		if (fnAnnotation != null) {
+			text += "[" + fnAnnotation.get() + "]";
 		}
 		return String.format("\n(%s)--[%s]-->(%s)", from, text, to);
 	}

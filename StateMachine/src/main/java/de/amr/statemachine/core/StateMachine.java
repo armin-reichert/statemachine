@@ -288,79 +288,80 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	 * @param action           action performed on transition
 	 * @param eventSlot        event value/class if transition is matched by value/class
 	 * @param timeoutTriggered if this transition is triggered by a timeout
-	 * @param annotation       annotation text
+	 * @param fnAnnotation     annotation text
 	 */
 	void addTransition(S from, S to, BooleanSupplier guard, Consumer<E> action, Object eventSlot, boolean timeout,
-			String annotation) {
+			Supplier<String> fnAnnotation) {
 		Objects.requireNonNull(from);
 		Objects.requireNonNull(to);
-		transitions(from).add(new Transition<>(this, from, to, guard, action, eventSlot, timeout, annotation));
+		transitions(from).add(new Transition<>(this, from, to, guard, action, eventSlot, timeout, fnAnnotation));
 	}
 
 	/**
 	 * Adds a timeout-triggered transition.
 	 * 
-	 * @param from       source state id
-	 * @param to         target state id
-	 * @param guard      condition guarding transition
-	 * @param action     action for transition
-	 * @param annotation annotation text
+	 * @param from         source state id
+	 * @param to           target state id
+	 * @param guard        condition guarding transition
+	 * @param action       action for transition
+	 * @param fnAnnotation annotation text
 	 */
-	public void addTransitionOnTimeout(S from, S to, BooleanSupplier guard, Consumer<E> action, String annotation) {
-		addTransition(from, to, guard, action, null, true, annotation);
+	public void addTransitionOnTimeout(S from, S to, BooleanSupplier guard, Consumer<E> action,
+			Supplier<String> fnAnnotation) {
+		addTransition(from, to, guard, action, null, true, fnAnnotation);
 	}
 
 	/**
 	 * Adds a transition which is fired if the guard condition holds and the current input's class
 	 * equals the given class.
 	 * 
-	 * @param from       source state id
-	 * @param to         target state id
-	 * @param guard      condition guarding transition
-	 * @param action     action for transition
-	 * @param eventClass class used for matching the current event
-	 * @param annotation annotation text
+	 * @param from         source state id
+	 * @param to           target state id
+	 * @param guard        condition guarding transition
+	 * @param action       action for transition
+	 * @param eventClass   class used for matching the current event
+	 * @param fnAnnotation annotation text
 	 */
 	public void addTransitionOnEventClass(S from, S to, BooleanSupplier guard, Consumer<E> action,
-			Class<? extends E> eventClass, String annotation) {
+			Class<? extends E> eventClass, Supplier<String> fnAnnotation) {
 		Objects.requireNonNull(eventClass);
 		if (matchEventsBy != TransitionMatchStrategy.BY_CLASS) {
 			throw new IllegalStateException("Cannot add transition, wrong match strategy: " + matchEventsBy);
 		}
-		addTransition(from, to, guard, action, eventClass, false, annotation);
+		addTransition(from, to, guard, action, eventClass, false, fnAnnotation);
 	}
 
 	/**
 	 * Adds a transition which is fired if the guard condition holds and the current input equals the
 	 * given value.
 	 * 
-	 * @param from       source state id
-	 * @param to         target state id
-	 * @param guard      condition guarding transition
-	 * @param action     action for transition
-	 * @param value      value used for matching the current input/event
-	 * @param annotation annotation text
+	 * @param from         source state id
+	 * @param to           target state id
+	 * @param guard        condition guarding transition
+	 * @param action       action for transition
+	 * @param value        value used for matching the current input/event
+	 * @param fnAnnotation annotation text
 	 */
 	public void addTransitionOnEventValue(S from, S to, BooleanSupplier guard, Consumer<E> action, E value,
-			String annotation) {
+			Supplier<String> fnAnnotation) {
 		Objects.requireNonNull(value);
 		if (matchEventsBy != TransitionMatchStrategy.BY_VALUE) {
 			throw new IllegalStateException("Cannot add transition, wrong match strategy");
 		}
-		addTransition(from, to, guard, action, value, false, annotation);
+		addTransition(from, to, guard, action, value, false, fnAnnotation);
 	}
 
 	/**
 	 * Adds a transition which is fired when the guard condition holds.
 	 * 
-	 * @param from       source state id
-	 * @param to         target state id
-	 * @param guard      condition guarding transition
-	 * @param action     action for transition
-	 * @param annotation annotation text
+	 * @param from         source state id
+	 * @param to           target state id
+	 * @param guard        condition guarding transition
+	 * @param action       action for transition
+	 * @param fnAnnotation annotation text
 	 */
-	public void addTransition(S from, S to, BooleanSupplier guard, Consumer<E> action, String annotation) {
-		addTransition(from, to, guard, action, null, false, annotation);
+	public void addTransition(S from, S to, BooleanSupplier guard, Consumer<E> action, Supplier<String> fnAnnotation) {
+		addTransition(from, to, guard, action, null, false, fnAnnotation);
 	}
 
 	@Override
