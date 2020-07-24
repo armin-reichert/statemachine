@@ -16,7 +16,7 @@ import de.amr.statemachine.core.StateMachine;
  */
 public class DotPrinter {
 
-	public static String dotText(StateMachine<?, ?> fsm) {
+	public static String printToString(StateMachine<?, ?> fsm) {
 		StringWriter sw = new StringWriter();
 		new DotPrinter(sw).print(fsm);
 		return sw.toString();
