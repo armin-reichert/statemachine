@@ -59,10 +59,19 @@ public class DotPrinter {
 		fsm.states().forEach(state -> {
 			print("  ");
 			print(state.id());
+			print(" [label=\"");
+			print(state.id());
 			String annotation = state.getAnnotation();
 			if (annotation != null) {
-				print(" [label=\"" + state.id() + ": " + annotation + "\"]");
+				print("\n");
+				print(annotation);
 			}
+			if (state.hasTimer() && !state.isTerminated()) {
+				int consumed = state.getTicksConsumed();
+				int duration = state.getDuration();
+				print(String.format("\n%d of %d ticks", consumed, duration));
+			}
+			print("\"]");
 			if (state.id().equals(fsm.getState())) {
 				print(" [fontcolor=\"red\"]");
 			}
