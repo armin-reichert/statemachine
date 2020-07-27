@@ -102,7 +102,7 @@ public class StateMachineBuilder<S, E> {
 		private Runnable entryAction, exitAction;
 		private TickAction<S> tickAction;
 		private boolean entryActionSet, exitActionSet, tickActionSet;
-		private IntSupplier fnTimer;
+		private StateTimer timer;
 		private Supplier<String> fnAnnotation;
 
 		private void clear() {
@@ -110,24 +110,25 @@ public class StateMachineBuilder<S, E> {
 			entryAction = exitAction = null;
 			tickAction = null;
 			entryActionSet = exitActionSet = tickActionSet = false;
-			fnTimer = null;
+			timer = StateTimer.NEVER_ENDING_TIMER;
 			fnAnnotation = () -> null;
 		}
 
 		/**
 		 * Starts the construction of a state.
 		 * 
-		 * @param stateId state identifier
+		 * @param nextStateId state identifier
 		 * @return the builder
 		 */
-		public StateBuilder state(S stateId) {
-			// commit previous build if any
-			if (this.stateId != null) {
-				commit();
+		public StateBuilder state(S nextStateId) {
+			// commit pending build if any
+			if (stateId != null) {
+				commit(stateId);
 			}
 			clear();
-			// start new build
-			this.stateId = stateId;
+			// start next build
+			System.err.println("start building " + nextStateId);
+			stateId = nextStateId;
 			return this;
 		}
 
@@ -142,7 +143,14 @@ public class StateMachineBuilder<S, E> {
 			if (customStateInstance == null) {
 				throw new IllegalArgumentException("Custom state object cannot be NULL");
 			}
+			System.err.println("custom state " + stateId + ": " + customStateInstance.getClass());
 			sm.realizeState(stateId, customStateInstance);
+			entryAction = customStateInstance::onEntry;
+			exitAction = customStateInstance::onExit;
+			tickAction = customStateInstance::onTick;
+			entryActionSet = exitActionSet = tickActionSet = true;
+			timer = customStateInstance.timer;
+			fnAnnotation = customStateInstance.fnAnnotation;
 			return this;
 		}
 
@@ -156,7 +164,7 @@ public class StateMachineBuilder<S, E> {
 			if (fnTimer == null) {
 				throw new IllegalStateException("Timer function cannot be null for state " + stateId);
 			}
-			this.fnTimer = fnTimer;
+			timer = new StateTimer(fnTimer);
 			return this;
 		}
 
@@ -170,7 +178,7 @@ public class StateMachineBuilder<S, E> {
 			if (fixedTime < 0) {
 				throw new IllegalStateException("Timer value must be positive for state " + stateId);
 			}
-			this.fnTimer = () -> fixedTime;
+			timer = new StateTimer(() -> fixedTime);
 			return this;
 		}
 
@@ -261,17 +269,14 @@ public class StateMachineBuilder<S, E> {
 			return this;
 		}
 
-		private StateBuilder commit() {
+		private StateBuilder commit(S stateId) {
 			State<S> state = sm.state(stateId);
 			state.entryAction = entryAction != null ? entryAction : state::onEntry;
 			state.exitAction = exitAction != null ? exitAction : state::onExit;
 			state.tickAction = tickAction != null ? tickAction : state::onTick;
-			if (fnTimer != null) {
-				state.timer = new StateTimer(fnTimer);
-			} else {
-				state.timer = StateTimer.NEVER_ENDING_TIMER;
-			}
+			state.timer = timer;
 			state.fnAnnotation = fnAnnotation;
+			System.err.println("commited state " + stateId);
 			return this;
 		}
 
@@ -282,8 +287,8 @@ public class StateMachineBuilder<S, E> {
 		 */
 		public TransitionBuilder transitions() {
 			// commit previous build if any
-			if (this.stateId != null) {
-				commit();
+			if (stateId != null) {
+				commit(stateId);
 			}
 			return new TransitionBuilder();
 		}
