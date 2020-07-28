@@ -64,7 +64,7 @@ public class StateMachineTest {
 					.state(S1).onEntry(entryAction)
 					.state(S2).onExit(exitAction)
 					.state(S3)
-						.timeoutAfter(() -> 10)
+						.timeoutAfter(() -> 10L)
 						.onTick(tickAction)
 					.state(S4).customState(new StateImpl())
 				.transitions()

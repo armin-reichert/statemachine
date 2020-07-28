@@ -1,6 +1,5 @@
 package de.amr.statemachine.core;
 
-import java.util.function.IntSupplier;
 import java.util.function.Supplier;
 
 import de.amr.statemachine.api.TickAction;
@@ -34,7 +33,7 @@ public class State<S> {
 	String annotation;
 
 	protected State() {
-		timer = StateTimer.NEVER_ENDING_TIMER;
+		timer = new InfiniteTimer();
 	}
 
 	@Override
@@ -46,7 +45,7 @@ public class State<S> {
 			s += " tick";
 		if (exitAction != null)
 			s += " exit";
-		if (timer != StateTimer.NEVER_ENDING_TIMER) {
+		if (hasTimer()) {
 			s += " timer";
 		}
 		s += ")";
@@ -84,7 +83,7 @@ public class State<S> {
 	 * @param ticksConsumed  number of timer ticks already consumed
 	 * @param ticksRemaining number of ticks remaining until timer times out
 	 */
-	public void onTick(State<?> state, int ticksConsumed, int ticksRemaining) {
+	public void onTick(State<S> state, long ticksConsumed, long ticksRemaining) {
 	}
 
 	// Timer stuff
@@ -94,7 +93,7 @@ public class State<S> {
 	 * 
 	 * @param fnDuration function providing the duration
 	 */
-	public void setTimer(IntSupplier fnDuration) {
+	public void setTimer(Supplier<Long> fnDuration) {
 		timer = new StateTimer(fnDuration);
 		timer.reset();
 	}
@@ -104,18 +103,18 @@ public class State<S> {
 	 * 
 	 * @param ticks duration as number of ticks
 	 */
-	public void setTimer(int ticks) {
+	public void setTimer(long ticks) {
 		setTimer(() -> ticks);
 	}
 
-	/** Tells if this state has a timer. */
+	/** Tells if this state has a (non-infinite) timer. */
 	public boolean hasTimer() {
-		return timer != StateTimer.NEVER_ENDING_TIMER;
+		return !(timer instanceof InfiniteTimer);
 	}
 
 	/** Removes the timer of this state. */
 	public void removeTimer() {
-		timer = StateTimer.NEVER_ENDING_TIMER;
+		timer = new InfiniteTimer();
 	}
 
 	/** Tells if this state timer, if any, reached its end. */
@@ -128,7 +127,7 @@ public class State<S> {
 	 * 
 	 * @return the state duration (total number of updates until timeout)
 	 */
-	public int getDuration() {
+	public long getDuration() {
 		return timer.duration;
 	}
 
@@ -137,7 +136,7 @@ public class State<S> {
 	 * 
 	 * @return remaining number of updates until timeout occurs
 	 */
-	public int getTicksRemaining() {
+	public long getTicksRemaining() {
 		return timer.remaining;
 	}
 
@@ -147,7 +146,7 @@ public class State<S> {
 	 * @return Number of updates since the timer for this state was started or reset. If there is no
 	 *         timer assigned to this state, <code>0</code> is returned.
 	 */
-	public int getTicksConsumed() {
+	public long getTicksConsumed() {
 		return hasTimer() ? timer.duration - timer.remaining : 0;
 	}
 

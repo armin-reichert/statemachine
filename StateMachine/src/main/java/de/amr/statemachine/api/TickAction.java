@@ -18,5 +18,5 @@ public interface TickAction<S> {
 	 * @param ticksConsumed  ticks consumed in this state
 	 * @param ticksRemaining ticks remaining until tiemout
 	 */
-	void run(State<S> state, int ticksConsumed, int ticksRemaining);
+	void run(State<S> state, long ticksConsumed, long ticksRemaining);
 }

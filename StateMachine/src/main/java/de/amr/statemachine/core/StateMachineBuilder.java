@@ -3,7 +3,6 @@ package de.amr.statemachine.core;
 import java.util.Objects;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
-import java.util.function.IntSupplier;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
@@ -100,7 +99,7 @@ public class StateMachineBuilder<S, E> {
 			entryAction = exitAction = null;
 			tickAction = null;
 			entryActionSet = exitActionSet = tickActionSet = false;
-			timer = StateTimer.NEVER_ENDING_TIMER;
+			timer = new InfiniteTimer();
 			fnAnnotation = () -> null;
 		}
 
@@ -148,7 +147,7 @@ public class StateMachineBuilder<S, E> {
 		 * @param fnTimer timer function (returning duration in ticks)
 		 * @return the builder
 		 */
-		public StateBuilder timeoutAfter(IntSupplier fnTimer) {
+		public StateBuilder timeoutAfter(Supplier<Long> fnTimer) {
 			if (fnTimer == null) {
 				throw new IllegalStateException("Timer function cannot be null for state " + stateId);
 			}
@@ -162,7 +161,7 @@ public class StateMachineBuilder<S, E> {
 		 * @param fixedTime number of state updates until timeout
 		 * @return the builder
 		 */
-		public StateBuilder timeoutAfter(int fixedTime) {
+		public StateBuilder timeoutAfter(long fixedTime) {
 			if (fixedTime < 0) {
 				throw new IllegalStateException("Timer value must be positive for state " + stateId);
 			}

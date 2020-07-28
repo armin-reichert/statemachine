@@ -61,9 +61,7 @@ public class DotPrinter {
 				print(annotation);
 			}
 			if (state.hasTimer() && !state.isTerminated()) {
-				int consumed = state.getTicksConsumed();
-				int duration = state.getDuration();
-				print("\\n%d of %d ticks", consumed, duration);
+				print("\\n%d of %d ticks", state.getTicksConsumed(), state.getDuration());
 			}
 			print("\"]");
 			if (state.id().equals(fsm.getState())) {

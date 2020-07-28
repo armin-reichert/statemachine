@@ -29,7 +29,7 @@ public class StateMachineTracer<S, E> {
 	/**
 	 * Converts ticks into seconds. Default is 60 ticks per second.
 	 */
-	public Function<Integer, Float> fnTicksToSeconds = ticks -> ticks / 60f;
+	public Function<Long, Float> fnTicksToSeconds = ticks -> ticks / 60f;
 
 	/**
 	 * Output destination.
@@ -101,7 +101,7 @@ public class StateMachineTracer<S, E> {
 	public void logEnteringState(StateMachine<S, E> fsm, S id) {
 		State<S> stateEntered = fsm.state(id);
 		if (stateEntered.hasTimer()) {
-			int duration = stateEntered.getDuration();
+			long duration = stateEntered.getDuration();
 			float seconds = fnTicksToSeconds.apply(duration);
 			loginfo(() -> format("%s enters state '%s' for %.2f seconds (%d ticks)", fsm.getDescription(), id, seconds,
 					duration));
