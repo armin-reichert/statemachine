@@ -141,15 +141,19 @@ public class State<S> {
 	}
 
 	/**
-	 * The number of updates since the (optional) timer for this state was started or reset.
+	 * The number of ticks since the timer for this state was started or reset.
 	 * 
-	 * @return Number of updates since the timer for this state was started or reset. If there is no
-	 *         timer assigned to this state, <code>0</code> is returned.
+	 * @return Number of updates since the timer for this state was started or reset.
 	 */
 	public long getTicksConsumed() {
-		return hasTimer() ? timer.duration - timer.remaining : 0;
+		return timer.duration - timer.remaining;
 	}
 
+	/**
+	 * The current annotation text of this state.
+	 * 
+	 * @return the annotation text
+	 */
 	public String getAnnotation() {
 		return annotation;
 	}

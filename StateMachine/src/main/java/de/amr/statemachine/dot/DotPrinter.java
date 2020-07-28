@@ -15,7 +15,7 @@ import de.amr.statemachine.core.StateMachine;
  * @author Armin Reichert
  */
 public class DotPrinter {
-	
+
 	public static String printToString(StateMachine<?, ?> fsm) {
 		StringWriter sw = new StringWriter();
 		new DotPrinter(sw).print(fsm);
@@ -35,7 +35,7 @@ public class DotPrinter {
 	public DotPrinter() {
 		this(System.out);
 	}
-	
+
 	private void print(String fmt, Object... args) {
 		print(String.format(fmt, args));
 	}
@@ -52,7 +52,7 @@ public class DotPrinter {
 		print("\n  edge [fontname=\"sans-serif\" fontsize=%d];", 12);
 		print("\n\n  // states");
 		fsm.states().forEach(state -> {
-			print("\n  %s",state.id());
+			print("\n  %s", state.id());
 			print(" [label=\"");
 			print(state.id());
 			String annotation = state.getAnnotation();
