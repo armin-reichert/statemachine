@@ -111,84 +111,64 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	}
 
 	/**
-	 * Creates a new state machine instance and starts its definition building. The event match strategy
-	 * is "by class".
-	 * 
-	 * @param stateIdentifierClass class of state identifiers e.g. an enumeration class
-	 * @param eventClass           class of events/inputs
-	 * 
-	 * @param <STATE>              state identifier type
-	 * @param <EVENT>              event/input type
-	 * @return state machine builder
-	 */
-	public static <STATE, EVENT> StateMachineBuilder<STATE, EVENT> beginStateMachine(Class<STATE> stateIdentifierClass,
-			Class<EVENT> eventClass) {
-		return new StateMachineBuilder<>(stateIdentifierClass);
-	}
-
-	/**
 	 * Creates a new state machine instance and starts its definition building.
 	 * 
-	 * @param stateIdentifierClass class of state identifiers e.g. an enumeration class
-	 * @param eventClass           class of events/inputs
-	 * @param matchStrategy        strategy for matching events against transition definitions
+	 * @param stateIdClass  class of state identifiers e.g. an enumeration class
+	 * @param eventClass    class of events/inputs
+	 * @param matchStrategy strategy for matching events against transition definitions
 	 * 
-	 * @param <STATE>              state identifier type
-	 * @param <EVENT>              event/input type
+	 * @param <STATE>       state identifier type
+	 * @param <EVENT>       event/input type
 	 * @return state machine builder
 	 */
-	public static <STATE, EVENT> StateMachineBuilder<STATE, EVENT> beginStateMachine(Class<STATE> stateIdentifierClass,
+	public static <STATE, EVENT> StateMachineBuilder<STATE, EVENT> beginStateMachine(Class<STATE> stateIdClass,
 			Class<EVENT> eventClass, TransitionMatchStrategy matchStrategy) {
-		return new StateMachineBuilder<>(stateIdentifierClass, matchStrategy);
+		return new StateMachineBuilder<>(stateIdClass, matchStrategy);
 	}
 
-	private S initialState;
+	private S initialStateId;
 	private S currentStateId;
 	private Transition<S, E> lastFiredTransition;
-	private MissingTransitionBehavior missingTransitionBehavior;
+	private MissingTransitionBehavior missingTransitionBehavior = MissingTransitionBehavior.EXCEPTION;
 	private final TransitionMatchStrategy matchEventsBy;
 	private final Map<S, State<S>> stateMap;
-	private final Map<S, List<Transition<S, E>>> transitionMap;
-	protected final Deque<E> eventQ;
+	private final Map<S, List<Transition<S, E>>> transitionMap = new HashMap<>(7);
+	protected final Deque<E> eventQ = new ArrayDeque<>();
 
 	private final Set<Consumer<E>> eventListeners = new LinkedHashSet<>();
 	private Map<S, Set<Consumer<State<S>>>> entryListeners;
 	private Map<S, Set<Consumer<State<S>>>> exitListeners;
 
-	private Supplier<String> fnDescription;
-	private final StateMachineTracer<S, E> tracer;
+	private Supplier<String> fnDescription = () -> String.format("[%s]", getClass().getSimpleName());
+	private final StateMachineTracer<S, E> tracer = new StateMachineTracer<>();
 	private final List<Predicate<E>> publishingBlacklist = new ArrayList<>();
 
 	/**
-	 * Creates a new state machine.
+	 * Creates a new state machine with a transition match strategy of "by class".
 	 * 
-	 * @param stateIdClass  class of state identifiers e.g. an enumeration class
-	 * @param matchStrategy strategy for matching events
-	 */
-	@SuppressWarnings({ "rawtypes", "unchecked" })
-	public StateMachine(Class<S> stateIdClass, TransitionMatchStrategy matchStrategy) {
-		Objects.requireNonNull(stateIdClass);
-		stateMap = stateIdClass.isEnum() ? new EnumMap(stateIdClass)
-				: stateIdClass == Boolean.class ? new BooleanMap() : new HashMap<>(7);
-		matchEventsBy = Objects.requireNonNull(matchStrategy);
-		transitionMap = new HashMap<>(7);
-		missingTransitionBehavior = MissingTransitionBehavior.EXCEPTION;
-		eventQ = new ArrayDeque<>();
-		fnDescription = () -> String.format("[%s]", getClass().getSimpleName());
-		tracer = new StateMachineTracer<>();
-	}
-
-	/**
-	 * Creates a new state machine with a default match strategy of "by class".
-	 * 
-	 * @param stateIdClass type of state identifiers e.g. an enumeration class
+	 * @param stateIdClass type of state identifiers, e.g. an enumeration class
 	 */
 	public StateMachine(Class<S> stateIdClass) {
 		this(stateIdClass, TransitionMatchStrategy.BY_CLASS);
 	}
 
 	/**
-	 * Starts building of the state machine.
+	 * Creates a new state machine.
+	 * 
+	 * @param stateIdClass  class of state identifiers, e.g. some enumeration class
+	 * @param matchStrategy strategy for matching events against transitions
+	 */
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	public StateMachine(Class<S> stateIdClass, TransitionMatchStrategy matchStrategy) {
+		Objects.requireNonNull(stateIdClass);
+		Objects.requireNonNull(matchStrategy);
+		stateMap = stateIdClass.isEnum() ? new EnumMap(stateIdClass)
+				: stateIdClass == Boolean.class ? new BooleanMap() : new HashMap<>(7);
+		matchEventsBy = matchStrategy;
+	}
+
+	/**
+	 * Starts building of this state machine.
 	 * 
 	 * @return new state machine builder
 	 */
@@ -203,11 +183,13 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 
 	@Override
 	public void doNotLogEventProcessingIf(Predicate<E> condition) {
+		Objects.requireNonNull(condition);
 		tracer.doNotLog(condition);
 	}
 
 	@Override
 	public void doNotLogEventPublishingIf(Predicate<E> condition) {
+		Objects.requireNonNull(condition);
 		publishingBlacklist.add(condition);
 	}
 
@@ -226,7 +208,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	}
 
 	/**
-	 * Sets the description supplier for this state machine.
+	 * Sets the description for this state machine.
 	 * 
 	 * @param fnDescription description text supplier
 	 */
@@ -235,7 +217,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	}
 
 	/**
-	 * Sets the description for this state machine.
+	 * Sets a fixed description for this state machine.
 	 * 
 	 * @param description description text
 	 */
@@ -246,29 +228,30 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	/**
 	 * Defines how the state machine reacts to missing transitions.
 	 * 
-	 * @param missingTransitionBehavior behavior in case no transition is available
+	 * @param behavior behavior in case no transition for the current event is defined
 	 */
 	@Override
-	public void setMissingTransitionBehavior(MissingTransitionBehavior missingTransitionBehavior) {
-		this.missingTransitionBehavior = Objects.requireNonNull(missingTransitionBehavior);
+	public void setMissingTransitionBehavior(MissingTransitionBehavior behavior) {
+		this.missingTransitionBehavior = Objects.requireNonNull(behavior);
 	}
 
 	/**
 	 * Sets the initial state (id) for this state machine.
 	 * 
-	 * @param stateId initial state identifier
+	 * @param stateId identifier of initial state
 	 */
 	public void setInitialState(S stateId) {
-		this.initialState = Objects.requireNonNull(stateId);
+		this.initialStateId = Objects.requireNonNull(stateId);
 	}
 
 	/**
-	 * @return the initial state of this state machine
+	 * @return the initial state (id) of this state machine
 	 */
 	public S getInitialState() {
-		return initialState;
+		return initialStateId;
 	}
 
+	// create lists on demand
 	private List<Transition<S, E>> transitions(S stateId) {
 		if (!transitionMap.containsKey(stateId)) {
 			transitionMap.put(stateId, new ArrayList<>(3));
@@ -287,7 +270,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	}
 
 	/**
-	 * Adds a state transition.
+	 * Adds a new state transition.
 	 * 
 	 * @param from             source state id
 	 * @param to               target state id
@@ -297,10 +280,8 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	 * @param timeoutTriggered if this transition is triggered by a timeout
 	 * @param fnAnnotation     annotation text
 	 */
-	void addTransition(S from, S to, BooleanSupplier guard, Consumer<E> action, Object eventSlot, boolean timeout,
+	void addNewTransition(S from, S to, BooleanSupplier guard, Consumer<E> action, Object eventSlot, boolean timeout,
 			Supplier<String> fnAnnotation) {
-		Objects.requireNonNull(from);
-		Objects.requireNonNull(to);
 		transitions(from).add(new Transition<>(this, from, to, guard, action, eventSlot, timeout, fnAnnotation));
 	}
 
@@ -315,7 +296,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	 */
 	public void addTransitionOnTimeout(S from, S to, BooleanSupplier guard, Consumer<E> action,
 			Supplier<String> fnAnnotation) {
-		addTransition(from, to, guard, action, null, true, fnAnnotation);
+		addNewTransition(from, to, guard, action, null, true, fnAnnotation);
 	}
 
 	/**
@@ -335,7 +316,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 		if (matchEventsBy != TransitionMatchStrategy.BY_CLASS) {
 			throw new IllegalStateException("Cannot add transition, wrong match strategy: " + matchEventsBy);
 		}
-		addTransition(from, to, guard, action, eventClass, false, fnAnnotation);
+		addNewTransition(from, to, guard, action, eventClass, false, fnAnnotation);
 	}
 
 	/**
@@ -355,7 +336,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 		if (matchEventsBy != TransitionMatchStrategy.BY_VALUE) {
 			throw new IllegalStateException("Cannot add transition, wrong match strategy");
 		}
-		addTransition(from, to, guard, action, value, false, fnAnnotation);
+		addNewTransition(from, to, guard, action, value, false, fnAnnotation);
 	}
 
 	/**
@@ -368,7 +349,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	 * @param fnAnnotation annotation text
 	 */
 	public void addTransition(S from, S to, BooleanSupplier guard, Consumer<E> action, Supplier<String> fnAnnotation) {
-		addTransition(from, to, guard, action, null, false, fnAnnotation);
+		addNewTransition(from, to, guard, action, null, false, fnAnnotation);
 	}
 
 	@Override
@@ -383,7 +364,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 
 	@Override
 	public void publish(E event) {
-		if (publishingBlacklist.stream().noneMatch(condition -> condition.test(event))) {
+		if (publishingBlacklist.stream().noneMatch(predicate -> predicate.test(event))) {
 			tracer.loginfo(() -> String.format("%s published event '%s'", this, event));
 		}
 		eventListeners.forEach(listener -> listener.accept(event));
@@ -413,35 +394,33 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 
 	@Override
 	public void setState(S stateId) {
-		Objects.requireNonNull(stateId);
-		if (currentStateId != null) {
-			state(currentStateId).exitAction.run();
-			fireExitListeners(currentStateId);
-		}
-		currentStateId = stateId;
-		restartTimer(stateId);
-		state(currentStateId).entryAction.run();
-		fireEntryListeners(currentStateId);
-		lastFiredTransition = null;
-	}
-
-	@Override
-	public void restartTimer(S stateId) {
-		Objects.requireNonNull(stateId);
-		StateTimer timer = state(stateId).timer;
-		if (timer != StateTimer.NEVER_ENDING_TIMER) {
-			timer.reset();
-			tracer.logStateTimerReset(this, stateId);
-		}
+		enterState(stateId, true);
 	}
 
 	@Override
 	public void resumeState(S stateId) {
-		Objects.requireNonNull(stateId);
-		currentStateId = stateId;
+		enterState(stateId, false);
+	}
+
+	private void enterState(S stateId, boolean resetTimer) {
+		if (currentStateId != null) {
+			state(currentStateId).exitAction.run();
+			fireExitListeners(currentStateId);
+		}
+		currentStateId = Objects.requireNonNull(stateId);
+		if (resetTimer) {
+			resetTimer(stateId);
+		}
 		state(currentStateId).entryAction.run();
 		fireEntryListeners(currentStateId);
 		lastFiredTransition = null;
+	}
+
+	@Override
+	public void resetTimer(S stateId) {
+		Objects.requireNonNull(stateId);
+		state(stateId).timer.reset();
+		tracer.logStateTimerReset(this, stateId);
 	}
 
 	@Override
@@ -459,40 +438,41 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 
 	@Override
 	@SuppressWarnings("unchecked")
-	public <StateType extends State<S>> StateType state(S stateId) {
+	public <StateClass extends State<S>> StateClass state(S stateId) {
 		if (!stateMap.containsKey(stateId)) {
-			return (StateType) realizeState(stateId, new State<>());
+			// realize state by generic state object
+			return (StateClass) realizeState(stateId, new State<>());
 		}
-		return (StateType) stateMap.get(stateId);
+		return (StateClass) stateMap.get(stateId);
 	}
 
 	/**
-	 * Creates or replaces the state instance for a state. Using a subclass instead of the generic state
+	 * Creates or replaces the implementation of a state. Using a subclass instead of the generic state
 	 * class is useful if the implementation of a state needs additional fields and methods.
 	 * 
-	 * @param stateId       state identifier
-	 * @param stateInstance instance of state class
+	 * @param stateId   state identifier
+	 * @param stateImpl instance of state class
 	 * @return the state instance
 	 * 
 	 * @param <StateClass> subclass of {@link State} class
 	 */
-	public <StateClass extends State<S>> StateClass realizeState(S stateId, StateClass stateInstance) {
+	public <StateClass extends State<S>> StateClass realizeState(S stateId, StateClass stateImpl) {
 		Objects.requireNonNull(stateId);
-		Objects.requireNonNull(stateInstance);
-		stateInstance.id = stateId;
-		stateMap.put(stateId, stateInstance);
-		return stateInstance;
+		Objects.requireNonNull(stateImpl);
+		stateImpl.id = stateId;
+		stateMap.put(stateId, stateImpl);
+		return stateImpl;
 	}
 
 	@Override
 	public void init() {
-		if (initialState == null) {
+		if (initialStateId == null) {
 			throw new IllegalStateException("Cannot initialize state machine, no initial state defined.");
 		}
-		currentStateId = initialState;
+		currentStateId = initialStateId;
 		lastFiredTransition = null;
-		restartTimer(currentStateId);
-		tracer.logEnteringInitialState(this, initialState);
+		resetTimer(currentStateId);
+		tracer.logEnteringInitialState(this, initialStateId);
 		state(currentStateId).entryAction.run();
 		fireEntryListeners(currentStateId);
 	}
@@ -581,7 +561,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 			transition.action.accept(optionalInput.orElse(null));
 			// enter new state
 			currentStateId = transition.to;
-			restartTimer(currentStateId);
+			resetTimer(currentStateId);
 			tracer.logEnteringState(this, currentStateId);
 			state(currentStateId).entryAction.run();
 			fireEntryListeners(currentStateId);

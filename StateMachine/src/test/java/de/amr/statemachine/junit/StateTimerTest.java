@@ -6,6 +6,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import de.amr.statemachine.api.TransitionMatchStrategy;
 import de.amr.statemachine.core.StateMachine;
 
 public class StateTimerTest {
@@ -17,7 +18,7 @@ public class StateTimerTest {
 	@Before
 	public void setup() {
 		//@formatter:off
-		fsm = beginStateMachine(Integer.class, Void.class)
+		fsm = beginStateMachine(Integer.class, Void.class, TransitionMatchStrategy.BY_CLASS)
 				.initialState(1)
 				.states()
 					.state(1)

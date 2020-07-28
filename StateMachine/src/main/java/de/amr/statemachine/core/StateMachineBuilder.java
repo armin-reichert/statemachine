@@ -16,12 +16,12 @@ import de.amr.statemachine.api.TransitionMatchStrategy;
  * @author Armin Reichert
  *
  * @param <S> Type for identifying states
- * @param <E> Type of events
+ * @param <E> Type of inputs/events
  */
 public class StateMachineBuilder<S, E> {
 
-	private final Logger log = Logger.getGlobal();
-	private StateMachine<S, E> sm;
+	private final Logger logger = Logger.getLogger(StateMachineBuilder.class.getName());
+	private StateMachine<S, E> fsm;
 
 	/**
 	 * Creates a builder for a state machine of the given state type and event match strategy.
@@ -30,17 +30,7 @@ public class StateMachineBuilder<S, E> {
 	 * @param matchStrategy how events are matched
 	 */
 	public StateMachineBuilder(Class<S> stateType, TransitionMatchStrategy matchStrategy) {
-		sm = new StateMachine<>(stateType, matchStrategy);
-	}
-
-	/**
-	 * Creates a builder for a state machine of the given state type and a class-based event match
-	 * strategy.
-	 * 
-	 * @param stateType type used for state identification
-	 */
-	public StateMachineBuilder(Class<S> stateType) {
-		sm = new StateMachine<>(stateType);
+		fsm = new StateMachine<>(stateType, matchStrategy);
 	}
 
 	/**
@@ -49,7 +39,7 @@ public class StateMachineBuilder<S, E> {
 	 * @param sm state machine using this builder
 	 */
 	StateMachineBuilder(StateMachine<S, E> sm) {
-		this.sm = sm;
+		this.fsm = sm;
 	}
 
 	/**
@@ -59,7 +49,7 @@ public class StateMachineBuilder<S, E> {
 	 * @return the builder
 	 */
 	public StateMachineBuilder<S, E> description(Supplier<String> fnDescription) {
-		sm.setDescription(Objects.requireNonNull(fnDescription));
+		fsm.setDescription(Objects.requireNonNull(fnDescription));
 		return this;
 	}
 
@@ -80,7 +70,7 @@ public class StateMachineBuilder<S, E> {
 	 * @return the builder
 	 */
 	public StateMachineBuilder<S, E> initialState(S state) {
-		sm.setInitialState(state);
+		fsm.setInitialState(state);
 		return this;
 	}
 
@@ -127,7 +117,6 @@ public class StateMachineBuilder<S, E> {
 			}
 			clear();
 			// start next build
-			System.err.println("start building " + nextStateId);
 			stateId = nextStateId;
 			return this;
 		}
@@ -143,8 +132,7 @@ public class StateMachineBuilder<S, E> {
 			if (customStateInstance == null) {
 				throw new IllegalArgumentException("Custom state object cannot be NULL");
 			}
-			System.err.println("custom state " + stateId + ": " + customStateInstance.getClass());
-			sm.realizeState(stateId, customStateInstance);
+			fsm.realizeState(stateId, customStateInstance);
 			entryAction = customStateInstance::onEntry;
 			exitAction = customStateInstance::onExit;
 			tickAction = customStateInstance::onTick;
@@ -191,8 +179,8 @@ public class StateMachineBuilder<S, E> {
 		 */
 		public StateBuilder onEntry(Runnable action) {
 			if (entryActionSet) {
-				log.info(
-						() -> String.format("ERROR: entry action already set: state %s in FSM %s", stateId, sm.getDescription()));
+				logger.info(
+						() -> String.format("ERROR: entry action already set: state %s in FSM %s", stateId, fsm.getDescription()));
 				throw new IllegalStateException();
 			}
 			entryAction = action;
@@ -209,8 +197,8 @@ public class StateMachineBuilder<S, E> {
 		 */
 		public StateBuilder onExit(Runnable action) {
 			if (exitActionSet) {
-				log.info(
-						() -> String.format("ERROR: exit action already set: state %s in FSM %s", stateId, sm.getDescription()));
+				logger.info(
+						() -> String.format("ERROR: exit action already set: state %s in FSM %s", stateId, fsm.getDescription()));
 				throw new IllegalStateException();
 			}
 			exitAction = action;
@@ -227,8 +215,8 @@ public class StateMachineBuilder<S, E> {
 		 */
 		public StateBuilder onTick(TickAction<S> action) {
 			if (tickActionSet) {
-				log.info(
-						() -> String.format("ERROR: tick action already set: state %s in FSM %s", stateId, sm.getDescription()));
+				logger.info(
+						() -> String.format("ERROR: tick action already set: state %s in FSM %s", stateId, fsm.getDescription()));
 				throw new IllegalStateException();
 			}
 			tickAction = action;
@@ -270,13 +258,12 @@ public class StateMachineBuilder<S, E> {
 		}
 
 		private StateBuilder commit(S stateId) {
-			State<S> state = sm.state(stateId);
+			State<S> state = fsm.state(stateId);
 			state.entryAction = entryAction != null ? entryAction : state::onEntry;
 			state.exitAction = exitAction != null ? exitAction : state::onExit;
 			state.tickAction = tickAction != null ? tickAction : state::onTick;
 			state.timer = timer;
 			state.fnAnnotation = fnAnnotation;
-			System.err.println("commited state " + stateId);
 			return this;
 		}
 
@@ -486,10 +473,10 @@ public class StateMachineBuilder<S, E> {
 				throw new IllegalStateException("Cannot specify both timeout and event class for the same transition");
 			}
 			if (timeoutCondition) {
-				sm.addTransitionOnTimeout(sourceStateId, targetStateId, guard, action, fnAnnotation);
+				fsm.addTransitionOnTimeout(sourceStateId, targetStateId, guard, action, fnAnnotation);
 			} else {
-				sm.addTransition(sourceStateId, targetStateId, guard, action,
-						sm.getMatchStrategy() == TransitionMatchStrategy.BY_CLASS ? eventClass : eventValue, false, fnAnnotation);
+				fsm.addNewTransition(sourceStateId, targetStateId, guard, action,
+						fsm.getMatchStrategy() == TransitionMatchStrategy.BY_CLASS ? eventClass : eventValue, false, fnAnnotation);
 			}
 			clear();
 			return this;
@@ -504,7 +491,7 @@ public class StateMachineBuilder<S, E> {
 			if (sourceStateId != null) {
 				commit();
 			}
-			return sm;
+			return fsm;
 		}
 	}
 }

@@ -128,7 +128,7 @@ public interface Fsm<S, E> {
 	 * 
 	 * @param stateId a state identifier
 	 */
-	void restartTimer(S stateId);
+	void resetTimer(S stateId);
 
 	/**
 	 * Adds an input (event) to the input queue of this state machine.

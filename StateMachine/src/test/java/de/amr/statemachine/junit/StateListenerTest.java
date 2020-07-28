@@ -4,6 +4,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import de.amr.statemachine.api.TransitionMatchStrategy;
 import de.amr.statemachine.core.State;
 import de.amr.statemachine.core.StateMachine;
 
@@ -16,7 +17,7 @@ public class StateListenerTest {
 	@Before
 	public void createFixture() {
 		//@formatter:off
-		fsm = StateMachine.beginStateMachine(Integer.class, Void.class)
+		fsm = StateMachine.beginStateMachine(Integer.class, Void.class, TransitionMatchStrategy.BY_CLASS)
 				.initialState(0)
 				.states()
 					.state(0).timeoutAfter(1).onEntry(() -> ++stateEntryCount).onExit(() -> ++stateExitCount)
