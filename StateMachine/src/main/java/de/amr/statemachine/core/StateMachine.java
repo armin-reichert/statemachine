@@ -484,7 +484,6 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 					String.format("Cannot update state, state machine '%s' not initialized.", getDescription()));
 		}
 		State<S> currentState = state(currentStateId);
-		boolean timeout = currentState.timer.tick();
 		currentState.annotation = currentState.fnAnnotation.get();
 
 		// Find a transition matching the current input (ignore timeout-transitions)
@@ -517,10 +516,8 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 			}
 		});
 
-		// No state change, execute tick action, if any
-		currentState.tickAction.run(currentState, currentState.getTicksConsumed(), currentState.getTicksRemaining());
-
 		// Check if timeout occurred right now and fire matching transition, if any
+		boolean timeout = currentState.timer.tick();
 		if (timeout) {
 			matchingTransition = transitions(currentStateId).stream()
 			//@formatter:off
@@ -532,6 +529,9 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 				fireTransition(matchingTransition.get(), Optional.empty());
 			}
 		}
+
+		// execute tick action, if any
+		currentState.tickAction.run(currentState, currentState.getTicksConsumed(), currentState.getTicksRemaining());
 	}
 
 	private boolean isTransitionMatchingInput(Transition<S, E> transition, Optional<E> optionalInput) {
