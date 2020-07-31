@@ -89,17 +89,16 @@ public class State<S> {
 	// Timer stuff
 
 	/**
-	 * Sets a timer for this state and restarts the timer.
+	 * Sets a timer for this state.
 	 * 
 	 * @param fnDuration function providing the duration
 	 */
 	public void setTimer(Supplier<Long> fnDuration) {
 		timer = new StateTimer(fnDuration);
-		timer.reset();
 	}
 
 	/**
-	 * Sets a constant timer for this state and restarts the timer.
+	 * Sets a constant timer for this state.
 	 * 
 	 * @param ticks duration as number of ticks
 	 */
