@@ -121,6 +121,17 @@ public class StateMachineBuilder<S, E> {
 		}
 
 		/**
+		 * Replaces the standard state instance by the supplied custom state instance.
+		 * 
+		 * @param <C>                 type of state instance
+		 * @param customStateInstance custom state instance supplier e.g. constructor
+		 * @return the builder
+		 */
+		public <C extends State<S>> StateBuilder customState(Supplier<C> customStateInstance) {
+			return customState(customStateInstance.get());
+		}
+
+		/**
 		 * Replaces the standard state instance by the given custom state instance.
 		 * 
 		 * @param <C>                 type of state instance
