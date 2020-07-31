@@ -106,6 +106,13 @@ public class State<S> {
 		setTimer(() -> ticks);
 	}
 
+	/** Resets the timer for this state. */
+	public void resetTimer() {
+		if (hasTimer()) {
+			timer.reset();
+		}
+	}
+
 	/** Tells if this state has a (non-infinite) timer. */
 	public boolean hasTimer() {
 		return !(timer instanceof InfiniteTimer);
