@@ -85,7 +85,10 @@ public class DotPrinter {
 				print(transition.eventClass().getSimpleName());
 				print(annotation);
 			} else if (fsm.getMatchStrategy() == TransitionMatchStrategy.BY_VALUE && transition.eventValue() != null) {
-				print(transition.eventValueOrClass);
+				Object value = transition.eventValue();
+				if (!(value instanceof Number) && !(value instanceof Boolean)) {
+					print(value);
+				}
 				print(annotation);
 			} else {
 				if (annotation.length() > 0) {
