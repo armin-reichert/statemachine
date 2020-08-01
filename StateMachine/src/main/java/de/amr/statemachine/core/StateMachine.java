@@ -419,8 +419,10 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	@Override
 	public void resetTimer(S stateId) {
 		Objects.requireNonNull(stateId);
-		state(stateId).timer.reset();
-		tracer.logStateTimerReset(this, stateId);
+		if (state(stateId).hasTimer()) {
+			state(stateId).timer.reset();
+			tracer.logStateTimerReset(this, stateId);
+		}
 	}
 
 	@Override
