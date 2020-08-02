@@ -133,9 +133,9 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	private final TransitionMatchStrategy matchEventsBy;
 	private final Map<S, State<S>> stateMap;
 	private final Map<S, List<Transition<S, E>>> transitionMap = new HashMap<>(7);
-	protected final Deque<E> eventQ = new ArrayDeque<>();
+	private Deque<E> eventQ;
 
-	private final Set<Consumer<E>> eventListeners = new LinkedHashSet<>();
+	private Set<Consumer<E>> eventListeners;
 	private Map<S, Set<Consumer<State<S>>>> entryListeners;
 	private Map<S, Set<Consumer<State<S>>>> exitListeners;
 
@@ -352,14 +352,21 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 		addNewTransition(from, to, guard, action, null, false, fnAnnotation);
 	}
 
+	private Set<Consumer<E>> eventListeners() {
+		if (eventListeners == null) {
+			eventListeners = new LinkedHashSet<>();
+		}
+		return eventListeners;
+	}
+
 	@Override
 	public void addEventListener(Consumer<E> listener) {
-		eventListeners.add(listener);
+		eventListeners().add(listener);
 	}
 
 	@Override
 	public void removeEventListener(Consumer<E> listener) {
-		eventListeners.remove(listener);
+		eventListeners().remove(listener);
 	}
 
 	@Override
@@ -367,12 +374,12 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 		if (publishingBlacklist.stream().noneMatch(predicate -> predicate.test(event))) {
 			tracer.loginfo(() -> String.format("%s published event '%s'", this, event));
 		}
-		eventListeners.forEach(listener -> listener.accept(event));
+		eventListeners().forEach(listener -> listener.accept(event));
 	}
 
 	@Override
 	public void enqueue(E event) {
-		eventQ.add(Objects.requireNonNull(event));
+		eventQ().add(Objects.requireNonNull(event));
 	}
 
 	@Override
@@ -489,7 +496,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 		currentState.annotation = currentState.fnAnnotation.get();
 
 		// Find a transition matching the current input (ignore timeout-transitions)
-		Optional<E> optionalInput = Optional.ofNullable(eventQ.poll());
+		Optional<E> optionalInput = eventQ != null ? Optional.ofNullable(eventQ().poll()) : Optional.empty();
 		Optional<Transition<S, E>> matchingTransition = transitions(currentStateId).stream()
 		//@formatter:off
 			.filter(transition -> !transition.timeoutTriggered)
@@ -569,6 +576,13 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 			fireEntryListeners(currentStateId);
 		}
 		lastFiredTransition = transition;
+	}
+
+	public Deque<E> eventQ() {
+		if (eventQ == null) {
+			eventQ = new ArrayDeque<>();
+		}
+		return eventQ;
 	}
 
 	/**
