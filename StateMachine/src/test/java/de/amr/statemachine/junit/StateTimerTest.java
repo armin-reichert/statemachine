@@ -11,9 +11,8 @@ import de.amr.statemachine.core.StateMachine;
 
 public class StateTimerTest {
 
-	static final int N_TICKS = 20;
-	StateMachine<Integer, Void> fsm;
-	int ticks;
+	private StateMachine<Integer, Void> fsm;
+	private int ticks;
 
 	@Before
 	public void setup() {
@@ -22,7 +21,7 @@ public class StateTimerTest {
 				.initialState(1)
 				.states()
 					.state(1)
-						.timeoutAfter(N_TICKS)
+						.timeoutAfter(20)
 						.onTick(() -> {
 							++ticks;
 						})
@@ -34,19 +33,21 @@ public class StateTimerTest {
 	}
 
 	@Test
-	public void test20Ticks() {
+	public void testTicks() {
 		ticks = 0;
 		fsm.init();
+		Assert.assertEquals(20, fsm.state(1).getDuration());
 		while (fsm.is(1)) {
 			fsm.update();
 		}
-		Assert.assertEquals(N_TICKS, ticks);
+		Assert.assertEquals(20, ticks);
 
 		ticks = 0;
 		fsm.setState(1);
+		Assert.assertEquals(20, fsm.state(1).getDuration());
 		while (fsm.is(1)) {
 			fsm.update();
 		}
-		Assert.assertEquals(N_TICKS, ticks);
+		Assert.assertEquals(20, ticks);
 	}
 }
