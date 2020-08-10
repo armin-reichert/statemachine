@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -32,9 +33,14 @@ public class StateMachineTracer<S, E> {
 	public Function<Long, Float> fnTicksToSeconds = ticks -> ticks / 60f;
 
 	/**
+	 * Output destination or NULL stream when shut up.
+	 */
+	private PrintStream out;
+
+	/**
 	 * Output destination.
 	 */
-	private PrintStream out = System.err;
+	private PrintStream savedOut;
 
 	/**
 	 * Predicates defining which inputs/events are not getting logged.
@@ -53,8 +59,16 @@ public class StateMachineTracer<S, E> {
 		out.println(String.format("[%s] %s", timestamp, fnMessage.get()));
 	}
 
+	public StateMachineTracer(PrintStream out) {
+		this.out = savedOut = Objects.requireNonNull(out);
+	}
+
 	public StateMachineTracer() {
 		shutUp(true);
+	}
+
+	public void setOut(PrintStream out) {
+		this.out = savedOut = out;
 	}
 
 	/**
@@ -63,7 +77,7 @@ public class StateMachineTracer<S, E> {
 	 * @param shutUp if should shut up
 	 */
 	public void shutUp(boolean shutUp) {
-		out = shutUp ? new PrintStream(OutputStream.nullOutputStream()) : System.err;
+		out = shutUp ? new PrintStream(OutputStream.nullOutputStream()) : savedOut;
 	}
 
 	/**
