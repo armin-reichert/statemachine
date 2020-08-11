@@ -372,7 +372,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	@Override
 	public void publish(E event) {
 		if (publishingBlacklist.stream().noneMatch(predicate -> predicate.test(event))) {
-			tracer.loginfo(() -> String.format("%s published event '%s'", this, event));
+			tracer.logPublishedEvent(this, event);
 		}
 		eventListeners().forEach(listener -> listener.accept(event));
 	}
