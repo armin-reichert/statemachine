@@ -9,7 +9,8 @@ import de.amr.statemachine.api.Log;
 
 public class LogImpl implements Log {
 
-	private static final PrintStream TRASHCAN = new PrintStream(OutputStream.nullOutputStream());
+	public static final PrintStream TRASHCAN = new PrintStream(OutputStream.nullOutputStream());
+	public static final Log NULL = new LogImpl(TRASHCAN);
 
 	private PrintStream destination;
 	private PrintStream out;

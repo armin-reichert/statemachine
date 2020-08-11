@@ -24,7 +24,7 @@ import de.amr.statemachine.api.Log;
  */
 public class StateMachineTracer<S, E> {
 
-	private LogImpl logger = new LogImpl();
+	private Log logger = new LogImpl();
 
 	/**
 	 * Converts ticks into seconds. Default is 60 ticks per second.
@@ -36,11 +36,24 @@ public class StateMachineTracer<S, E> {
 	 */
 	public final List<Predicate<E>> eventLoggingBlacklist = new ArrayList<>();
 
+	public StateMachineTracer() {
+		logger = LogImpl.NULL;
+	}
+
 	/**
 	 * @return the logger used for tracing
 	 */
 	public Log getLogger() {
 		return logger;
+	}
+
+	/**
+	 * Sets the logger used for tracing.
+	 * 
+	 * @param logger the logger used for tracing
+	 */
+	public void setLogger(Log logger) {
+		this.logger = logger != null ? logger : LogImpl.NULL;
 	}
 
 	/**
