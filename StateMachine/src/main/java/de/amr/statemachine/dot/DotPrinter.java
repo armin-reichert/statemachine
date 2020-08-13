@@ -7,6 +7,7 @@ import java.io.Writer;
 import java.time.LocalDateTime;
 
 import de.amr.statemachine.api.TransitionMatchStrategy;
+import de.amr.statemachine.core.InfiniteTimer;
 import de.amr.statemachine.core.StateMachine;
 
 /**
@@ -61,7 +62,11 @@ public class DotPrinter {
 				print(annotation);
 			}
 			if (state.hasTimer() && !state.isTerminated()) {
-				print("\\n%d of %d ticks", state.getTicksConsumed(), state.getDuration());
+				if (state.getDuration() == InfiniteTimer.INFINITY) {
+					print("\\n%d of \u221E ticks", state.getTicksConsumed());
+				} else {
+					print("\\n%d of %d ticks", state.getTicksConsumed(), state.getDuration());
+				}
 			}
 			print("\"]");
 			if (state.id().equals(fsm.getState())) {
