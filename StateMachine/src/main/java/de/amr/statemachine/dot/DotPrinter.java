@@ -1,6 +1,5 @@
 package de.amr.statemachine.dot;
 
-import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
@@ -17,7 +16,7 @@ import de.amr.statemachine.core.StateMachine;
  */
 public class DotPrinter {
 
-	public static String printToString(StateMachine<?, ?> fsm) {
+	public static String toDotFormat(StateMachine<?, ?> fsm) {
 		StringWriter sw = new StringWriter();
 		new DotPrinter(sw).print(fsm);
 		return sw.toString();
@@ -25,16 +24,8 @@ public class DotPrinter {
 
 	private PrintWriter pw;
 
-	public DotPrinter(OutputStream out) {
-		pw = new PrintWriter(out);
-	}
-
 	public DotPrinter(Writer writer) {
 		pw = new PrintWriter(writer);
-	}
-
-	public DotPrinter() {
-		this(System.out);
 	}
 
 	private void print(String fmt, Object... args) {
@@ -51,7 +42,8 @@ public class DotPrinter {
 		print("\n  rankdir=LR;");
 		print("\n  node [shape=ellipse fontname=\"sans-serif\" fontsize=%d];", 12);
 		print("\n  edge [fontname=\"sans-serif\" fontsize=%d];", 12);
-		print("\n\n  // states");
+		print("\n");
+		print("\n  // states");
 		fsm.states().forEach(state -> {
 			print("\n  %s", state.id());
 			print(" [label=\"");
