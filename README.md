@@ -295,22 +295,19 @@ I used this state machine library extensively in my [Pac-Man game implementation
 This is the state machine controlling the behavior of the ghosts:
 
 ```java
-beginStateMachine()
-
-	.description(this::toString)
+ai.beginStateMachine()
+	.description(name + " AI")
 	.initialState(LOCKED)
 
 	.states()
 
 		.state(LOCKED)
 			.onEntry(() -> {
-				fnSubsequentState = () -> LOCKED;
-				setVisible(true);
-				flashing = false;
+				visible = true;
+				recovering = false;
 				bounty = 0;
-				placeAt(Tile.at(bed.col(), bed.row()), Tile.SIZE / 2, 0);
-				setMoveDir(bed.exitDir);
-				setWishDir(bed.exitDir);
+				nextState = LOCKED;
+				placeIntoBed();
 			})
 			.onTick(this::move)
 
@@ -319,30 +316,34 @@ beginStateMachine()
 			.onExit(() -> forceMoving(Direction.LEFT))
 
 		.state(ENTERING_HOUSE)
-			.onEntry(() -> steering().init()) //TODO should not be necessary
 			.onTick(this::move)
 
 		.state(SCATTERING)
 			.onTick(() -> {
-				maybeMeetPacMan(pacMan);
+				updateMentalHealth();
+				checkPacManCollision(pacMan);
 				move();
 			})
 
 		.state(CHASING)
 			.onTick(() -> {
-				maybeMeetPacMan(pacMan);
+				updateMentalHealth();
+				checkPacManCollision(pacMan);
 				move();
 			})
 
 		.state(FRIGHTENED)
+			.timeoutAfter(this::getFrightenedTicks)
 			.onTick((state, consumed, remaining) -> {
-				maybeMeetPacMan(pacMan);
+				updateMentalHealth();
+				checkPacManCollision(pacMan);
 				move();
-				// one flashing animation takes 0.5 sec
-				flashing = remaining < fnNumFlashes.getAsInt() * 0.5f;
+				recovering = remaining < getFlashTimeTicks();
 			})
 
 		.state(DEAD)
+			.timeoutAfter(sec(1))
+			.onEntry(this::computeBounty)
 			.onTick((s, consumed, remaining) -> {
 				if (remaining == 0) {
 					bounty = 0;
@@ -352,57 +353,67 @@ beginStateMachine()
 
 	.transitions()
 
-		.when(LOCKED).then(LEAVING_HOUSE)
-			.on(GhostUnlockedEvent.class)
+		.when(LOCKED).then(LEAVING_HOUSE).on(GhostUnlockedEvent.class)
 
 		.when(LEAVING_HOUSE).then(SCATTERING)
-			.condition(() -> hasLeftGhostHouse() && fnSubsequentState.get() == SCATTERING)
+			.condition(() -> justLeftHouse() && nextState == SCATTERING)
+			.annotation("Outside house")
 
 		.when(LEAVING_HOUSE).then(CHASING)
-			.condition(() -> hasLeftGhostHouse() && fnSubsequentState.get() == CHASING)
+			.condition(() -> justLeftHouse() && nextState == CHASING)
+			.annotation("Outside house")
+
+		.when(LEAVING_HOUSE).then(FRIGHTENED)
+			.condition(() -> justLeftHouse() && nextState == FRIGHTENED)
+			.annotation("Outside house")
 
 		.when(ENTERING_HOUSE).then(LEAVING_HOUSE)
-			.condition(() -> steering().isComplete())
+			.condition(() -> getSteering().isComplete())
+			.annotation("Reached bed")
 
 		.when(CHASING).then(FRIGHTENED)
 			.on(PacManGainsPowerEvent.class)
-			.act(() -> reverseDirection())
+			.act(this::reverseDirection)
 
 		.when(CHASING).then(DEAD)
 			.on(GhostKilledEvent.class)
 
 		.when(CHASING).then(SCATTERING)
-			.condition(() -> fnSubsequentState.get() == SCATTERING)
-			.act(() -> reverseDirection())
+			.condition(() -> nextState == SCATTERING)
+			.act(this::reverseDirection)
+			.annotation("Got scattering command")
 
 		.when(SCATTERING).then(FRIGHTENED)
 			.on(PacManGainsPowerEvent.class)
-			.act(() -> reverseDirection())
+			.act(this::reverseDirection)
 
 		.when(SCATTERING).then(DEAD)
 			.on(GhostKilledEvent.class)
 
 		.when(SCATTERING).then(CHASING)
-			.condition(() -> fnSubsequentState.get() == CHASING)
-			.act(() -> reverseDirection())
+			.condition(() -> nextState == CHASING)
+			.act(this::reverseDirection)
+			.annotation("Got chasing command")
 
-		.stay(FRIGHTENED)
-			.on(PacManGainsPowerEvent.class)
-			.act(() -> restartTimer(FRIGHTENED))
+		.stay(FRIGHTENED).on(PacManGainsPowerEvent.class)
+			.act(() -> ai.resetTimer(FRIGHTENED))
 
 		.when(FRIGHTENED).then(DEAD)
 			.on(GhostKilledEvent.class)
 
 		.when(FRIGHTENED).then(SCATTERING)
 			.onTimeout()
-			.condition(() -> fnSubsequentState.get() == SCATTERING)
+			.condition(() -> nextState == SCATTERING)
 
 		.when(FRIGHTENED).then(CHASING)
 			.onTimeout()
-			.condition(() -> fnSubsequentState.get() == CHASING)
+			.condition(() -> nextState == CHASING)
 
 		.when(DEAD).then(ENTERING_HOUSE)
-			.condition(() -> world.isHouseEntry(tileLocation()))
+			.condition(this::isAtHouseEntry)
+			.annotation("Reached house entry")
 
-.endStateMachine();
+	.endStateMachine();
+/*@formatter:on*/
+ai.setMissingTransitionBehavior(MissingTransitionBehavior.LOG);
 ```
