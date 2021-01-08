@@ -82,9 +82,8 @@ import de.amr.statemachine.api.TransitionMatchStrategy;
 public class StateMachine<S, E> implements Fsm<S, E> {
 
 	static {
-		try {
-			InputStream in = StateMachine.class.getClassLoader()
-					.getResourceAsStream("de/amr/statemachine/logging.properties");
+		try (InputStream in = StateMachine.class.getClassLoader()
+				.getResourceAsStream("de/amr/statemachine/logging.properties")) {
 			LogManager.getLogManager().readConfiguration(in);
 		} catch (NullPointerException | IOException | SecurityException e) {
 			throw new RuntimeException("Could not read logging configuration");
