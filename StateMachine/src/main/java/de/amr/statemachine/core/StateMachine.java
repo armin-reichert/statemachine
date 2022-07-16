@@ -1,7 +1,5 @@
 package de.amr.statemachine.core;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -19,9 +17,6 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.logging.Level;
-import java.util.logging.LogManager;
-import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 import de.amr.statemachine.api.Fsm;
@@ -81,24 +76,8 @@ import de.amr.statemachine.api.TransitionMatchStrategy;
  */
 public class StateMachine<S, E> implements Fsm<S, E> {
 
-	static {
-		try (InputStream in = StateMachine.class.getClassLoader()
-				.getResourceAsStream("de/amr/statemachine/logging.properties")) {
-			LogManager.getLogManager().readConfiguration(in);
-		} catch (NullPointerException | IOException | SecurityException e) {
-			throw new RuntimeException("Could not read logging configuration");
-		}
-	}
-
-	public static final Logger logger = Logger.getLogger(StateMachine.class.getName());
-
-	static {
-		logger.setLevel(Level.OFF);
-	}
-
 	/**
-	 * Defines what happens when no transition is found. Either ignore silently, log a message or throw
-	 * an exception.
+	 * Defines what happens when no transition is found. Either ignore silently, log a message or throw an exception.
 	 */
 	public enum MissingTransitionBehavior {
 		/** Ignore silently. */
@@ -299,8 +278,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	}
 
 	/**
-	 * Adds a transition which is fired if the guard condition holds and the current input's class
-	 * equals the given class.
+	 * Adds a transition which is fired if the guard condition holds and the current input's class equals the given class.
 	 * 
 	 * @param from         source state id
 	 * @param to           target state id
@@ -319,8 +297,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	}
 
 	/**
-	 * Adds a transition which is fired if the guard condition holds and the current input equals the
-	 * given value.
+	 * Adds a transition which is fired if the guard condition holds and the current input equals the given value.
 	 * 
 	 * @param from         source state id
 	 * @param to           target state id
@@ -455,8 +432,8 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	}
 
 	/**
-	 * Creates or replaces the implementation of a state. Using a subclass instead of the generic state
-	 * class is useful if the implementation of a state needs additional fields and methods.
+	 * Creates or replaces the implementation of a state. Using a subclass instead of the generic state class is useful if
+	 * the implementation of a state needs additional fields and methods.
 	 * 
 	 * @param stateId   state identifier
 	 * @param stateImpl instance of state class
@@ -585,8 +562,8 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	}
 
 	/**
-	 * Adds a listener that is executed when the given state is entered. This happenes after the
-	 * {@code onEntry} hook method was called.
+	 * Adds a listener that is executed when the given state is entered. This happenes after the {@code onEntry} hook
+	 * method was called.
 	 * 
 	 * @param state    a state
 	 * @param listener entry listener
@@ -613,8 +590,8 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	}
 
 	/**
-	 * Adds a listener that is executed when the given state is left. This happenes after the
-	 * {@code onExit} hook method was called.
+	 * Adds a listener that is executed when the given state is left. This happenes after the {@code onExit} hook method
+	 * was called.
 	 * 
 	 * @param state    a state
 	 * @param listener exit listener

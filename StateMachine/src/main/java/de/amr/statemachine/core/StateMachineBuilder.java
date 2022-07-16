@@ -4,7 +4,6 @@ import java.util.Objects;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import java.util.logging.Logger;
 
 import de.amr.statemachine.api.TickAction;
 import de.amr.statemachine.api.TransitionMatchStrategy;
@@ -19,7 +18,6 @@ import de.amr.statemachine.api.TransitionMatchStrategy;
  */
 public class StateMachineBuilder<S, E> {
 
-	private final Logger logger = Logger.getLogger(StateMachineBuilder.class.getName());
 	private StateMachine<S, E> fsm;
 
 	/**
@@ -170,17 +168,15 @@ public class StateMachineBuilder<S, E> {
 		}
 
 		/**
-		 * Defines the action to be executed when this state is entered. Calling this method twice leads to
-		 * an error.
+		 * Defines the action to be executed when this state is entered. Calling this method twice leads to an error.
 		 * 
 		 * @param action some action
 		 * @return the builder
 		 */
 		public StateBuilder onEntry(Runnable action) {
 			if (entryActionSet) {
-				logger.info(
-						() -> String.format("ERROR: entry action already set: state %s in FSM %s", stateId, fsm.getDescription()));
-				throw new IllegalStateException();
+				throw new IllegalStateException(
+						String.format("ERROR: entry action already set: state %s in FSM %s", stateId, fsm.getDescription()));
 			}
 			entryAction = action;
 			entryActionSet = true;
@@ -188,17 +184,15 @@ public class StateMachineBuilder<S, E> {
 		}
 
 		/**
-		 * Defines the action to be executed when this state is left. Calling this method twice leads to an
-		 * error.
+		 * Defines the action to be executed when this state is left. Calling this method twice leads to an error.
 		 * 
 		 * @param action some action
 		 * @return the builder
 		 */
 		public StateBuilder onExit(Runnable action) {
 			if (exitActionSet) {
-				logger.info(
-						() -> String.format("ERROR: exit action already set: state %s in FSM %s", stateId, fsm.getDescription()));
-				throw new IllegalStateException();
+				throw new IllegalStateException(
+						String.format("ERROR: exit action already set: state %s in FSM %s", stateId, fsm.getDescription()));
 			}
 			exitAction = action;
 			exitActionSet = true;
@@ -206,17 +200,15 @@ public class StateMachineBuilder<S, E> {
 		}
 
 		/**
-		 * Defines the action to be executed when this state is ticked. Calling this method twice leads to
-		 * an error.
+		 * Defines the action to be executed when this state is ticked. Calling this method twice leads to an error.
 		 * 
 		 * @param action some action
 		 * @return the builder
 		 */
 		public StateBuilder onTick(TickAction<S> action) {
 			if (tickActionSet) {
-				logger.info(
-						() -> String.format("ERROR: tick action already set: state %s in FSM %s", stateId, fsm.getDescription()));
-				throw new IllegalStateException();
+				throw new IllegalStateException(
+						String.format("ERROR: tick action already set: state %s in FSM %s", stateId, fsm.getDescription()));
 			}
 			tickAction = action;
 			tickActionSet = true;
@@ -224,8 +216,7 @@ public class StateMachineBuilder<S, E> {
 		}
 
 		/**
-		 * Defines the action to be executed when this state is ticked. Calling this method twice leads to
-		 * an error.
+		 * Defines the action to be executed when this state is ticked. Calling this method twice leads to an error.
 		 * 
 		 * @param action some action
 		 * @return the builder

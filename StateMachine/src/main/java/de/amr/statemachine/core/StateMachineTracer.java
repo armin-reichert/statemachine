@@ -9,7 +9,8 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-import de.amr.statemachine.api.Log;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * A tracer for the state machine operations.
@@ -24,7 +25,7 @@ import de.amr.statemachine.api.Log;
  */
 public class StateMachineTracer<S, E> {
 
-	private Log logger = new LogImpl();
+	private static final Logger LOGGER = LogManager.getFormatterLogger();
 
 	/**
 	 * Converts ticks into seconds. Default is 60 ticks per second.
@@ -35,26 +36,6 @@ public class StateMachineTracer<S, E> {
 	 * Predicates defining which inputs/events are not getting logged.
 	 */
 	public final List<Predicate<E>> eventLoggingBlacklist = new ArrayList<>();
-
-	public StateMachineTracer() {
-		logger = LogImpl.NULL;
-	}
-
-	/**
-	 * @return the logger used for tracing
-	 */
-	public Log getLogger() {
-		return logger;
-	}
-
-	/**
-	 * Sets the logger used for tracing.
-	 * 
-	 * @param logger the logger used for tracing
-	 */
-	public void setLogger(Log logger) {
-		this.logger = logger != null ? logger : LogImpl.NULL;
-	}
 
 	/**
 	 * Adds an input/event predicate to the blacklist.
@@ -67,28 +48,28 @@ public class StateMachineTracer<S, E> {
 
 	private void logEventInfo(E event, Supplier<String> fnMessage) {
 		if (eventLoggingBlacklist.stream().noneMatch(condition -> condition.test(event))) {
-			logger.loginfo(fnMessage.get());
+			LOGGER.info(fnMessage.get());
 		}
 	}
 
 	public void logStateCreated(StateMachine<S, E> fsm, S id) {
-		logger.loginfo("%s created state '%s'", fsm.getDescription(), id);
+		LOGGER.info("%s created state '%s'", fsm.getDescription(), id);
 	}
 
 	public void logStateTimerReset(StateMachine<S, E> fsm, S id) {
-		logger.loginfo("%s did reset timer for state '%s'", fsm.getDescription(), id);
+		LOGGER.info("%s did reset timer for state '%s'", fsm.getDescription(), id);
 	}
 
 	public void logUnhandledEvent(StateMachine<S, E> fsm, E event) {
-		logger.loginfo("%s in state %s could not handle '%s'", fsm.getDescription(), fsm.getState(), event);
+		LOGGER.info("%s in state %s could not handle '%s'", fsm.getDescription(), fsm.getState(), event);
 	}
 
 	public void logPublishedEvent(StateMachine<S, E> fsm, E event) {
-		logger.loginfo("%s published event %s", fsm.getDescription(), event);
+		LOGGER.info("%s published event %s", fsm.getDescription(), event);
 	}
 
 	public void logEnteringInitialState(StateMachine<S, E> fsm, S id) {
-		logger.loginfo("%s enters initial state", fsm.getDescription());
+		LOGGER.info("%s enters initial state", fsm.getDescription());
 		logEnteringState(fsm, id);
 	}
 
@@ -97,26 +78,26 @@ public class StateMachineTracer<S, E> {
 		if (stateEntered.hasTimer()) {
 			long duration = stateEntered.getDuration();
 			float seconds = fnTicksToSeconds.apply(duration);
-			logger.loginfo("%s enters state '%s' for %.2f seconds (%d ticks)", fsm.getDescription(), id, seconds, duration);
+			LOGGER.info("%s enters state '%s' for %.2f seconds (%d ticks)", fsm.getDescription(), id, seconds, duration);
 		} else {
-			logger.loginfo("%s enters state '%s'", fsm.getDescription(), id);
+			LOGGER.info("%s enters state '%s'", fsm.getDescription(), id);
 		}
 	}
 
 	public void logExitingState(StateMachine<S, E> fsm, S id) {
-		logger.loginfo("%s exits state  '%s'", fsm.getDescription(), id);
+		LOGGER.info("%s exits state  '%s'", fsm.getDescription(), id);
 	}
 
 	public void logFiringTransition(StateMachine<S, E> fsm, Transition<S, E> t, Optional<E> event) {
 		if (!event.isPresent()) {
 			if (t.from != t.to) {
 				if (t.timeoutTriggered) {
-					logger.loginfo("%s changes from  '%s' to '%s (timeout)'", fsm.getDescription(), t.from, t.to);
+					LOGGER.info("%s changes from  '%s' to '%s (timeout)'", fsm.getDescription(), t.from, t.to);
 				} else {
-					logger.loginfo("%s changes from  '%s' to '%s'", fsm.getDescription(), t.from, t.to);
+					LOGGER.info("%s changes from  '%s' to '%s'", fsm.getDescription(), t.from, t.to);
 				}
 			} else {
-				logger.loginfo("%s stays '%s'", fsm.getDescription(), t.from);
+				LOGGER.info("%s stays '%s'", fsm.getDescription(), t.from);
 			}
 		} else {
 			if (t.from != t.to) {
