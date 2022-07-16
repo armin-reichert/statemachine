@@ -118,7 +118,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	private Map<S, Set<Consumer<State<S>>>> exitListeners;
 
 	private Supplier<String> fnDescription = () -> String.format("[%s]", getClass().getSimpleName());
-	private final StateMachineTracer<S, E> tracer = new StateMachineTracer<>();
+	private final Tracer<S, E> tracer = new Tracer<>();
 	private final List<Predicate<E>> publishingBlacklist = new ArrayList<>();
 
 	/**
@@ -155,7 +155,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	}
 
 	@Override
-	public StateMachineTracer<S, E> getTracer() {
+	public Tracer<S, E> getTracer() {
 		return tracer;
 	}
 
@@ -348,7 +348,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	@Override
 	public void publish(E event) {
 		if (publishingBlacklist.stream().noneMatch(predicate -> predicate.test(event))) {
-			tracer.logPublishedEvent(this, event);
+			tracer.publishedEvent(this, event);
 		}
 		eventListeners().forEach(listener -> listener.accept(event));
 	}
@@ -404,7 +404,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 		Objects.requireNonNull(stateId);
 		state(stateId).timer.reset();
 		if (state(stateId).hasTimer()) {
-			tracer.logStateTimerReset(this, stateId);
+			tracer.stateTimerReset(this, stateId);
 		}
 	}
 
@@ -457,7 +457,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 		currentStateId = initialStateId;
 		lastFiredTransition = null;
 		resetTimer(currentStateId);
-		tracer.logEnteringInitialState(this, initialStateId);
+		tracer.enteringInitialState(this, initialStateId);
 		state(currentStateId).entryAction.run();
 		fireEntryListeners(currentStateId);
 	}
@@ -491,7 +491,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 			case IGNORE:
 				break;
 			case LOG:
-				tracer.logUnhandledEvent(this, input);
+				tracer.unhandledEvent(this, input);
 				break;
 			case EXCEPTION:
 				throw new IllegalStateException(String.format("%s: No transition defined for state '%s' and event/input '%s'",
@@ -533,13 +533,13 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	}
 
 	private void fireTransition(Transition<S, E> transition, Optional<E> optionalInput) {
-		tracer.logFiringTransition(this, transition, optionalInput);
+		tracer.firingTransition(this, transition, optionalInput);
 		if (currentStateId.equals(transition.to)) {
 			// loop: don't execute exit/entry actions, don't restart timer
 			transition.action.accept(optionalInput.orElse(null));
 		} else {
 			// exit current state
-			tracer.logExitingState(this, currentStateId);
+			tracer.exitingState(this, currentStateId);
 			state(currentStateId).exitAction.run();
 			fireExitListeners(currentStateId);
 			// maybe call action
@@ -547,7 +547,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 			// enter new state
 			currentStateId = transition.to;
 			resetTimer(currentStateId);
-			tracer.logEnteringState(this, currentStateId);
+			tracer.enteringState(this, currentStateId);
 			state(currentStateId).entryAction.run();
 			fireEntryListeners(currentStateId);
 		}

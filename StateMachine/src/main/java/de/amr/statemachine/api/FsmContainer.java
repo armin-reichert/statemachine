@@ -6,7 +6,7 @@ import java.util.function.Predicate;
 import de.amr.statemachine.core.State;
 import de.amr.statemachine.core.StateMachine;
 import de.amr.statemachine.core.StateMachine.MissingTransitionBehavior;
-import de.amr.statemachine.core.StateMachineTracer;
+import de.amr.statemachine.core.Tracer;
 
 /**
  * If a class cannot directly inherit from the {@link StateMachine} class it can
@@ -38,7 +38,7 @@ public interface FsmContainer<S, E> extends Fsm<S, E> {
 	}
 
 	@Override
-	default StateMachineTracer<S, E> getTracer() {
+	default Tracer<S, E> getTracer() {
 		return fsm().getTracer();
 	}
 

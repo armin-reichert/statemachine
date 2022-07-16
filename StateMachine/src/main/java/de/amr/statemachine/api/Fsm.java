@@ -7,7 +7,7 @@ import java.util.stream.Stream;
 
 import de.amr.statemachine.core.State;
 import de.amr.statemachine.core.StateMachine.MissingTransitionBehavior;
-import de.amr.statemachine.core.StateMachineTracer;
+import de.amr.statemachine.core.Tracer;
 import de.amr.statemachine.core.Transition;
 
 /**
@@ -54,7 +54,7 @@ public interface Fsm<S, E> {
 	/**
 	 * @return the tracer of this state machine.
 	 */
-	StateMachineTracer<S, E> getTracer();
+	Tracer<S, E> getTracer();
 
 	/**
 	 * Supresses logging for an event.
