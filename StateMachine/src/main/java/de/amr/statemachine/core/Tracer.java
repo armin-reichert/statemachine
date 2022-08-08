@@ -8,9 +8,7 @@ import java.util.Optional;
 import java.util.function.LongFunction;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import java.util.logging.Logger;
 
 /**
  * A tracer for the state machine operations.
@@ -22,7 +20,11 @@ import org.apache.logging.log4j.Logger;
  */
 public class Tracer<S, E> {
 
-	private static final Logger LOGGER = LogManager.getFormatterLogger();
+	private static final Logger LOGGER = Logger.getLogger(Tracer.class.getName());
+
+	private static void trace(String msg, Object... args) {
+		LOGGER.fine(() -> msg.formatted(args));
+	}
 
 	/**
 	 * Converts ticks into seconds. Default is 60 ticks per second.
@@ -45,28 +47,28 @@ public class Tracer<S, E> {
 
 	private void eventInfo(E event, Supplier<String> fnMessage) {
 		if (eventLoggingBlacklist.stream().noneMatch(condition -> condition.test(event))) {
-			LOGGER.trace(fnMessage.get());
+			trace(fnMessage.get());
 		}
 	}
 
 	public void stateCreated(StateMachine<S, E> fsm, S id) {
-		LOGGER.trace("%s created state '%s'", fsm.getDescription(), id);
+		trace("%s created state '%s'", fsm.getDescription(), id);
 	}
 
 	public void stateTimerReset(StateMachine<S, E> fsm, S id) {
-		LOGGER.trace("%s did reset timer for state '%s'", fsm.getDescription(), id);
+		trace("%s did reset timer for state '%s'", fsm.getDescription(), id);
 	}
 
 	public void unhandledEvent(StateMachine<S, E> fsm, E event) {
-		LOGGER.trace("%s in state %s could not handle '%s'", fsm.getDescription(), fsm.getState(), event);
+		trace("%s in state %s could not handle '%s'", fsm.getDescription(), fsm.getState(), event);
 	}
 
 	public void publishedEvent(StateMachine<S, E> fsm, E event) {
-		LOGGER.trace("%s published event %s", fsm.getDescription(), event);
+		trace("%s published event %s", fsm.getDescription(), event);
 	}
 
 	public void enteringInitialState(StateMachine<S, E> fsm, S id) {
-		LOGGER.trace("%s enters initial state", fsm.getDescription());
+		trace("%s enters initial state", fsm.getDescription());
 		enteringState(fsm, id);
 	}
 
@@ -75,26 +77,26 @@ public class Tracer<S, E> {
 		if (stateEntered.hasTimer()) {
 			long duration = stateEntered.getDuration();
 			float seconds = fnTicksToSeconds.apply(duration);
-			LOGGER.trace("%s enters state '%s' for %.2f seconds (%d ticks)", fsm.getDescription(), id, seconds, duration);
+			trace("%s enters state '%s' for %.2f seconds (%d ticks)", fsm.getDescription(), id, seconds, duration);
 		} else {
-			LOGGER.trace("%s enters state '%s'", fsm.getDescription(), id);
+			trace("%s enters state '%s'", fsm.getDescription(), id);
 		}
 	}
 
 	public void exitingState(StateMachine<S, E> fsm, S id) {
-		LOGGER.trace("%s exits state  '%s'", fsm.getDescription(), id);
+		trace("%s exits state  '%s'", fsm.getDescription(), id);
 	}
 
 	public void firingTransition(StateMachine<S, E> fsm, Transition<S, E> t, Optional<E> event) {
 		if (!event.isPresent()) {
 			if (t.from != t.to) {
 				if (t.timeoutTriggered) {
-					LOGGER.trace("%s changes from  '%s' to '%s (timeout)'", fsm.getDescription(), t.from, t.to);
+					trace("%s changes from  '%s' to '%s (timeout)'", fsm.getDescription(), t.from, t.to);
 				} else {
-					LOGGER.trace("%s changes from  '%s' to '%s'", fsm.getDescription(), t.from, t.to);
+					trace("%s changes from  '%s' to '%s'", fsm.getDescription(), t.from, t.to);
 				}
 			} else {
-				LOGGER.trace("%s stays '%s'", fsm.getDescription(), t.from);
+				trace("%s stays '%s'", fsm.getDescription(), t.from);
 			}
 		} else {
 			if (t.from != t.to) {
