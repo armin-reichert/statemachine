@@ -5,8 +5,8 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
+import de.amr.statemachine.core.MissingTransitionBehavior;
 import de.amr.statemachine.core.State;
-import de.amr.statemachine.core.StateMachine.MissingTransitionBehavior;
 import de.amr.statemachine.core.Tracer;
 import de.amr.statemachine.core.Transition;
 

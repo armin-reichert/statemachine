@@ -3,9 +3,9 @@ package de.amr.statemachine.api;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
+import de.amr.statemachine.core.MissingTransitionBehavior;
 import de.amr.statemachine.core.State;
 import de.amr.statemachine.core.StateMachine;
-import de.amr.statemachine.core.StateMachine.MissingTransitionBehavior;
 import de.amr.statemachine.core.Tracer;
 
 /**
