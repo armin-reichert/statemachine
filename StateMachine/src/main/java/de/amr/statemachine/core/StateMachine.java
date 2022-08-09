@@ -136,13 +136,22 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	 * @param stateIdClass  class of state identifiers, e.g. some enumeration class
 	 * @param matchStrategy strategy for matching events against transitions
 	 */
-	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public StateMachine(Class<S> stateIdClass, TransitionMatchStrategy matchStrategy) {
-		Objects.requireNonNull(stateIdClass);
-		Objects.requireNonNull(matchStrategy);
-		stateMap = stateIdClass.isEnum() ? new EnumMap(stateIdClass)
-				: stateIdClass == Boolean.class ? new BooleanMap() : new HashMap<>(7);
-		matchEventsBy = matchStrategy;
+		stateMap = selectMapImplementation(Objects.requireNonNull(stateIdClass));
+		matchEventsBy = Objects.requireNonNull(matchStrategy);
+	}
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	private Map<S, State<S>> selectMapImplementation(Class<S> stateIdClass) {
+		Map<S, State<S>> map = null;
+		if (stateIdClass.isEnum()) {
+			map = new EnumMap(stateIdClass);
+		} else if (stateIdClass.equals(Boolean.class)) {
+			map = new BooleanMap();
+		} else {
+			map = new HashMap<>();
+		}
+		return map;
 	}
 
 	/**
@@ -161,8 +170,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 
 	@Override
 	public void doNotLogEventProcessingIf(Predicate<E> condition) {
-		Objects.requireNonNull(condition);
-		tracer.doNotLog(condition);
+		tracer.doNotLog(Objects.requireNonNull(condition));
 	}
 
 	@Override
