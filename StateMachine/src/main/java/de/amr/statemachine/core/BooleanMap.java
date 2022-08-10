@@ -71,7 +71,7 @@ public class BooleanMap<V> implements Map<Boolean, V> {
 	@Override
 	public V put(Boolean key, V value) {
 		V oldValue = get(key);
-		if (key) {
+		if (key.booleanValue()) {
 			t.setValue(value);
 		} else {
 			f.setValue(value);
@@ -105,7 +105,7 @@ public class BooleanMap<V> implements Map<Boolean, V> {
 	@Override
 	public Set<Boolean> keySet() {
 		if (keySet == null) {
-			keySet = new HashSet<Boolean>(2);
+			keySet = new HashSet<>(2);
 			if (f.getValue() != null)
 				keySet.add(false);
 			if (t.getValue() != null)
@@ -116,7 +116,7 @@ public class BooleanMap<V> implements Map<Boolean, V> {
 
 	@Override
 	public Set<Entry<Boolean, V>> entrySet() {
-		Set<Entry<Boolean, V>> entrySet = new HashSet<Map.Entry<Boolean, V>>();
+		Set<Entry<Boolean, V>> entrySet = new HashSet<>();
 		if (f.getValue() != null)
 			entrySet.add(f);
 		if (t.getValue() != null)
