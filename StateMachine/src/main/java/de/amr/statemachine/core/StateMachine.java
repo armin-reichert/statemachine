@@ -601,9 +601,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 		if (exitListeners == null) {
 			exitListeners = new LinkedHashMap<>();
 		}
-		if (!exitListeners.containsKey(state)) {
-			exitListeners.put(state, new LinkedHashSet<>());
-		}
+		exitListeners.computeIfAbsent(state, s -> new LinkedHashSet<>());
 		return exitListeners.get(state);
 	}
 
