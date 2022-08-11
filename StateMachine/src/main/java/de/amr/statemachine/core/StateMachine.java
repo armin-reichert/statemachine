@@ -83,12 +83,12 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	 * @param eventClass    class of events/inputs
 	 * @param matchStrategy strategy for matching events against transition definitions
 	 * 
-	 * @param <STATE>       state identifier type
-	 * @param <EVENT>       event/input type
+	 * @param <S0>          state identifier type
+	 * @param <E0>          event/input type
 	 * @return state machine builder
 	 */
-	public static <STATE, EVENT> StateMachineBuilder<STATE, EVENT> beginStateMachine(Class<STATE> stateIdClass,
-			Class<EVENT> eventClass, TransitionMatchStrategy matchStrategy) {
+	public static <S0, E0> StateMachineBuilder<S0, E0> beginStateMachine(Class<S0> stateIdClass, Class<E0> eventClass,
+			TransitionMatchStrategy matchStrategy) {
 		return new StateMachineBuilder<>(stateIdClass, matchStrategy);
 	}
 
