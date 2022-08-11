@@ -86,9 +86,12 @@ public class StateMachineBuilder<S, E> {
 	public class StateBuilder {
 
 		private S stateId;
-		private Runnable entryAction, exitAction;
+		private Runnable entryAction;
+		private Runnable exitAction;
 		private TickAction<S> tickAction;
-		private boolean entryActionSet, exitActionSet, tickActionSet;
+		private boolean entryActionSet;
+		private boolean exitActionSet;
+		private boolean tickActionSet;
 		private StateTimer timer;
 		private Supplier<String> fnAnnotation;
 

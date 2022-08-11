@@ -411,7 +411,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	}
 
 	@Override
-	public <StateType extends State<S>> StateType state() {
+	public <S0 extends State<S>> S0 state() {
 		if (currentStateId == null) {
 			throw new IllegalStateException("Cannot access current state object, state machine not initialized.");
 		}
@@ -420,12 +420,12 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 
 	@Override
 	@SuppressWarnings("unchecked")
-	public <StateClass extends State<S>> StateClass state(S stateId) {
+	public <S0 extends State<S>> S0 state(S stateId) {
 		if (!stateMap.containsKey(stateId)) {
 			// realize state by generic state object
-			return (StateClass) realizeState(stateId, new State<>());
+			return (S0) realizeState(stateId, new State<>());
 		}
-		return (StateClass) stateMap.get(stateId);
+		return (S0) stateMap.get(stateId);
 	}
 
 	/**
@@ -436,9 +436,9 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	 * @param stateImpl instance of state class
 	 * @return the state instance
 	 * 
-	 * @param <StateClass> subclass of {@link State} class
+	 * @param <S0> subclass of {@link State} class
 	 */
-	public <StateClass extends State<S>> StateClass realizeState(S stateId, StateClass stateImpl) {
+	public <S0 extends State<S>> S0 realizeState(S stateId, S0 stateImpl) {
 		Objects.requireNonNull(stateId);
 		Objects.requireNonNull(stateImpl);
 		stateImpl.id = stateId;
