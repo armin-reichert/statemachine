@@ -227,9 +227,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 
 	// create lists on demand
 	private List<Transition<S, E>> transitions(S stateId) {
-		if (!transitionMap.containsKey(stateId)) {
-			transitionMap.put(stateId, new ArrayList<>(3));
-		}
+		transitionMap.computeIfAbsent(stateId, id -> new ArrayList<>(3));
 		return transitionMap.get(stateId);
 	}
 
@@ -368,7 +366,10 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	@Override
 	@SuppressWarnings("unchecked")
 	public boolean is(S... stateIds) {
-		return stateIds.length > 0 ? Arrays.stream(stateIds).anyMatch(s -> s.equals(currentStateId)) : true;
+		if (stateIds.length == 0) {
+			throw new IllegalArgumentException();
+		}
+		return Arrays.stream(stateIds).anyMatch(s -> s.equals(currentStateId));
 	}
 
 	@Override
@@ -573,9 +574,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 		if (entryListeners == null) {
 			entryListeners = new LinkedHashMap<>();
 		}
-		if (!entryListeners.containsKey(state)) {
-			entryListeners.put(state, new LinkedHashSet<>());
-		}
+		entryListeners.computeIfAbsent(state, s -> new LinkedHashSet<>());
 		return entryListeners.get(state);
 	}
 
