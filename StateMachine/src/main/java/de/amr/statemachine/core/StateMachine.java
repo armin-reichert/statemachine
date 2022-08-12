@@ -106,7 +106,7 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	private Map<S, Set<Consumer<State<S>>>> exitListeners;
 
 	private Supplier<String> fnDescription = () -> String.format("[%s]", getClass().getSimpleName());
-	private final Tracer<S, E> tracer = new Tracer<>();
+	private Tracer<S, E> tracer = new Tracer<>();
 	private final List<Predicate<E>> publishingBlacklist = new ArrayList<>();
 
 	/**
@@ -154,6 +154,11 @@ public class StateMachine<S, E> implements Fsm<S, E> {
 	@Override
 	public Tracer<S, E> getTracer() {
 		return tracer;
+	}
+
+	@Override
+	public void setTracer(Tracer<S, E> tracer) {
+		this.tracer = Objects.requireNonNull(tracer);
 	}
 
 	@Override

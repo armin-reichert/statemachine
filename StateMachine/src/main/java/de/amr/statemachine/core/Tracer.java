@@ -8,7 +8,6 @@ import java.util.Optional;
 import java.util.function.LongFunction;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.logging.Logger;
 
 /**
  * A tracer for the state machine operations.
@@ -20,10 +19,8 @@ import java.util.logging.Logger;
  */
 public class Tracer<S, E> {
 
-	private static final Logger LOGGER = Logger.getLogger(Tracer.class.getName());
-
-	private static void trace(String msg, Object... args) {
-		LOGGER.fine(() -> msg.formatted(args));
+	public void trace(String msg, Object... args) {
+		System.out.println(msg.formatted(args));
 	}
 
 	/**

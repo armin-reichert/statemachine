@@ -52,6 +52,13 @@ public interface Fsm<S, E> {
 	void publish(E event);
 
 	/**
+	 * Sets the tracer for this state machine.
+	 * 
+	 * @param tracer the tracer (default tracer prints to system out)
+	 */
+	void setTracer(Tracer<S, E> tracer);
+
+	/**
 	 * @return the tracer of this state machine.
 	 */
 	Tracer<S, E> getTracer();
@@ -83,16 +90,16 @@ public interface Fsm<S, E> {
 	Stream<State<S>> states();
 
 	/**
-	 * Sets state machine directly to the given state. The state's entry action is executed and a state
-	 * timer, if defined, gets reset.
+	 * Sets state machine directly to the given state. The state's entry action is executed and a state timer, if defined,
+	 * gets reset.
 	 * 
 	 * @param stateId id of new state
 	 */
 	void setState(S stateId);
 
 	/**
-	 * Resumes given state. Normally not used directly. The difference to {@link #setState(Object)} is
-	 * that a timer of the state is not reset.
+	 * Resumes given state. Normally not used directly. The difference to {@link #setState(Object)} is that a timer of the
+	 * state is not reset.
 	 * 
 	 * @param stateId id of state to resume
 	 */
@@ -113,7 +120,7 @@ public interface Fsm<S, E> {
 	/**
 	 * @return internal state representation of current state.
 	 */
-	default <StateType extends State<S>> StateType state() {
+	default <S0 extends State<S>> S0 state() {
 		return state(getState());
 	}
 
@@ -121,7 +128,7 @@ public interface Fsm<S, E> {
 	 * @param stateId state ID
 	 * @return internal state representation of the specified state.
 	 */
-	<StateType extends State<S>> StateType state(S stateId);
+	<S0 extends State<S>> S0 state(S stateId);
 
 	/**
 	 * If the state has a timer, this timer is set to its full duration.
